@@ -24,7 +24,7 @@ export function Footer() {
             <img
               src="/logo.png"
               alt="Clip N Copy"
-              className="h-12 w-auto object-contain rounded-lg bg-white p-1"
+              className="h-14 w-auto object-contain bg-white/90 rounded-lg p-1.5 shadow-sm"
             />
           </div>
           <p className="text-sm text-ink-foreground/70">
