@@ -1,9 +1,12 @@
 services:
-  - type: web
+  - type: static
     name: clip-n-copy
-    env: node
     buildCommand: npm run build
-    startCommand: node .output/server/index.mjs
+    staticPublishPath: .output/public
+    routes:
+      - type: rewrite
+        source: /*
+        destination: /index.html
     envVars:
       - key: VITE_SUPABASE_URL
         sync: false
