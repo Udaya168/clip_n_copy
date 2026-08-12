@@ -201,19 +201,39 @@ export function MobileBottomNav() {
   const item = "flex flex-1 flex-col items-center gap-1 py-2 text-[11px] font-semibold";
   return (
     <nav className="fixed inset-x-0 bottom-0 z-50 flex border-t border-border bg-background/95 pb-[env(safe-area-inset-bottom)] backdrop-blur-xl lg:hidden">
-      <Link to="/" className={cn(item, "text-muted-foreground")} activeProps={{ className: "text-primary" }} activeOptions={{ exact: true }}>
+      <Link
+        to="/"
+        className={cn(item, "text-muted-foreground")}
+        activeProps={{ className: "text-primary" }}
+        activeOptions={{ exact: true }}
+      >
         <Home className="size-5" /> Home
       </Link>
-      <Link to="/shop" className={cn(item, "text-muted-foreground")} activeProps={{ className: "text-primary" }}>
+      <Link
+        to="/shop"
+        className={cn(item, "text-muted-foreground")}
+        activeProps={{ className: "text-primary" }}
+      >
         <Sparkles className="size-5" /> Shop
       </Link>
-      <Link to="/offers" className={cn(item, "text-muted-foreground")} activeProps={{ className: "text-primary" }}>
+      <Link
+        to="/offers"
+        className={cn(item, "text-muted-foreground")}
+        activeProps={{ className: "text-primary" }}
+      >
         <Tag className="size-5" /> Offers
       </Link>
-      <Link to="/wishlist" className={cn(item, "text-muted-foreground")} activeProps={{ className: "text-primary" }}>
+      <Link
+        to="/wishlist"
+        className={cn(item, "text-muted-foreground")}
+        activeProps={{ className: "text-primary" }}
+      >
         <Heart className="size-5" /> Saved
       </Link>
-      <button onClick={() => setCartOpen(true)} className={cn(item, "relative text-muted-foreground")}>
+      <button
+        onClick={() => setCartOpen(true)}
+        className={cn(item, "relative text-muted-foreground")}
+      >
         <ShoppingBag className="size-5" /> Cart
         {cartCount > 0 && (
           <span className="absolute top-1 right-1/4 grid min-w-4.5 place-items-center rounded-full bg-primary px-1 text-[10px] font-bold text-primary-foreground">

@@ -75,7 +75,8 @@ export function CartDrawer() {
                         <span className="w-6 text-center text-sm font-bold">{qty}</span>
                         <button
                           onClick={() => setQty(product.id, qty + 1)}
-                          className="grid size-8 place-items-center rounded-full hover:bg-secondary"
+                          disabled={qty >= product.stock}
+                          className="grid size-8 place-items-center rounded-full hover:bg-secondary disabled:opacity-40"
                           aria-label="Increase quantity"
                         >
                           <Plus className="size-3.5" />

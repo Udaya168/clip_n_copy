@@ -1,21 +1,45 @@
 import { createFileRoute, Link, notFound } from "@tanstack/react-router";
 import { Check, Heart, ShoppingBag, Star, Truck, Minus, Plus, Store } from "lucide-react";
 import { useState } from "react";
+import { toast } from "sonner";
 import { ProductCard } from "@/components/ProductCard";
-import { CATEGORY_NAME, PRODUCTS, REVIEWS, byId, discountOf } from "@/lib/data";
+import { CATEGORY_NAME, REVIEWS, discountOf } from "@/lib/data";
+import { supabase } from "@/lib/supabase";
+import {
+  mapSupabaseProduct,
+  fetchSupabaseProducts,
+  useSupabaseProducts,
+  type SupabaseProduct,
+} from "@/lib/supabase-products";
 import { inr, useShop } from "@/lib/shop-store";
 import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/product/$id")({
-  loader: ({ params }) => {
-    const product = byId(params.id);
-    if (!product) throw notFound();
-    return { product };
+  loader: async ({ params }) => {
+    const { data, error } = await supabase
+      .from("products")
+      .select("*")
+      .eq("id", params.id)
+      .maybeSingle();
+
+    if (data) {
+      return { product: mapSupabaseProduct(data as SupabaseProduct) };
+    }
+
+    const products = await fetchSupabaseProducts();
+    const found = products.find(
+      (p) => String(p.id) === params.id || String(p.id).toLowerCase() === params.id.toLowerCase(),
+    );
+    if (!found) throw notFound();
+    return { product: found };
   },
   head: ({ loaderData }) => {
     if (!loaderData) {
       return {
-        meta: [{ title: "Product not found — Clip N Copy" }, { name: "robots", content: "noindex" }],
+        meta: [
+          { title: "Product not found — Clip N Copy" },
+          { name: "robots", content: "noindex" },
+        ],
       };
     }
     const { product } = loaderData;
@@ -45,11 +69,11 @@ function ProductDetail() {
   const [zoom, setZoom] = useState<{ x: number; y: number } | null>(null);
   const [tab, setTab] = useState<"desc" | "specs" | "reviews">("desc");
 
+  const { data: products = [] } = useSupabaseProducts();
   const gallery = [product.image, product.image, product.image, product.image];
-  const similar = PRODUCTS.filter((p) => p.category === product.category && p.id !== product.id).slice(
-    0,
-    4,
-  );
+  const similar = products
+    .filter((p) => p.category === product.category && p.id !== product.id)
+    .slice(0, 4);
   const saved = inWishlist(product.id);
 
   return (
@@ -108,7 +132,12 @@ function ProductDetail() {
                   active === i ? "border-primary" : "border-border hover:border-primary/50",
                 )}
               >
-                <img src={g} alt={`${product.name} view ${i + 1}`} loading="lazy" className="size-full object-cover" />
+                <img
+                  src={g}
+                  alt={`${product.name} view ${i + 1}`}
+                  loading="lazy"
+                  className="size-full object-cover"
+                />
               </button>
             ))}
           </div>
@@ -119,7 +148,9 @@ function ProductDetail() {
             <p className="text-xs font-bold tracking-widest text-primary uppercase">
               {product.brand}
             </p>
-            <h1 className="mt-1 font-display text-2xl font-extrabold sm:text-3xl">{product.name}</h1>
+            <h1 className="mt-1 font-display text-2xl font-extrabold sm:text-3xl">
+              {product.name}
+            </h1>
             <div className="mt-2 flex flex-wrap items-center gap-3 text-sm">
               <span className="flex items-center gap-1 rounded-md bg-success/12 px-2 py-0.5 font-bold text-success">
                 {product.rating.toFixed(1)} <Star className="size-3.5 fill-current" />
@@ -127,8 +158,22 @@ function ProductDetail() {
               <span className="text-muted-foreground">
                 {product.reviews.toLocaleString("en-IN")} reviews
               </span>
-              <span className="flex items-center gap-1 font-semibold text-success">
-                <Check className="size-4" /> In stock
+              <span
+                className={cn(
+                  "flex items-center gap-1 font-semibold text-xs px-2.5 py-1 rounded-full",
+                  product.stock > 5
+                    ? "text-success bg-success/12"
+                    : product.stock > 0
+                      ? "text-amber-600 bg-amber-500/12 font-bold"
+                      : "text-destructive bg-destructive/12 font-bold",
+                )}
+              >
+                <Check className="size-4" />{" "}
+                {product.stock > 5
+                  ? "In Stock"
+                  : product.stock > 0
+                    ? `Only ${product.stock} left`
+                    : "Out of Stock"}
               </span>
             </div>
           </div>
@@ -148,15 +193,23 @@ function ProductDetail() {
               <div className="flex items-center gap-1 rounded-full border border-border">
                 <button
                   onClick={() => setQty((q) => Math.max(1, q - 1))}
-                  className="grid size-9 place-items-center rounded-full hover:bg-secondary"
+                  disabled={product.stock <= 0 || qty <= 1}
+                  className="grid size-9 place-items-center rounded-full hover:bg-secondary disabled:opacity-40"
                   aria-label="Decrease quantity"
                 >
                   <Minus className="size-4" />
                 </button>
-                <span className="w-8 text-center font-bold">{qty}</span>
+                <span className="w-8 text-center font-bold">{product.stock <= 0 ? 0 : qty}</span>
                 <button
-                  onClick={() => setQty((q) => q + 1)}
-                  className="grid size-9 place-items-center rounded-full hover:bg-secondary"
+                  onClick={() => {
+                    if (qty >= product.stock) {
+                      toast.error(`Maximum available quantity is ${product.stock}.`);
+                      return;
+                    }
+                    setQty((q) => Math.min(product.stock, q + 1));
+                  }}
+                  disabled={product.stock <= 0 || qty >= product.stock}
+                  className="grid size-9 place-items-center rounded-full hover:bg-secondary disabled:opacity-40"
                   aria-label="Increase quantity"
                 >
                   <Plus className="size-4" />
@@ -167,20 +220,36 @@ function ProductDetail() {
             <div className="mt-5 grid gap-2 sm:grid-cols-2">
               <button
                 onClick={() => addToCart(product.id, qty)}
-                className="inline-flex h-12 items-center justify-center gap-2 rounded-full bg-ink font-semibold text-ink-foreground transition-colors hover:bg-primary"
+                disabled={product.stock <= 0}
+                className={cn(
+                  "inline-flex h-12 items-center justify-center gap-2 rounded-full font-semibold transition-colors",
+                  product.stock <= 0
+                    ? "cursor-not-allowed bg-muted text-muted-foreground opacity-60"
+                    : "bg-ink text-ink-foreground hover:bg-primary",
+                )}
               >
-                <ShoppingBag className="size-4" /> Add to Cart
+                <ShoppingBag className="size-4" />{" "}
+                {product.stock <= 0 ? "Out of Stock" : "Add to Cart"}
               </button>
-              <Link
-                to="/checkout"
-                onClick={() => {
-                  addToCart(product.id, qty);
-                  setCartOpen(false);
-                }}
-                className="inline-flex h-12 items-center justify-center rounded-full accent-gradient font-bold text-accent-foreground shadow-glow"
-              >
-                Buy Now
-              </Link>
+              {product.stock > 0 ? (
+                <Link
+                  to="/checkout"
+                  onClick={() => {
+                    addToCart(product.id, qty);
+                    setCartOpen(false);
+                  }}
+                  className="inline-flex h-12 items-center justify-center rounded-full accent-gradient font-bold text-accent-foreground shadow-glow"
+                >
+                  Buy Now
+                </Link>
+              ) : (
+                <button
+                  disabled
+                  className="inline-flex h-12 items-center justify-center rounded-full bg-muted font-bold text-muted-foreground cursor-not-allowed opacity-60"
+                >
+                  Out of Stock
+                </button>
+              )}
             </div>
             <button
               onClick={() => toggleWishlist(product.id)}
@@ -239,7 +308,10 @@ function ProductDetail() {
           {tab === "specs" && (
             <dl className="grid max-w-2xl gap-x-8 gap-y-3 sm:grid-cols-2">
               {Object.entries(product.specs ?? {}).map(([k, v]) => (
-                <div key={k} className="flex justify-between gap-4 border-b border-border pb-2 text-sm">
+                <div
+                  key={k}
+                  className="flex justify-between gap-4 border-b border-border pb-2 text-sm"
+                >
                   <dt className="text-muted-foreground">{k}</dt>
                   <dd className="font-semibold">{v}</dd>
                 </div>

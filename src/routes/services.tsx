@@ -17,7 +17,8 @@ export const Route = createFileRoute("/services")({
       { property: "og:title", content: "Print. Bind. Done. — Clip N Copy" },
       {
         property: "og:description",
-        content: "Professional printing, photocopy and binding services in Kundalahalli, Bengaluru.",
+        content:
+          "Professional printing, photocopy and binding services in Kundalahalli, Bengaluru.",
       },
     ],
   }),
@@ -97,9 +98,21 @@ function Services() {
 
       <section className="section-shell pb-14">
         <div className="grid gap-4 sm:grid-cols-3">
-          <Highlight icon={<Clock className="size-5" />} title="15 min average" note="Turnaround on standard print jobs" />
-          <Highlight icon={<FileCheck2 className="size-5" />} title="Project ready" note="Spiral, comb and hard binding" />
-          <Highlight icon={<Printer className="size-5" />} title="Up to A0" note="Jumbo xerox and drawing prints" />
+          <Highlight
+            icon={<Clock className="size-5" />}
+            title="15 min average"
+            note="Turnaround on standard print jobs"
+          />
+          <Highlight
+            icon={<FileCheck2 className="size-5" />}
+            title="Project ready"
+            note="Spiral, comb and hard binding"
+          />
+          <Highlight
+            icon={<Printer className="size-5" />}
+            title="Up to A0"
+            note="Jumbo xerox and drawing prints"
+          />
         </div>
       </section>
 
@@ -108,15 +121,7 @@ function Services() {
   );
 }
 
-function Highlight({
-  icon,
-  title,
-  note,
-}: {
-  icon: React.ReactNode;
-  title: string;
-  note: string;
-}) {
+function Highlight({ icon, title, note }: { icon: React.ReactNode; title: string; note: string }) {
   return (
     <div className="surface-card flex items-center gap-4 p-5">
       <span className="grid size-11 shrink-0 place-items-center rounded-xl accent-gradient text-accent-foreground">

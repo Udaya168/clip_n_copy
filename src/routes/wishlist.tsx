@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { Heart, ShoppingBag, Trash2 } from "lucide-react";
-import { PRODUCTS } from "@/lib/data";
+import { useSupabaseProducts } from "@/lib/supabase-products";
 import { inr, useShop } from "@/lib/shop-store";
 
 export const Route = createFileRoute("/wishlist")({
@@ -21,7 +21,8 @@ export const Route = createFileRoute("/wishlist")({
 
 function Wishlist() {
   const { wishlist, toggleWishlist, addToCart } = useShop();
-  const items = PRODUCTS.filter((p) => wishlist.includes(p.id));
+  const { data: products = [] } = useSupabaseProducts();
+  const items = products.filter((p) => wishlist.includes(p.id));
 
   return (
     <div className="section-shell py-10">
@@ -47,7 +48,10 @@ function Wishlist() {
       ) : (
         <ul className="mt-8 space-y-3">
           {items.map((p) => (
-            <li key={p.id} className="surface-card flex flex-col gap-4 p-4 sm:flex-row sm:items-center">
+            <li
+              key={p.id}
+              className="surface-card flex flex-col gap-4 p-4 sm:flex-row sm:items-center"
+            >
               <img
                 src={p.image}
                 alt={p.name}

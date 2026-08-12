@@ -14,7 +14,10 @@ export const Route = createFileRoute("/checkout")({
           "Review your order, pick delivery or store pickup and place your Clip N Copy order. Demo checkout — no real payment is taken.",
       },
       { property: "og:title", content: "Checkout — Clip N Copy" },
-      { property: "og:description", content: "Delivery, pickup and payment options at Clip N Copy." },
+      {
+        property: "og:description",
+        content: "Delivery, pickup and payment options at Clip N Copy.",
+      },
     ],
   }),
   component: Checkout,
@@ -33,10 +36,11 @@ const PAYMENTS = [
 ];
 
 function Checkout() {
-  const { lines, subtotal, savings, total, clearCart } = useShop();
+  const { lines, subtotal, savings, total, clearCart, validateAndProcessCheckout } = useShop();
   const [delivery, setDelivery] = useState("standard");
   const [payment, setPayment] = useState("upi");
   const [placed, setPlaced] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const shipping = delivery === "express" ? 49 : 0;
 
@@ -82,10 +86,16 @@ function Checkout() {
 
       <form
         className="mt-8 grid gap-6 lg:grid-cols-[minmax(0,1fr)_22rem]"
-        onSubmit={(e) => {
+        onSubmit={async (e) => {
           e.preventDefault();
-          setPlaced(true);
-          clearCart();
+          if (isSubmitting) return;
+          setIsSubmitting(true);
+          const ok = await validateAndProcessCheckout();
+          setIsSubmitting(false);
+          if (ok) {
+            setPlaced(true);
+            clearCart();
+          }
         }}
       >
         <div className="space-y-6">
@@ -184,9 +194,10 @@ function Checkout() {
             </div>
             <button
               type="submit"
-              className="mt-5 inline-flex h-12 w-full items-center justify-center rounded-full bg-primary font-semibold text-primary-foreground shadow-glow transition-transform active:scale-98"
+              disabled={isSubmitting || lines.length === 0}
+              className="mt-5 inline-flex h-12 w-full items-center justify-center rounded-full bg-primary font-semibold text-primary-foreground shadow-glow transition-transform active:scale-98 disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              Place Order
+              {isSubmitting ? "Validating & Processing..." : "Place Order"}
             </button>
           </div>
         </aside>

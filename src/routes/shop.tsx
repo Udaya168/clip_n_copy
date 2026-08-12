@@ -1,8 +1,9 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { SlidersHorizontal, X } from "lucide-react";
 import { useMemo, useState } from "react";
-import { ProductCard } from "@/components/ProductCard";
-import { BRANDS, CATEGORIES, CATEGORY_NAME, PRODUCTS, discountOf } from "@/lib/data";
+import { ProductCard, ProductSkeleton } from "@/components/ProductCard";
+import { BRANDS, CATEGORIES, CATEGORY_NAME, RAW_CATEGORIES, discountOf } from "@/lib/data";
+import { useSupabaseProducts } from "@/lib/supabase-products";
 import { inr } from "@/lib/shop-store";
 import { cn } from "@/lib/utils";
 
@@ -48,6 +49,7 @@ const SORTS = [
 
 function Shop() {
   const { category, q, tag } = Route.useSearch();
+  const { data: products = [], isLoading, isError, error, refetch } = useSupabaseProducts();
   const [maxPrice, setMaxPrice] = useState(5000);
   const [brands, setBrands] = useState<string[]>([]);
   const [minRating, setMinRating] = useState(0);
@@ -56,9 +58,16 @@ function Shop() {
   const [sort, setSort] = useState<(typeof SORTS)[number]>("Popularity");
   const [filtersOpen, setFiltersOpen] = useState(false);
 
+  const categoriesWithCounts = useMemo(() => {
+    return RAW_CATEGORIES.map((c) => ({
+      ...c,
+      count: products.filter((p) => p.category === c.slug).length,
+    }));
+  }, [products]);
+
   const results = useMemo(() => {
     const term = q?.trim().toLowerCase();
-    let list = PRODUCTS.filter((p) => {
+    let list = products.filter((p) => {
       if (category && p.category !== category) return false;
       if (tag && !p.tags?.includes(tag)) return false;
       if (
@@ -80,7 +89,7 @@ function Shop() {
     if (sort === "Biggest Discount") list.sort((a, b) => discountOf(b) - discountOf(a));
     if (sort === "Popularity") list.sort((a, b) => b.reviews - a.reviews);
     return list;
-  }, [category, q, tag, maxPrice, brands, minRating, minDiscount, inStockOnly, sort]);
+  }, [products, category, q, tag, maxPrice, brands, minRating, minDiscount, inStockOnly, sort]);
 
   const title = category ? CATEGORY_NAME[category] : q ? `Results for “${q}”` : "All Products";
 
@@ -97,7 +106,7 @@ function Shop() {
           >
             All categories
           </Link>
-          {CATEGORIES.map((c) => (
+          {categoriesWithCounts.map((c) => (
             <Link
               key={c.slug}
               to="/shop"
@@ -139,7 +148,9 @@ function Shop() {
                 type="checkbox"
                 checked={brands.includes(b)}
                 onChange={() =>
-                  setBrands((prev) => (prev.includes(b) ? prev.filter((x) => x !== b) : [...prev, b]))
+                  setBrands((prev) =>
+                    prev.includes(b) ? prev.filter((x) => x !== b) : [...prev, b],
+                  )
                 }
                 className="size-4 accent-[var(--primary)]"
               />
@@ -243,7 +254,35 @@ function Shop() {
         </aside>
 
         <div>
-          {results.length ? (
+          {isLoading ? (
+            <div className="grid-products">
+              {Array.from({ length: 6 }).map((_, i) => (
+                <ProductSkeleton key={i} />
+              ))}
+            </div>
+          ) : isError ? (
+            <div className="surface-card space-y-4 p-10 text-center border border-destructive/20">
+              <p className="font-display text-lg font-bold text-destructive">
+                Failed to load products from Supabase
+              </p>
+              <p className="text-sm text-muted-foreground">
+                {error?.message || "An error occurred while fetching products."}
+              </p>
+              <button
+                onClick={() => refetch()}
+                className="inline-flex h-10 items-center justify-center rounded-full bg-primary px-5 text-sm font-semibold text-primary-foreground"
+              >
+                Try Again
+              </button>
+            </div>
+          ) : products.length === 0 ? (
+            <div className="surface-card space-y-2 p-10 text-center">
+              <p className="font-display text-lg font-bold">No products found</p>
+              <p className="text-sm text-muted-foreground">
+                The Supabase products table is currently empty.
+              </p>
+            </div>
+          ) : results.length ? (
             <div className="grid-products">
               {results.map((p) => (
                 <ProductCard key={p.id} product={p} />

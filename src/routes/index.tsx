@@ -1,14 +1,15 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { ArrowRight, Clock, Printer, Sparkles, Star } from "lucide-react";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { HeroCarousel } from "@/components/HeroCarousel";
-import { ProductCard } from "@/components/ProductCard";
+import { ProductCard, ProductSkeleton } from "@/components/ProductCard";
 import { SectionHead } from "@/components/SectionHead";
 import { StoreSection } from "@/components/StoreSection";
 import { UploadPrintModal } from "@/components/UploadPrintModal";
 import {
   BOOK_CATEGORIES,
   CATEGORIES,
+  RAW_CATEGORIES,
   OFFICE_ESSENTIALS,
   PRINT_SERVICES,
   PRODUCTS,
@@ -20,6 +21,8 @@ import {
 import { inr, useShop } from "@/lib/shop-store";
 import slideCollege from "@/assets/slide-college.jpg";
 import slideOffice from "@/assets/slide-office.jpg";
+
+import { useSupabaseProducts } from "@/lib/supabase-products";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -44,11 +47,24 @@ export const Route = createFileRoute("/")({
 function Home() {
   const { addToCart } = useShop();
   const [printOpen, setPrintOpen] = useState(false);
-  const flash = withTag("flash");
-  const best = withTag("best").slice(0, 12);
-  const student = withTag("student").slice(0, 8);
-  const books = inCategory("books").slice(0, 8);
-  const office = withTag("office").slice(0, 8);
+  const { data: products = [], isLoading, isError, error, refetch } = useSupabaseProducts();
+
+  const categoriesWithCounts = useMemo(() => {
+    return RAW_CATEGORIES.map((c) => ({
+      ...c,
+      count: products.filter((p) => p.category === c.slug).length,
+    }));
+  }, [products]);
+
+  const flash = products.filter((p) => p.tags?.includes("flash"));
+  const flashItems = flash.length > 0 ? flash : products.slice(0, 5);
+  const best = products.slice(0, 12);
+  const student =
+    products.filter((p) => p.tags?.includes("student")).length > 0
+      ? products.filter((p) => p.tags?.includes("student")).slice(0, 8)
+      : products.slice(0, 8);
+  const books = products.filter((p) => p.category === "books").slice(0, 8);
+  const office = products.filter((p) => p.category === "office-supplies").slice(0, 8);
 
   return (
     <>
@@ -64,7 +80,7 @@ function Home() {
           to="/shop"
         />
         <div className="-mx-4 flex gap-4 overflow-x-auto px-4 pb-3 no-scrollbar md:mx-0 md:grid md:grid-cols-5 md:px-0">
-          {CATEGORIES.map((c) => (
+          {categoriesWithCounts.map((c) => (
             <Link
               key={c.slug}
               to="/shop"
@@ -105,39 +121,55 @@ function Home() {
             </span>
           </div>
           <div className="mt-6 grid grid-cols-2 gap-3 md:grid-cols-3 md:gap-5 xl:grid-cols-5">
-            {flash.map((p) => (
-              <div key={p.id} className="surface-card card-lift overflow-hidden text-foreground">
-                <Link
-                  to="/product/$id"
-                  params={{ id: p.id }}
-                  className="block aspect-square overflow-hidden bg-secondary"
-                >
-                  <img
-                    src={p.image}
-                    alt={p.name}
-                    loading="lazy"
-                    className="size-full object-cover transition-transform duration-500 hover:scale-108"
-                  />
-                </Link>
-                <div className="space-y-1.5 p-3">
-                  <p className="line-clamp-2 text-xs font-semibold">{p.name}</p>
-                  <p className="flex items-center gap-1 text-[11px] text-muted-foreground">
-                    <Star className="size-3 fill-accent text-accent" /> {p.rating.toFixed(1)}
-                  </p>
-                  <div className="flex items-baseline gap-1.5">
-                    <span className="font-display text-base font-bold">{inr(p.price)}</span>
-                    <span className="text-xs text-muted-foreground line-through">{inr(p.mrp)}</span>
-                    <span className="text-xs font-bold text-success">{discountOf(p)}%</span>
-                  </div>
-                  <button
-                    onClick={() => addToCart(p.id)}
-                    className="h-9 w-full rounded-full bg-primary text-xs font-bold text-primary-foreground transition-transform active:scale-97"
-                  >
-                    Add to Cart
-                  </button>
-                </div>
+            {isLoading ? (
+              Array.from({ length: 5 }).map((_, i) => (
+                <div key={i} className="aspect-square animate-pulse rounded-2xl bg-secondary" />
+              ))
+            ) : isError ? (
+              <div className="col-span-full py-6 text-center text-sm text-accent">
+                Failed to load deals from Supabase.
               </div>
-            ))}
+            ) : flashItems.length === 0 ? (
+              <div className="col-span-full py-6 text-center text-sm text-ink-foreground/70">
+                No deal products available.
+              </div>
+            ) : (
+              flashItems.map((p) => (
+                <div key={p.id} className="surface-card card-lift overflow-hidden text-foreground">
+                  <Link
+                    to="/product/$id"
+                    params={{ id: p.id }}
+                    className="block aspect-square overflow-hidden bg-secondary"
+                  >
+                    <img
+                      src={p.image}
+                      alt={p.name}
+                      loading="lazy"
+                      className="size-full object-cover transition-transform duration-500 hover:scale-108"
+                    />
+                  </Link>
+                  <div className="space-y-1.5 p-3">
+                    <p className="line-clamp-2 text-xs font-semibold">{p.name}</p>
+                    <p className="flex items-center gap-1 text-[11px] text-muted-foreground">
+                      <Star className="size-3 fill-accent text-accent" /> {p.rating.toFixed(1)}
+                    </p>
+                    <div className="flex items-baseline gap-1.5">
+                      <span className="font-display text-base font-bold">{inr(p.price)}</span>
+                      <span className="text-xs text-muted-foreground line-through">
+                        {inr(p.mrp)}
+                      </span>
+                      <span className="text-xs font-bold text-success">{discountOf(p)}%</span>
+                    </div>
+                    <button
+                      onClick={() => addToCart(p.id)}
+                      className="h-9 w-full rounded-full bg-primary text-xs font-bold text-primary-foreground transition-transform active:scale-97"
+                    >
+                      Add to Cart
+                    </button>
+                  </div>
+                </div>
+              ))
+            )}
           </div>
         </div>
       </section>
@@ -151,11 +183,39 @@ function Home() {
           ctaLabel="View All Products"
           to="/shop"
         />
-        <div className="grid-products">
-          {best.map((p) => (
-            <ProductCard key={p.id} product={p} />
-          ))}
-        </div>
+        {isLoading ? (
+          <div className="grid-products">
+            {Array.from({ length: 4 }).map((_, i) => (
+              <ProductSkeleton key={i} />
+            ))}
+          </div>
+        ) : isError ? (
+          <div className="surface-card space-y-4 p-8 text-center border border-destructive/20">
+            <p className="font-display text-lg font-bold text-destructive">
+              Failed to load products from Supabase
+            </p>
+            <p className="text-sm text-muted-foreground">{error?.message}</p>
+            <button
+              onClick={() => refetch()}
+              className="inline-flex h-10 items-center justify-center rounded-full bg-primary px-5 text-sm font-semibold text-primary-foreground"
+            >
+              Try Again
+            </button>
+          </div>
+        ) : products.length === 0 ? (
+          <div className="surface-card p-8 text-center">
+            <p className="font-display text-lg font-bold">No products found</p>
+            <p className="text-sm text-muted-foreground">
+              The Supabase products table is currently empty.
+            </p>
+          </div>
+        ) : (
+          <div className="grid-products">
+            {best.map((p) => (
+              <ProductCard key={p.id} product={p} />
+            ))}
+          </div>
+        )}
       </section>
 
       {/* Student essentials */}
@@ -325,7 +385,7 @@ function Home() {
 
       <section className="section-shell pb-6">
         <div className="surface-card grid gap-4 p-6 text-center sm:grid-cols-3">
-          <Stat value={`${PRODUCTS.length * 40}+`} label="Products in store" />
+          <Stat value={`${PRODUCTS.length}+`} label="Products in catalog" />
           <Stat value="763" label="Google reviews" />
           <Stat value="15 min" label="Average print turnaround" />
         </div>

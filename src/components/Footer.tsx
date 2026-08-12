@@ -11,13 +11,7 @@ const SHOP = [
   { label: "Offers", to: "/offers" },
 ];
 
-const SERVICES = [
-  "Printing",
-  "Photocopy",
-  "Binding",
-  "Project Printing",
-  "Resume Printing",
-];
+const SERVICES = ["Printing", "Photocopy", "Binding", "Project Printing", "Resume Printing"];
 
 const SUPPORT = ["Contact Us", "Track Order", "Returns", "Help"];
 

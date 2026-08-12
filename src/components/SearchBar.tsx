@@ -1,7 +1,8 @@
 import { useNavigate } from "@tanstack/react-router";
 import { Search, TrendingUp, X } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
-import { POPULAR_SEARCHES, PRODUCTS } from "@/lib/data";
+import { POPULAR_SEARCHES } from "@/lib/data";
+import { useSupabaseProducts } from "@/lib/supabase-products";
 import { inr } from "@/lib/shop-store";
 import { cn } from "@/lib/utils";
 
@@ -10,6 +11,7 @@ export function SearchBar({ className, autoFocus }: { className?: string; autoFo
   const [q, setQ] = useState("");
   const [open, setOpen] = useState(false);
   const wrap = useRef<HTMLDivElement>(null);
+  const { data: products = [] } = useSupabaseProducts();
 
   useEffect(() => {
     const onDown = (e: MouseEvent) => {
@@ -21,12 +23,14 @@ export function SearchBar({ className, autoFocus }: { className?: string; autoFo
 
   const term = q.trim().toLowerCase();
   const matches = term
-    ? PRODUCTS.filter(
-        (p) =>
-          p.name.toLowerCase().includes(term) ||
-          p.brand.toLowerCase().includes(term) ||
-          p.category.includes(term),
-      ).slice(0, 6)
+    ? products
+        .filter(
+          (p) =>
+            p.name.toLowerCase().includes(term) ||
+            p.brand.toLowerCase().includes(term) ||
+            p.category.includes(term),
+        )
+        .slice(0, 6)
     : [];
 
   const submit = (value: string) => {

@@ -54,11 +54,29 @@ export function ProductCard({ product, compact }: { product: Product; compact?: 
         >
           {product.name}
         </Link>
-        <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
-          <span className="flex items-center gap-1 rounded-md bg-success/12 px-1.5 py-0.5 font-semibold text-success">
-            {product.rating.toFixed(1)} <Star className="size-3 fill-current" />
+        <div className="flex items-center justify-between gap-1 text-xs text-muted-foreground">
+          <div className="flex items-center gap-1.5">
+            <span className="flex items-center gap-1 rounded-md bg-success/12 px-1.5 py-0.5 font-semibold text-success">
+              {product.rating.toFixed(1)} <Star className="size-3 fill-current" />
+            </span>
+            <span>({product.reviews.toLocaleString("en-IN")})</span>
+          </div>
+          <span
+            className={cn(
+              "rounded-full px-2 py-0.5 text-[11px] font-semibold",
+              product.stock > 5
+                ? "bg-success/12 text-success"
+                : product.stock > 0
+                  ? "bg-amber-500/15 font-bold text-amber-600"
+                  : "bg-destructive/15 font-bold text-destructive",
+            )}
+          >
+            {product.stock > 5
+              ? "In Stock"
+              : product.stock > 0
+                ? `Only ${product.stock} left`
+                : "Out of Stock"}
           </span>
-          <span>({product.reviews.toLocaleString("en-IN")})</span>
         </div>
         <div className="mt-auto flex flex-wrap items-baseline gap-2">
           <span className="font-display text-lg font-bold">{inr(product.price)}</span>
@@ -66,9 +84,15 @@ export function ProductCard({ product, compact }: { product: Product; compact?: 
         </div>
         <button
           onClick={() => addToCart(product.id)}
-          className="mt-1 inline-flex h-10 items-center justify-center gap-2 rounded-full bg-ink px-4 text-sm font-semibold text-ink-foreground transition-all hover:bg-primary active:scale-97"
+          disabled={product.stock <= 0}
+          className={cn(
+            "mt-1 inline-flex h-10 items-center justify-center gap-2 rounded-full px-4 text-sm font-semibold transition-all active:scale-97",
+            product.stock <= 0
+              ? "cursor-not-allowed bg-muted text-muted-foreground opacity-60"
+              : "bg-ink text-ink-foreground hover:bg-primary",
+          )}
         >
-          <ShoppingBag className="size-4" /> Add to Cart
+          <ShoppingBag className="size-4" /> {product.stock <= 0 ? "Out of Stock" : "Add to Cart"}
         </button>
       </div>
     </article>

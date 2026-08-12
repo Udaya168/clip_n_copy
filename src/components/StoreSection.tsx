@@ -1,6 +1,4 @@
 import { Check, MapPin, MessageCircle, Navigation, Phone, Star } from "lucide-react";
-import storefront from "@/assets/storefront.png.asset.json";
-import shelves from "@/assets/shelves.png.asset.json";
 import { REVIEWS, STORE } from "@/lib/data";
 
 export function StoreSection() {
@@ -13,7 +11,7 @@ export function StoreSection() {
       <div className="grid gap-6 lg:grid-cols-2">
         <div className="surface-card overflow-hidden">
           <img
-            src={storefront.url}
+            src="/storefront.jpg"
             alt="Clip N Copy storefront on ITPL Main Road, Kundalahalli"
             loading="lazy"
             className="h-64 w-full object-cover sm:h-80"
@@ -75,7 +73,7 @@ export function StoreSection() {
         <div className="space-y-6">
           <div className="surface-card relative overflow-hidden">
             <img
-              src={shelves.url}
+              src="/shelves.jpg"
               alt="Stationery shelves stocked inside Clip N Copy"
               loading="lazy"
               className="h-52 w-full object-cover sm:h-60"
