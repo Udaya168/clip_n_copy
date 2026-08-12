@@ -207,9 +207,9 @@ function Shop() {
         <span className="text-foreground">{title}</span>
       </nav>
 
-      <div className="grid grid-cols-[minmax(0,1fr)_auto] items-end gap-4">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
         <div className="min-w-0">
-          <h1 className="font-display text-2xl font-extrabold sm:text-3xl">{title}</h1>
+          <h1 className="font-display text-2xl font-extrabold text-balance sm:text-3xl">{title}</h1>
           <p className="text-sm text-muted-foreground">{results.length} products found</p>
         </div>
         <div className="flex shrink-0 items-center gap-2">

@@ -68,7 +68,7 @@ export function HeroCarousel() {
   return (
     <section className="section-shell pt-6 md:pt-10">
       <div className="relative overflow-hidden rounded-3xl hero-gradient text-primary-foreground shadow-lift">
-        <div className="grid items-stretch gap-6 md:grid-cols-[1.05fr_0.95fr]">
+        <div className="grid items-stretch md:grid-cols-[1.05fr_0.95fr]">
           <div key={i} className="flex flex-col justify-center gap-5 p-6 sm:p-10 lg:p-14 rise-in">
             <span className="inline-flex w-fit items-center gap-2 rounded-full bg-primary-foreground/12 px-3 py-1.5 text-xs font-semibold backdrop-blur">
               <Star className="size-3.5 fill-accent text-accent" />
@@ -119,7 +119,7 @@ export function HeroCarousel() {
             </div>
           </div>
 
-          <div className="relative min-h-56 md:min-h-112">
+          <div className="relative order-first h-44 sm:h-56 md:order-none md:h-auto md:min-h-112">
             <img
               key={slide.image}
               src={slide.image}
@@ -128,7 +128,7 @@ export function HeroCarousel() {
               height={1100}
               className="absolute inset-0 size-full object-cover md:rounded-l-[2.5rem]"
             />
-            <div className="absolute inset-0 bg-linear-to-t from-primary/45 to-transparent md:bg-linear-to-r" />
+            <div className="absolute inset-0 bg-linear-to-b from-primary/30 to-primary/70 md:bg-linear-to-r md:from-primary/50 md:to-transparent" />
           </div>
         </div>
       </div>

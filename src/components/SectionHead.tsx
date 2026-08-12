@@ -17,7 +17,7 @@ export function SectionHead({
   search?: Record<string, string>;
 }) {
   return (
-    <div className="mb-6 grid grid-cols-[minmax(0,1fr)_auto] items-end gap-4">
+    <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between sm:gap-4">
       <div className="min-w-0">
         {eyebrow && (
           <p className="text-xs font-bold tracking-widest text-primary uppercase">{eyebrow}</p>
