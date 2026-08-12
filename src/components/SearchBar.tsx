@@ -15,7 +15,9 @@ export function SearchBar({ className, autoFocus }: { className?: string; autoFo
 
   useEffect(() => {
     const onDown = (e: MouseEvent) => {
-      if (wrap.current && !wrap.current.contains(e.target as Node)) setOpen(false);
+      if (wrap.current && !wrap.current.contains(e.target as Node)) {
+        setOpen(false);
+      }
     };
     document.addEventListener("mousedown", onDown);
     return () => document.removeEventListener("mousedown", onDown);
@@ -26,17 +28,39 @@ export function SearchBar({ className, autoFocus }: { className?: string; autoFo
     ? products
         .filter(
           (p) =>
-            p.name.toLowerCase().includes(term) ||
-            p.brand.toLowerCase().includes(term) ||
-            p.category.includes(term),
+            (p.name || "").toLowerCase().includes(term) ||
+            (p.brand || "").toLowerCase().includes(term) ||
+            (p.category || "").toLowerCase().includes(term) ||
+            (p.description || "").toLowerCase().includes(term),
         )
-        .slice(0, 6)
+        .slice(0, 8)
     : [];
 
-  const submit = (value: string) => {
+  const handleSearch = (value: string) => {
+    const trimmed = value.trim();
+    if (!trimmed) return;
     setOpen(false);
-    setQ(value);
-    navigate({ to: "/shop", search: { q: value } });
+    setQ(trimmed);
+    navigate({ to: "/shop", search: { q: trimmed } });
+  };
+
+  const handlePopularSearch = (item: string) => {
+    setOpen(false);
+    setQ(item);
+    const lower = item.toLowerCase();
+    if (lower.includes("notebook")) {
+      navigate({ to: "/shop", search: { category: "notebooks" } });
+    } else if (lower.includes("pen")) {
+      navigate({ to: "/shop", search: { category: "pens-pencils" } });
+    } else if (lower.includes("calc")) {
+      navigate({ to: "/shop", search: { category: "calculators" } });
+    } else if (lower.includes("book")) {
+      navigate({ to: "/shop", search: { category: "books" } });
+    } else if (lower.includes("art")) {
+      navigate({ to: "/shop", search: { category: "art-craft" } });
+    } else {
+      navigate({ to: "/shop", search: { q: item } });
+    }
   };
 
   return (
@@ -44,11 +68,18 @@ export function SearchBar({ className, autoFocus }: { className?: string; autoFo
       <form
         onSubmit={(e) => {
           e.preventDefault();
-          if (term) submit(q.trim());
+          handleSearch(q);
         }}
       >
         <div className="flex h-11 items-center gap-2 rounded-full border border-border bg-card px-4 shadow-soft transition-colors focus-within:border-primary">
-          <Search className="size-4 shrink-0 text-muted-foreground" />
+          <button
+            type="submit"
+            aria-label="Search"
+            className="grid size-7 shrink-0 place-items-center rounded-full text-muted-foreground transition-colors hover:bg-secondary hover:text-primary"
+          >
+            <Search className="size-4" />
+          </button>
+
           <input
             value={q}
             autoFocus={autoFocus}
@@ -57,13 +88,28 @@ export function SearchBar({ className, autoFocus }: { className?: string; autoFo
               setOpen(true);
             }}
             onFocus={() => setOpen(true)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") {
+                e.preventDefault();
+                handleSearch(q);
+              }
+            }}
             placeholder="Search books, pens, notebooks, stationery..."
             aria-label="Search products"
             className="min-w-0 flex-1 bg-transparent text-sm outline-none placeholder:text-muted-foreground"
           />
+
           {q && (
-            <button type="button" onClick={() => setQ("")} aria-label="Clear search">
-              <X className="size-4 text-muted-foreground hover:text-foreground" />
+            <button
+              type="button"
+              onClick={() => {
+                setQ("");
+                setOpen(false);
+              }}
+              aria-label="Clear search"
+              className="grid size-7 shrink-0 place-items-center rounded-full text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
+            >
+              <X className="size-4" />
             </button>
           )}
         </div>
@@ -77,11 +123,13 @@ export function SearchBar({ className, autoFocus }: { className?: string; autoFo
                 {matches.map((p) => (
                   <li key={p.id}>
                     <button
+                      type="button"
+                      onMouseDown={(e) => e.preventDefault()}
                       onClick={() => {
                         setOpen(false);
                         navigate({ to: "/product/$id", params: { id: p.id } });
                       }}
-                      className="flex w-full items-center gap-3 rounded-xl px-2 py-2 text-left hover:bg-secondary"
+                      className="flex w-full items-center gap-3 rounded-xl px-2 py-2 text-left transition-colors hover:bg-secondary"
                     >
                       <img
                         src={p.image}
@@ -99,7 +147,9 @@ export function SearchBar({ className, autoFocus }: { className?: string; autoFo
                 ))}
                 <li className="border-t border-border pt-1">
                   <button
-                    onClick={() => submit(q.trim())}
+                    type="button"
+                    onMouseDown={(e) => e.preventDefault()}
+                    onClick={() => handleSearch(q)}
                     className="w-full rounded-xl px-3 py-2 text-left text-sm font-semibold text-primary hover:bg-secondary"
                   >
                     See all results for “{q.trim()}”
@@ -107,9 +157,17 @@ export function SearchBar({ className, autoFocus }: { className?: string; autoFo
                 </li>
               </ul>
             ) : (
-              <p className="p-4 text-sm text-muted-foreground">
-                No matches for “{q.trim()}”. Try “pen”, “notebook” or “calculator”.
-              </p>
+              <div className="p-4 text-center">
+                <p className="text-sm text-muted-foreground">No matches for “{q.trim()}”.</p>
+                <button
+                  type="button"
+                  onMouseDown={(e) => e.preventDefault()}
+                  onClick={() => handleSearch(q)}
+                  className="mt-2 text-xs font-semibold text-primary hover:underline"
+                >
+                  Search all items for “{q.trim()}”
+                </button>
+              </div>
             )
           ) : (
             <div className="p-3">
@@ -120,7 +178,9 @@ export function SearchBar({ className, autoFocus }: { className?: string; autoFo
                 {POPULAR_SEARCHES.map((s) => (
                   <button
                     key={s}
-                    onClick={() => submit(s)}
+                    type="button"
+                    onMouseDown={(e) => e.preventDefault()}
+                    onClick={() => handlePopularSearch(s)}
                     className="rounded-full border border-border bg-secondary px-3 py-1.5 text-xs font-medium transition-colors hover:border-primary hover:text-primary"
                   >
                     {s}
