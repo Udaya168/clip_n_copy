@@ -2,12 +2,44 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Clip N Copy</title>
-    <script>
-      window.location.replace('/');
-    </script>
+    <style>
+      body {
+        font-family: system-ui, -apple-system, sans-serif;
+        background: #0f172a;
+        color: #f8fafc;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        min-height: 100vh;
+        margin: 0;
+        text-align: center;
+      }
+      .card {
+        padding: 2rem;
+        max-width: 400px;
+        background: #1e293b;
+        border-radius: 1rem;
+        box-shadow: 0 10px 25px rgba(0,0,0,0.3);
+      }
+      a {
+        display: inline-block;
+        margin-top: 1rem;
+        padding: 0.75rem 1.5rem;
+        background: #3b82f6;
+        color: white;
+        text-decoration: none;
+        border-radius: 9999px;
+        font-weight: 600;
+      }
+    </style>
   </head>
   <body>
-    <p>Redirecting to home...</p>
+    <div class="card">
+      <h2>Clip N Copy</h2>
+      <p>Page not found.</p>
+      <a href="/">Go to Homepage</a>
+    </div>
   </body>
 </html>
