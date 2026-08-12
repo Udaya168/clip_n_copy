@@ -6,13 +6,19 @@ import { BRANDS, CATEGORIES, CATEGORY_NAME, PRODUCTS, discountOf } from "@/lib/d
 import { inr } from "@/lib/shop-store";
 import { cn } from "@/lib/utils";
 
-type Search = { category?: string; q?: string; tag?: string };
+type Search = {
+  category?: string | undefined;
+  q?: string | undefined;
+  tag?: string | undefined;
+};
+
+const str = (v: unknown) => (typeof v === "string" && v ? v : undefined);
 
 export const Route = createFileRoute("/shop")({
   validateSearch: (search: Record<string, unknown>): Search => ({
-    category: typeof search.category === "string" ? search.category : undefined,
-    q: typeof search.q === "string" ? search.q : undefined,
-    tag: typeof search.tag === "string" ? search.tag : undefined,
+    category: str(search["category"]),
+    q: str(search["q"]),
+    tag: str(search["tag"]),
   }),
   head: () => ({
     meta: [
