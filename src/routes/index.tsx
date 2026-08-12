@@ -91,7 +91,7 @@ function Home() {
       {/* Flash deals */}
       <section className="section-shell py-6">
         <div className="overflow-hidden rounded-3xl bg-ink p-6 text-ink-foreground sm:p-8">
-          <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-4">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between sm:gap-4">
             <div className="min-w-0">
               <p className="flex items-center gap-2 text-xs font-bold tracking-widest text-accent uppercase">
                 <Sparkles className="size-3.5" /> Flash deals
@@ -100,7 +100,7 @@ function Home() {
                 Today&apos;s best prices
               </h2>
             </div>
-            <span className="flex shrink-0 items-center gap-2 rounded-full bg-ink-foreground/10 px-3 py-2 text-xs font-semibold">
+            <span className="flex w-fit shrink-0 items-center gap-2 rounded-full bg-ink-foreground/10 px-3 py-2 text-xs font-semibold">
               <Clock className="size-4 text-accent" /> Ends at 9:30 PM
             </span>
           </div>
