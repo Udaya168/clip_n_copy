@@ -2,7 +2,7 @@ import { createFileRoute, Link, notFound } from "@tanstack/react-router";
 import { Check, Heart, ShoppingBag, Star, Truck, Minus, Plus, Store } from "lucide-react";
 import { useState } from "react";
 import { ProductCard } from "@/components/ProductCard";
-import { PRODUCTS, REVIEWS, byId, discountOf } from "@/lib/data";
+import { CATEGORY_NAME, PRODUCTS, REVIEWS, byId, discountOf } from "@/lib/data";
 import { inr, useShop } from "@/lib/shop-store";
 import { cn } from "@/lib/utils";
 
@@ -60,7 +60,7 @@ function ProductDetail() {
         </Link>
         <span>/</span>
         <Link to="/shop" search={{ category: product.category }} className="hover:text-primary">
-          {product.category.replace(/-/g, " ")}
+          {CATEGORY_NAME[product.category] ?? product.category.replace(/-/g, " ")}
         </Link>
         <span>/</span>
         <span className="text-foreground">{product.name}</span>
