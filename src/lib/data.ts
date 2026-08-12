@@ -631,11 +631,34 @@ const RAW: Raw[] = [
   ],
 ];
 
-export let PRODUCTS: Product[] = [];
+export const INITIAL_PRODUCTS: Product[] = RAW.map(
+  ([id, name, brand, category, price, mrp, rating, reviews, imgKey, tagsStr]) => ({
+    id,
+    name,
+    brand,
+    category,
+    price,
+    mrp,
+    rating,
+    reviews,
+    image: IMG[imgKey] || imgNotebooks,
+    stock: 50,
+    tags: tagsStr ? tagsStr.split(",") : [],
+    description: `${name} by ${brand}`,
+    specs: {
+      Brand: brand,
+      Category: category,
+      SKU: `CNC-${id.toUpperCase()}`,
+      Stock: "In Stock",
+    },
+  }),
+);
+
+export let PRODUCTS: Product[] = INITIAL_PRODUCTS;
 
 export function setProductsCache(newProducts: Product[]) {
-  PRODUCTS = newProducts;
-  const updated = getCategories(newProducts);
+  PRODUCTS = newProducts.length > 0 ? newProducts : INITIAL_PRODUCTS;
+  const updated = getCategories(PRODUCTS);
   CATEGORIES.length = 0;
   CATEGORIES.push(...updated);
 }

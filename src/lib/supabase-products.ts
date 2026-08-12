@@ -1,6 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "./supabase";
-import { type Product, setProductsCache } from "./data";
+import { type Product, INITIAL_PRODUCTS, setProductsCache } from "./data";
 import imgPens from "@/assets/cat-pens.jpg";
 import imgNotebooks from "@/assets/cat-notebooks.jpg";
 import imgBooks from "@/assets/cat-books.jpg";
@@ -90,12 +90,25 @@ export function mapSupabaseProduct(p: SupabaseProduct): Product {
 }
 
 export async function fetchSupabaseProducts(): Promise<Product[]> {
-  const { data, error } = await supabase.from("products").select("*");
-  if (error) throw error;
-  if (!data) return [];
-  const mapped = (data as SupabaseProduct[]).map(mapSupabaseProduct);
-  setProductsCache(mapped);
-  return mapped;
+  try {
+    const { data, error } = await supabase.from("products").select("*");
+    if (error) {
+      console.warn("Supabase fetch error, using catalog fallback:", error.message);
+      setProductsCache(INITIAL_PRODUCTS);
+      return INITIAL_PRODUCTS;
+    }
+    if (!data || data.length === 0) {
+      setProductsCache(INITIAL_PRODUCTS);
+      return INITIAL_PRODUCTS;
+    }
+    const mapped = (data as SupabaseProduct[]).map(mapSupabaseProduct);
+    setProductsCache(mapped);
+    return mapped;
+  } catch (err) {
+    console.warn("Supabase fetch exception, using catalog fallback:", err);
+    setProductsCache(INITIAL_PRODUCTS);
+    return INITIAL_PRODUCTS;
+  }
 }
 
 export function useSupabaseProducts() {
@@ -103,5 +116,6 @@ export function useSupabaseProducts() {
     queryKey: ["supabase-products"],
     queryFn: fetchSupabaseProducts,
     staleTime: 1000 * 60 * 5,
+    retry: false,
   });
 }
