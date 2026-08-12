@@ -2,6 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { SlidersHorizontal, X } from "lucide-react";
 import { useMemo, useState } from "react";
 import { ProductCard, ProductSkeleton } from "@/components/ProductCard";
+import { isProductMatch } from "@/components/SearchBar";
 import { BRANDS, CATEGORIES, CATEGORY_NAME, RAW_CATEGORIES, discountOf } from "@/lib/data";
 import { useSupabaseProducts } from "@/lib/supabase-products";
 import { inr } from "@/lib/shop-store";
@@ -70,11 +71,7 @@ function Shop() {
     let list = products.filter((p) => {
       if (category && p.category !== category) return false;
       if (tag && !p.tags?.includes(tag)) return false;
-      if (
-        term &&
-        !`${p.name} ${p.brand} ${p.category} ${p.bookCategory ?? ""}`.toLowerCase().includes(term)
-      )
-        return false;
+      if (term && !isProductMatch(p, term)) return false;
       if (p.price > maxPrice) return false;
       if (brands.length && !brands.includes(p.brand)) return false;
       if (p.rating < minRating) return false;

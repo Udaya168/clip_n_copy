@@ -1,17 +1,77 @@
-import { useNavigate } from "@tanstack/react-router";
+import { useNavigate, useSearch } from "@tanstack/react-router";
 import { Search, TrendingUp, X } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
-import { POPULAR_SEARCHES } from "@/lib/data";
+import { POPULAR_SEARCHES, type Product } from "@/lib/data";
 import { useSupabaseProducts } from "@/lib/supabase-products";
 import { inr } from "@/lib/shop-store";
 import { cn } from "@/lib/utils";
 
+export function isProductMatch(p: Product, searchTerm: string): boolean {
+  if (!searchTerm) return true;
+  const term = searchTerm.trim().toLowerCase();
+  if (!term) return true;
+
+  const name = (p.name || "").toLowerCase();
+  const brand = (p.brand || "").toLowerCase();
+  const cat = (p.category || "").toLowerCase();
+  const desc = (p.description || "").toLowerCase();
+
+  if (name.includes(term) || brand.includes(term) || cat.includes(term) || desc.includes(term)) {
+    return true;
+  }
+
+  const singular = term.endsWith("s") ? term.slice(0, -1) : term;
+  const plural = term + "s";
+
+  if (
+    name.includes(singular) ||
+    cat.includes(singular) ||
+    desc.includes(singular) ||
+    name.includes(plural) ||
+    cat.includes(plural)
+  ) {
+    return true;
+  }
+
+  if (term.includes("notebook") || term.includes("register") || term.includes("copy")) {
+    return name.includes("notebook") || cat.includes("notebook") || name.includes("register");
+  }
+  if (term.includes("pen") || term.includes("pencil")) {
+    return (
+      name.includes("pen") ||
+      name.includes("pencil") ||
+      cat.includes("pen") ||
+      cat.includes("pencil")
+    );
+  }
+  if (term.includes("paper")) {
+    return name.includes("paper") || cat.includes("office") || desc.includes("paper");
+  }
+  if (term.includes("calc")) {
+    return name.includes("calc") || cat.includes("calc");
+  }
+  if (term.includes("book")) {
+    return name.includes("book") || cat.includes("book");
+  }
+
+  return false;
+}
+
 export function SearchBar({ className, autoFocus }: { className?: string; autoFocus?: boolean }) {
   const navigate = useNavigate();
+  const routeSearch = useSearch({ strict: false }) as { q?: string; category?: string };
+
   const [q, setQ] = useState("");
   const [open, setOpen] = useState(false);
   const wrap = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
   const { data: products = [] } = useSupabaseProducts();
+
+  useEffect(() => {
+    if (routeSearch?.q !== undefined) {
+      setQ(routeSearch.q);
+    }
+  }, [routeSearch?.q]);
 
   useEffect(() => {
     const onDown = (e: MouseEvent) => {
@@ -23,23 +83,16 @@ export function SearchBar({ className, autoFocus }: { className?: string; autoFo
     return () => document.removeEventListener("mousedown", onDown);
   }, []);
 
-  const term = q.trim().toLowerCase();
-  const matches = term
-    ? products
-        .filter(
-          (p) =>
-            (p.name || "").toLowerCase().includes(term) ||
-            (p.brand || "").toLowerCase().includes(term) ||
-            (p.category || "").toLowerCase().includes(term) ||
-            (p.description || "").toLowerCase().includes(term),
-        )
-        .slice(0, 8)
-    : [];
+  const term = q.trim();
+  const matches = term ? products.filter((p) => isProductMatch(p, term)).slice(0, 8) : [];
 
   const handleSearch = (value: string) => {
     const trimmed = value.trim();
-    if (!trimmed) return;
     setOpen(false);
+    if (!trimmed) {
+      navigate({ to: "/shop" });
+      return;
+    }
     setQ(trimmed);
     navigate({ to: "/shop", search: { q: trimmed } });
   };
@@ -81,6 +134,7 @@ export function SearchBar({ className, autoFocus }: { className?: string; autoFo
           </button>
 
           <input
+            ref={inputRef}
             value={q}
             autoFocus={autoFocus}
             onChange={(e) => {
@@ -88,12 +142,6 @@ export function SearchBar({ className, autoFocus }: { className?: string; autoFo
               setOpen(true);
             }}
             onFocus={() => setOpen(true)}
-            onKeyDown={(e) => {
-              if (e.key === "Enter") {
-                e.preventDefault();
-                handleSearch(q);
-              }
-            }}
             placeholder="Search books, pens, notebooks, stationery..."
             aria-label="Search products"
             className="min-w-0 flex-1 bg-transparent text-sm outline-none placeholder:text-muted-foreground"
@@ -102,9 +150,11 @@ export function SearchBar({ className, autoFocus }: { className?: string; autoFo
           {q && (
             <button
               type="button"
+              onMouseDown={(e) => e.preventDefault()}
               onClick={() => {
                 setQ("");
                 setOpen(false);
+                if (inputRef.current) inputRef.current.focus();
               }}
               aria-label="Clear search"
               className="grid size-7 shrink-0 place-items-center rounded-full text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
