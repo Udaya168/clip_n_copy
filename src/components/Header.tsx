@@ -54,17 +54,7 @@ export function Header() {
         </button>
 
         <Link to="/" className="flex min-w-0 shrink-0 items-center gap-2.5">
-          <span className="grid size-10 place-items-center rounded-xl hero-gradient font-display text-sm font-black text-primary-foreground shadow-glow md:size-11">
-            CNC
-          </span>
-          <span className="min-w-0">
-            <span className="block truncate font-display text-base leading-tight font-extrabold md:text-lg">
-              Clip <span className="text-accent">N</span> Copy
-            </span>
-            <span className="hidden text-[11px] text-muted-foreground sm:block">
-              Stationery · Books · Printing
-            </span>
-          </span>
+          <img src="/logo.png" alt="Clip N Copy" className="h-10 w-auto object-contain md:h-12" />
         </Link>
 
         <div className="hidden flex-1 lg:block">

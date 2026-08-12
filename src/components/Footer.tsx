@@ -21,12 +21,11 @@ export function Footer() {
       <div className="section-shell grid gap-10 py-14 sm:grid-cols-2 lg:grid-cols-4">
         <div className="space-y-4">
           <div className="flex items-center gap-2.5">
-            <span className="grid size-11 place-items-center rounded-xl accent-gradient font-display text-sm font-black text-accent-foreground">
-              CNC
-            </span>
-            <span className="font-display text-lg font-extrabold">
-              Clip <span className="text-accent">N</span> Copy
-            </span>
+            <img
+              src="/logo.png"
+              alt="Clip N Copy"
+              className="h-12 w-auto object-contain rounded-lg bg-white p-1"
+            />
           </div>
           <p className="text-sm text-ink-foreground/70">
             Total solutions in stationery &amp; xerox — school and office stationery, house keeping
