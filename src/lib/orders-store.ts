@@ -9,12 +9,20 @@ export interface OrderRecord {
   date: string;
   itemsCount: number;
   totalAmount: number;
-  status: "Processing" | "Shipped" | "Delivered";
+  status: "Processing" | "Confirmed" | "Shipped" | "Delivered" | "Cancelled";
   fulfillmentType: "Delivery" | "Pickup";
   address?: string;
   deliveryMethod?: string;
   paymentMethod?: string;
   user_id?: string;
+}
+
+export interface OrderItemInput {
+  product_id?: string;
+  product_name: string;
+  quantity: number;
+  price: number;
+  image_url?: string;
 }
 
 const ORDERS_KEY = "cnc-orders-v1";
@@ -85,7 +93,10 @@ export function getStoredOrders(): OrderRecord[] {
 }
 
 // Save order to both Supabase (if table exists) and localStorage
-export async function saveOrder(order: Omit<OrderRecord, "id">): Promise<OrderRecord> {
+export async function saveOrder(
+  order: Omit<OrderRecord, "id">,
+  items?: OrderItemInput[]
+): Promise<OrderRecord> {
   const generatedId = "ord-" + Date.now();
   const newOrder: OrderRecord = {
     ...order,
@@ -101,26 +112,47 @@ export async function saveOrder(order: Omit<OrderRecord, "id">): Promise<OrderRe
 
   // 2. Try inserting into Supabase orders table if available
   try {
-    const { data, error } = await supabase.from("orders").insert({
-      id: newOrder.id,
-      order_number: newOrder.orderNumber,
-      customer_name: newOrder.customerName,
-      customer_phone: newOrder.customerPhone,
-      customer_email: newOrder.customerEmail,
-      items_count: newOrder.itemsCount,
-      total_amount: newOrder.totalAmount,
-      status: newOrder.status,
-      fulfillment_type: newOrder.fulfillmentType,
-      address: newOrder.address,
-      delivery_method: newOrder.deliveryMethod,
-      payment_method: newOrder.paymentMethod,
-      user_id: newOrder.user_id,
-    }).select().maybeSingle();
+    const { data: { session } } = await supabase.auth.getSession();
+    const authenticatedUserId = session?.user?.id || newOrder.user_id;
+
+    const { data, error } = await supabase
+      .from("orders")
+      .insert({
+        id: newOrder.id,
+        order_number: newOrder.orderNumber,
+        customer_name: newOrder.customerName,
+        customer_phone: newOrder.customerPhone,
+        customer_email: newOrder.customerEmail,
+        items_count: newOrder.itemsCount,
+        total_amount: newOrder.totalAmount,
+        status: newOrder.status.toLowerCase(),
+        fulfillment_type: newOrder.fulfillmentType,
+        address: newOrder.address,
+        delivery_method: newOrder.deliveryMethod,
+        payment_method: newOrder.paymentMethod,
+        user_id: authenticatedUserId,
+      })
+      .select()
+      .maybeSingle();
 
     if (error) {
       console.log("[OrdersStore] Supabase orders table notice:", error.message);
-    } else if (data) {
-      console.log("[OrdersStore] Saved order to Supabase successfully:", data);
+    } else if (data && items && items.length > 0) {
+      // Insert related order_items
+      const itemRows = items.map((item, idx) => ({
+        id: `item-${newOrder.id}-${idx}`,
+        order_id: newOrder.id,
+        product_id: item.product_id || null,
+        product_name: item.product_name,
+        quantity: item.quantity,
+        price: item.price,
+        image_url: item.image_url || null,
+      }));
+
+      const { error: itemsError } = await supabase.from("order_items").insert(itemRows);
+      if (itemsError) {
+        console.log("[OrdersStore] Supabase order_items notice:", itemsError.message);
+      }
     }
   } catch (err) {
     console.log("[OrdersStore] Supabase insert skipped/fallback to local store:", err);
@@ -148,7 +180,9 @@ export async function fetchAllOrders(): Promise<OrderRecord[]> {
         date: d.created_at ? (new Date(d.created_at).toISOString().split("T")[0] || TODAY) : TODAY,
         itemsCount: d.items_count || d.itemsCount || 1,
         totalAmount: d.total_amount || d.totalAmount || 0,
-        status: d.status || "Processing",
+        status: (d.status
+          ? d.status.charAt(0).toUpperCase() + d.status.slice(1)
+          : "Processing") as any,
         fulfillmentType: d.fulfillment_type || d.fulfillmentType || "Delivery",
         address: d.address || "",
         deliveryMethod: d.delivery_method || d.deliveryMethod || "",
@@ -165,7 +199,10 @@ export async function fetchAllOrders(): Promise<OrderRecord[]> {
 }
 
 // Update Order Status (Admin)
-export async function updateOrderStatus(orderId: string, newStatus: "Processing" | "Shipped" | "Delivered"): Promise<void> {
+export async function updateOrderStatus(
+  orderId: string,
+  newStatus: "Processing" | "Confirmed" | "Shipped" | "Delivered" | "Cancelled"
+): Promise<void> {
   const existing = getStoredOrders();
   const updated = existing.map((o) => (o.id === orderId ? { ...o, status: newStatus } : o));
   if (typeof window !== "undefined") {
@@ -173,7 +210,13 @@ export async function updateOrderStatus(orderId: string, newStatus: "Processing"
   }
 
   try {
-    await supabase.from("orders").update({ status: newStatus }).eq("id", orderId);
+    await supabase
+      .from("orders")
+      .update({
+        status: newStatus.toLowerCase(),
+        updated_at: new Date().toISOString(),
+      })
+      .eq("id", orderId);
   } catch (err) {
     console.log("[OrdersStore] Supabase update skipped/fallback:", err);
   }

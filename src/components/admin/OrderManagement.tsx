@@ -1,10 +1,12 @@
 import { useEffect, useState } from "react";
 import { fetchAllOrders, updateOrderStatus, OrderRecord } from "@/lib/orders-store";
 import { inr } from "@/lib/shop-store";
-import { ShoppingBag, Search, Filter, Clock, CheckCircle2, Truck, Package, RefreshCw } from "lucide-react";
+import { ShoppingBag, Search, Filter, Clock, CheckCircle2, Truck, Package, RefreshCw, XCircle } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
+
+type OrderStatusType = "Processing" | "Confirmed" | "Shipped" | "Delivered" | "Cancelled";
 
 export function OrderManagement() {
   const [orders, setOrders] = useState<OrderRecord[]>([]);
@@ -34,7 +36,7 @@ export function OrderManagement() {
     };
   }, []);
 
-  const handleStatusChange = async (orderId: string, status: "Processing" | "Shipped" | "Delivered") => {
+  const handleStatusChange = async (orderId: string, status: OrderStatusType) => {
     await updateOrderStatus(orderId, status);
     toast.success(`Order ${orderId} updated to ${status}`);
     setOrders((prev) => prev.map((o) => (o.id === orderId ? { ...o, status } : o)));
@@ -91,7 +93,7 @@ export function OrderManagement() {
 
         <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar pb-1 md:pb-0">
           <Filter className="size-3.5 text-muted-foreground shrink-0" />
-          {["all", "processing", "shipped", "delivered"].map((st) => (
+          {["all", "processing", "confirmed", "shipped", "delivered", "cancelled"].map((st) => (
             <Button
               key={st}
               size="sm"
@@ -161,12 +163,14 @@ export function OrderManagement() {
                     <td className="px-5 py-4 text-right">
                       <select
                         value={o.status}
-                        onChange={(e) => handleStatusChange(o.id, e.target.value as any)}
+                        onChange={(e) => handleStatusChange(o.id, e.target.value as OrderStatusType)}
                         className="rounded-xl border border-border bg-background px-2.5 py-1.5 text-xs font-semibold text-foreground focus:ring-2 focus:ring-primary focus:outline-none cursor-pointer"
                       >
                         <option value="Processing">Processing</option>
+                        <option value="Confirmed">Confirmed</option>
                         <option value="Shipped">Shipped</option>
                         <option value="Delivered">Delivered</option>
+                        <option value="Cancelled">Cancelled</option>
                       </select>
                     </td>
                   </tr>
@@ -180,11 +184,18 @@ export function OrderManagement() {
   );
 }
 
-function StatusBadge({ status }: { status: "Processing" | "Shipped" | "Delivered" }) {
+function StatusBadge({ status }: { status: OrderStatusType }) {
   if (status === "Processing") {
     return (
       <span className="inline-flex items-center gap-1 rounded-full bg-amber-500/10 px-2.5 py-1 text-[11px] font-bold text-amber-600">
         <Clock className="size-3" /> Processing
+      </span>
+    );
+  }
+  if (status === "Confirmed") {
+    return (
+      <span className="inline-flex items-center gap-1 rounded-full bg-indigo-500/10 px-2.5 py-1 text-[11px] font-bold text-indigo-600">
+        <CheckCircle2 className="size-3" /> Confirmed
       </span>
     );
   }
@@ -195,9 +206,16 @@ function StatusBadge({ status }: { status: "Processing" | "Shipped" | "Delivered
       </span>
     );
   }
+  if (status === "Delivered") {
+    return (
+      <span className="inline-flex items-center gap-1 rounded-full bg-emerald-500/10 px-2.5 py-1 text-[11px] font-bold text-emerald-600">
+        <CheckCircle2 className="size-3" /> Delivered
+      </span>
+    );
+  }
   return (
-    <span className="inline-flex items-center gap-1 rounded-full bg-emerald-500/10 px-2.5 py-1 text-[11px] font-bold text-emerald-600">
-      <CheckCircle2 className="size-3" /> Delivered
+    <span className="inline-flex items-center gap-1 rounded-full bg-destructive/10 px-2.5 py-1 text-[11px] font-bold text-destructive">
+      <XCircle className="size-3" /> Cancelled
     </span>
   );
 }

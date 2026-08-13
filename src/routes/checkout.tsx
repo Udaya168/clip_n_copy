@@ -136,21 +136,32 @@ function Checkout() {
           const ok = await validateAndProcessCheckout();
           if (ok) {
             const orderNum = "CNC-2026-" + Math.floor(10000 + Math.random() * 90000);
-            const saved = await saveOrder({
-              orderNumber: orderNum,
-              customerName: nameInput || userFullName || "Customer",
-              customerPhone: phoneInput || "+91 99860 55335",
-              customerEmail: user.email || "",
-              date: new Date().toISOString().split("T")[0] || "2026-08-13",
-              itemsCount: lines.reduce((s, l) => s + l.qty, 0),
-              totalAmount: total + shipping,
-              status: "Processing",
-              fulfillmentType: delivery === "pickup" ? "Pickup" : "Delivery",
-              address: addressInput || "ITPL Main Road, Kundalahalli, Bengaluru",
-              deliveryMethod: DELIVERY.find((d) => d.id === delivery)?.label || "Standard Delivery",
-              paymentMethod: PAYMENTS.find((p) => p.id === payment)?.label || "UPI",
-              user_id: user.id,
-            });
+            const orderItemsInput = lines.map(({ product, qty }) => ({
+              product_id: product.id,
+              product_name: product.name,
+              quantity: qty,
+              price: product.price,
+              image_url: product.image,
+            }));
+
+            const saved = await saveOrder(
+              {
+                orderNumber: orderNum,
+                customerName: nameInput || userFullName || "Customer",
+                customerPhone: phoneInput || "+91 99860 55335",
+                customerEmail: user.email || "",
+                date: new Date().toISOString().split("T")[0] || "2026-08-13",
+                itemsCount: lines.reduce((s, l) => s + l.qty, 0),
+                totalAmount: total + shipping,
+                status: "Processing",
+                fulfillmentType: delivery === "pickup" ? "Pickup" : "Delivery",
+                address: addressInput || "ITPL Main Road, Kundalahalli, Bengaluru",
+                deliveryMethod: DELIVERY.find((d) => d.id === delivery)?.label || "Standard Delivery",
+                paymentMethod: PAYMENTS.find((p) => p.id === payment)?.label || "UPI",
+                user_id: user.id,
+              },
+              orderItemsInput
+            );
 
             setCreatedOrder(saved);
             setPlaced(true);
