@@ -90,11 +90,13 @@ export function MyOrdersList() {
 
     if (!user) return;
 
-    // Listen for local order creation event
-    const handleLocalOrderPlaced = () => {
+    // Listen for local order creation and window focus/refresh events
+    const handleRefresh = () => {
       fetchOrders();
     };
-    window.addEventListener("cnc-order-placed", handleLocalOrderPlaced);
+    window.addEventListener("cnc-order-placed", handleRefresh);
+    window.addEventListener("focus", handleRefresh);
+    document.addEventListener("visibilitychange", handleRefresh);
 
     // Supabase Realtime Subscription to user's orders
     const channel = supabase
@@ -116,7 +118,9 @@ export function MyOrdersList() {
       .subscribe();
 
     return () => {
-      window.removeEventListener("cnc-order-placed", handleLocalOrderPlaced);
+      window.removeEventListener("cnc-order-placed", handleRefresh);
+      window.removeEventListener("focus", handleRefresh);
+      document.removeEventListener("visibilitychange", handleRefresh);
       supabase.removeChannel(channel);
     };
   }, [user, fetchOrders]);

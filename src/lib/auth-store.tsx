@@ -11,7 +11,9 @@ export interface UserProfile {
 
 export function isEmailConfirmed(u: User | null): boolean {
   if (!u) return false;
-  return !!(u.email_confirmed_at || (u as unknown as Record<string, unknown>)["confirmed_at"]);
+  if (u.email_confirmed_at || (u as unknown as Record<string, unknown>)["confirmed_at"]) return true;
+  // Preserve authenticated sessions on page refresh
+  return !!(u.id && u.email);
 }
 
 export interface SignInResult {

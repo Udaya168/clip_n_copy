@@ -21,6 +21,17 @@ export function OrderManagement() {
 
   useEffect(() => {
     loadOrders();
+
+    const handleFocusRefresh = () => {
+      loadOrders();
+    };
+    window.addEventListener("focus", handleFocusRefresh);
+    document.addEventListener("visibilitychange", handleFocusRefresh);
+
+    return () => {
+      window.removeEventListener("focus", handleFocusRefresh);
+      document.removeEventListener("visibilitychange", handleFocusRefresh);
+    };
   }, []);
 
   const handleStatusChange = async (orderId: string, status: "Processing" | "Shipped" | "Delivered") => {
