@@ -23,6 +23,8 @@ type ShopState = {
   wishlist: string[];
   cartOpen: boolean;
   setCartOpen: (v: boolean) => void;
+  mobileMenuOpen: boolean;
+  setMobileMenuOpen: (v: boolean) => void;
   addToCart: (id: string, qty?: number) => void;
   setQty: (id: string, qty: number) => void;
   removeFromCart: (id: string) => void;
@@ -56,6 +58,7 @@ export function ShopProvider({ children }: { children: ReactNode }) {
   const [cart, setCart] = useState<CartLine[]>([]);
   const [wishlist, setWishlist] = useState<string[]>([]);
   const [cartOpen, setCartOpen] = useState(false);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [hydrated, setHydrated] = useState(false);
 
   useEffect(() => {
@@ -232,6 +235,8 @@ export function ShopProvider({ children }: { children: ReactNode }) {
       wishlist,
       cartOpen,
       setCartOpen,
+      mobileMenuOpen,
+      setMobileMenuOpen,
       addToCart,
       setQty,
       removeFromCart,
@@ -249,6 +254,7 @@ export function ShopProvider({ children }: { children: ReactNode }) {
     cart,
     wishlist,
     cartOpen,
+    mobileMenuOpen,
     addToCart,
     setQty,
     removeFromCart,

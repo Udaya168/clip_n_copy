@@ -1,12 +1,28 @@
-import { Link } from "@tanstack/react-router";
+import { Link, useNavigate } from "@tanstack/react-router";
 import { Minus, Plus, ShoppingBag, Trash2, X } from "lucide-react";
 import { inr, useShop } from "@/lib/shop-store";
+import { useAuth, isEmailConfirmed } from "@/lib/auth-store";
+import { toast } from "sonner";
 
 export function CartDrawer() {
   const { cartOpen, setCartOpen, lines, setQty, removeFromCart, subtotal, savings, total } =
     useShop();
+  const { user } = useAuth();
+  const navigate = useNavigate();
 
   if (!cartOpen) return null;
+
+  const handleCheckoutClick = (e: React.MouseEvent) => {
+    e.preventDefault();
+    setCartOpen(false);
+    // Requirement 6: Check auth & email confirmation status
+    if (!user || !isEmailConfirmed(user)) {
+      toast.error("Please confirm your email and sign in to continue with checkout.");
+      navigate({ to: "/login", search: { redirect: "/checkout" } });
+    } else {
+      navigate({ to: "/checkout" });
+    }
+  };
 
   return (
     <div className="fixed inset-0 z-70">
@@ -107,13 +123,12 @@ export function CartDrawer() {
                   <span>{inr(total)}</span>
                 </div>
               </div>
-              <Link
-                to="/checkout"
-                onClick={() => setCartOpen(false)}
-                className="inline-flex h-12 w-full items-center justify-center rounded-full bg-primary font-semibold text-primary-foreground shadow-glow transition-transform active:scale-98"
+              <button
+                onClick={handleCheckoutClick}
+                className="inline-flex h-12 w-full items-center justify-center rounded-full bg-primary font-semibold text-primary-foreground shadow-glow transition-transform active:scale-98 cursor-pointer"
               >
                 Proceed to Checkout
-              </Link>
+              </button>
             </footer>
           </>
         )}

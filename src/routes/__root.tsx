@@ -15,6 +15,7 @@ import { Header, MobileBottomNav } from "@/components/Header";
 import { Footer } from "@/components/Footer";
 import { CartDrawer } from "@/components/CartDrawer";
 import { ShopProvider } from "@/lib/shop-store";
+import { AuthProvider } from "@/lib/auth-store";
 import { Toaster } from "@/components/ui/sonner";
 
 function NotFoundComponent() {
@@ -119,19 +120,21 @@ function RootComponent() {
 
   return (
     <QueryClientProvider client={queryClient}>
-      <ShopProvider>
-        <div className="flex min-h-screen flex-col">
-          <Header />
-          <main className="flex-1 pb-16 lg:pb-0">
-            {/* Required: nested routes render here. Removing <Outlet /> breaks all child routes. */}
-            <Outlet />
-          </main>
-          <Footer />
-        </div>
-        <CartDrawer />
-        <MobileBottomNav />
-        <Toaster position="bottom-right" />
-      </ShopProvider>
+      <AuthProvider>
+        <ShopProvider>
+          <div className="flex min-h-screen flex-col">
+            <Header />
+            <main className="flex-1 pb-16 lg:pb-0">
+              {/* Required: nested routes render here. Removing <Outlet /> breaks all child routes. */}
+              <Outlet />
+            </main>
+            <Footer />
+          </div>
+          <CartDrawer />
+          <MobileBottomNav />
+          <Toaster position="bottom-right" />
+        </ShopProvider>
+      </AuthProvider>
     </QueryClientProvider>
   );
 }

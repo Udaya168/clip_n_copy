@@ -10,10 +10,13 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as AdminRouteImport } from './routes/admin'
 import { Route as CheckoutRouteImport } from './routes/checkout'
+import { Route as LoginRouteImport } from './routes/login'
 import { Route as OffersRouteImport } from './routes/offers'
 import { Route as ServicesRouteImport } from './routes/services'
 import { Route as ShopRouteImport } from './routes/shop'
+import { Route as SignupRouteImport } from './routes/signup'
 import { Route as StoreRouteImport } from './routes/store'
 import { Route as WishlistRouteImport } from './routes/wishlist'
 import { Route as ProductIdRouteImport } from './routes/product.$id'
@@ -23,9 +26,19 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AdminRoute = AdminRouteImport.update({
+  id: '/admin',
+  path: '/admin',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const CheckoutRoute = CheckoutRouteImport.update({
   id: '/checkout',
   path: '/checkout',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const LoginRoute = LoginRouteImport.update({
+  id: '/login',
+  path: '/login',
   getParentRoute: () => rootRouteImport,
 } as any)
 const OffersRoute = OffersRouteImport.update({
@@ -41,6 +54,11 @@ const ServicesRoute = ServicesRouteImport.update({
 const ShopRoute = ShopRouteImport.update({
   id: '/shop',
   path: '/shop',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SignupRoute = SignupRouteImport.update({
+  id: '/signup',
+  path: '/signup',
   getParentRoute: () => rootRouteImport,
 } as any)
 const StoreRoute = StoreRouteImport.update({
@@ -61,20 +79,26 @@ const ProductIdRoute = ProductIdRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/admin': typeof AdminRoute
   '/checkout': typeof CheckoutRoute
+  '/login': typeof LoginRoute
   '/offers': typeof OffersRoute
   '/services': typeof ServicesRoute
   '/shop': typeof ShopRoute
+  '/signup': typeof SignupRoute
   '/store': typeof StoreRoute
   '/wishlist': typeof WishlistRoute
   '/product/$id': typeof ProductIdRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/admin': typeof AdminRoute
   '/checkout': typeof CheckoutRoute
+  '/login': typeof LoginRoute
   '/offers': typeof OffersRoute
   '/services': typeof ServicesRoute
   '/shop': typeof ShopRoute
+  '/signup': typeof SignupRoute
   '/store': typeof StoreRoute
   '/wishlist': typeof WishlistRoute
   '/product/$id': typeof ProductIdRoute
@@ -82,10 +106,13 @@ export interface FileRoutesByTo {
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/admin': typeof AdminRoute
   '/checkout': typeof CheckoutRoute
+  '/login': typeof LoginRoute
   '/offers': typeof OffersRoute
   '/services': typeof ServicesRoute
   '/shop': typeof ShopRoute
+  '/signup': typeof SignupRoute
   '/store': typeof StoreRoute
   '/wishlist': typeof WishlistRoute
   '/product/$id': typeof ProductIdRoute
@@ -94,30 +121,39 @@ export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | '/admin'
     | '/checkout'
+    | '/login'
     | '/offers'
     | '/services'
     | '/shop'
+    | '/signup'
     | '/store'
     | '/wishlist'
     | '/product/$id'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
+    | '/admin'
     | '/checkout'
+    | '/login'
     | '/offers'
     | '/services'
     | '/shop'
+    | '/signup'
     | '/store'
     | '/wishlist'
     | '/product/$id'
   id:
     | '__root__'
     | '/'
+    | '/admin'
     | '/checkout'
+    | '/login'
     | '/offers'
     | '/services'
     | '/shop'
+    | '/signup'
     | '/store'
     | '/wishlist'
     | '/product/$id'
@@ -125,10 +161,13 @@ export interface FileRouteTypes {
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  AdminRoute: typeof AdminRoute
   CheckoutRoute: typeof CheckoutRoute
+  LoginRoute: typeof LoginRoute
   OffersRoute: typeof OffersRoute
   ServicesRoute: typeof ServicesRoute
   ShopRoute: typeof ShopRoute
+  SignupRoute: typeof SignupRoute
   StoreRoute: typeof StoreRoute
   WishlistRoute: typeof WishlistRoute
   ProductIdRoute: typeof ProductIdRoute
@@ -143,11 +182,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/admin': {
+      id: '/admin'
+      path: '/admin'
+      fullPath: '/admin'
+      preLoaderRoute: typeof AdminRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/checkout': {
       id: '/checkout'
       path: '/checkout'
       fullPath: '/checkout'
       preLoaderRoute: typeof CheckoutRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/login': {
+      id: '/login'
+      path: '/login'
+      fullPath: '/login'
+      preLoaderRoute: typeof LoginRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/offers': {
@@ -169,6 +222,13 @@ declare module '@tanstack/react-router' {
       path: '/shop'
       fullPath: '/shop'
       preLoaderRoute: typeof ShopRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/signup': {
+      id: '/signup'
+      path: '/signup'
+      fullPath: '/signup'
+      preLoaderRoute: typeof SignupRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/store': {
@@ -197,10 +257,13 @@ declare module '@tanstack/react-router' {
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  AdminRoute: AdminRoute,
   CheckoutRoute: CheckoutRoute,
+  LoginRoute: LoginRoute,
   OffersRoute: OffersRoute,
   ServicesRoute: ServicesRoute,
   ShopRoute: ShopRoute,
+  SignupRoute: SignupRoute,
   StoreRoute: StoreRoute,
   WishlistRoute: WishlistRoute,
   ProductIdRoute: ProductIdRoute,

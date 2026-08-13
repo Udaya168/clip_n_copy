@@ -1,8 +1,10 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
-import { Banknote, CheckCircle2, CreditCard, Smartphone, Store, Truck, Zap } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { Banknote, CheckCircle2, CreditCard, Smartphone, Store, Truck, Zap, Loader2 } from "lucide-react";
 import { inr, useShop } from "@/lib/shop-store";
+import { useAuth, isEmailConfirmed } from "@/lib/auth-store";
 import { cn } from "@/lib/utils";
+import { toast } from "sonner";
 
 export const Route = createFileRoute("/checkout")({
   head: () => ({
@@ -37,12 +39,38 @@ const PAYMENTS = [
 
 function Checkout() {
   const { lines, subtotal, savings, total, clearCart, validateAndProcessCheckout } = useShop();
+  const { user, profile, loading } = useAuth();
+  const navigate = useNavigate();
+
   const [delivery, setDelivery] = useState("standard");
   const [payment, setPayment] = useState("upi");
   const [placed, setPlaced] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  // Requirement 6 & 7: Security check for session authentication and email confirmation
+  useEffect(() => {
+    if (!loading && (!user || !isEmailConfirmed(user))) {
+      toast.error("Please confirm your email and sign in to continue with checkout.");
+      navigate({ to: "/login", search: { redirect: "/checkout" } });
+    }
+  }, [user, loading, navigate]);
+
+  if (loading) {
+    return (
+      <div className="section-shell flex min-h-[60vh] items-center justify-center py-16">
+        <div className="flex items-center gap-3 text-sm font-semibold text-muted-foreground">
+          <Loader2 className="size-5 animate-spin text-primary" /> Loading checkout...
+        </div>
+      </div>
+    );
+  }
+
+  if (!user) {
+    return null;
+  }
+
   const shipping = delivery === "express" ? 49 : 0;
+  const userFullName = profile?.full_name || (user?.user_metadata?.["full_name"] as string) || "";
 
   if (placed) {
     return (
@@ -81,7 +109,7 @@ function Checkout() {
     <div className="section-shell py-10">
       <h1 className="font-display text-2xl font-extrabold sm:text-3xl">Checkout</h1>
       <p className="text-sm text-muted-foreground">
-        Demo checkout — no payment is processed and no data leaves your browser.
+        Signed in as <span className="font-semibold text-foreground">{userFullName || user.email}</span>. Demo checkout — no payment is processed.
       </p>
 
       <form
@@ -103,7 +131,7 @@ function Checkout() {
             <h2 className="font-display text-lg font-bold">Delivery Address</h2>
             <div className="mt-4 grid gap-3 sm:grid-cols-2">
               <Field label="Full name">
-                <input required className="input-base" placeholder="Saswatee Swain" />
+                <input required className="input-base" defaultValue={userFullName} placeholder="Your Full Name" />
               </Field>
               <Field label="Phone">
                 <input required type="tel" className="input-base" placeholder="99860 55335" />
@@ -195,7 +223,7 @@ function Checkout() {
             <button
               type="submit"
               disabled={isSubmitting || lines.length === 0}
-              className="mt-5 inline-flex h-12 w-full items-center justify-center rounded-full bg-primary font-semibold text-primary-foreground shadow-glow transition-transform active:scale-98 disabled:opacity-50 disabled:cursor-not-allowed"
+              className="mt-5 inline-flex h-12 w-full items-center justify-center rounded-full bg-primary font-semibold text-primary-foreground shadow-glow transition-transform active:scale-98 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
             >
               {isSubmitting ? "Validating & Processing..." : "Place Order"}
             </button>
