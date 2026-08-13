@@ -1,4 +1,4 @@
-import { Link } from "@tanstack/react-router";
+import { Link, useLocation } from "@tanstack/react-router";
 import {
   Heart,
   MapPin,
@@ -6,6 +6,8 @@ import {
   Phone,
   Search,
   ShoppingBag,
+  ShoppingCart,
+  Store,
   User,
   X,
   Home,
@@ -52,303 +54,360 @@ const NAV_CATEGORIES: NavItem[] = [
   { label: "Calculators", to: "/shop", search: { category: "calculators" }, icon: <Calculator className="size-4 text-primary" /> },
   { label: "Bags & Backpacks", to: "/shop", search: { category: "bags" }, icon: <Backpack className="size-4 text-primary" /> },
   { label: "Printing & Services", to: "/services", icon: <Printer className="size-4 text-primary" /> },
-  { label: "Offers & Discounts", to: "/offers", icon: <Tag className="size-4 text-primary" /> },
+  { label: "Discounts & Deals", to: "/offers", icon: <Tag className="size-4 text-primary" /> },
 ];
 
 export function Header() {
   const { cartCount, wishlist, setCartOpen, mobileMenuOpen, setMobileMenuOpen } = useShop();
   const { user, profile, role, signOut } = useAuth();
   const [mobileSearch, setMobileSearch] = useState(false);
+  const location = useLocation();
+  const pathname = location.pathname;
 
   const fullName = profile?.full_name || (user?.user_metadata?.["full_name"] as string) || "User";
 
+  // Active state calculations
+  const isHomeActive = pathname === "/";
+  const isShopActive = pathname === "/shop";
+  const isDiscountsActive = pathname === "/offers";
+  const isCartActive = pathname === "/checkout";
+  const isAccountActive = pathname === "/account" || pathname === "/store" || pathname === "/login" || pathname === "/signup";
+  const isAdminActive = pathname.startsWith("/admin");
+
+  const getNavItemStyle = (isActive: boolean) =>
+    cn(
+      "flex items-center justify-between rounded-2xl px-4 py-3 text-sm font-bold transition-all cursor-pointer",
+      isActive
+        ? "bg-primary-soft text-primary font-black border-l-4 border-primary shadow-xs"
+        : "text-foreground hover:bg-secondary"
+    );
+
   return (
-    <header className="sticky top-0 z-50 w-full border-b border-border bg-background/85 backdrop-blur-xl">
-      <div className="hidden bg-ink py-1.5 text-center text-xs text-ink-foreground md:block">
-        Free delivery around ITPL Main Road on orders above ₹499 · Printing &amp; binding ready in
-        minutes
-      </div>
-
-      <div className="section-shell flex h-16 items-center gap-3 md:h-20 md:gap-6">
-        {/* Top-left Hamburger Menu (Three Lines ☰ Icon) */}
-        <button
-          className="grid size-10 shrink-0 place-items-center rounded-full border border-border lg:hidden transition-colors hover:bg-secondary cursor-pointer"
-          aria-label="Open top-left menu"
-          onClick={() => setMobileMenuOpen(true)}
-        >
-          <Menu className="size-5 text-foreground" />
-        </button>
-
-        <Link to="/" className="flex min-w-0 shrink-0 items-center gap-2.5">
-          <img src="/logo.png" alt="Clip N Copy" className="h-10 w-auto object-contain md:h-12" />
-        </Link>
-
-        <div className="hidden flex-1 lg:block">
-          <SearchBar />
+    <>
+      <header className="sticky top-0 z-50 w-full border-b border-border bg-background/85 backdrop-blur-xl">
+        <div className="hidden bg-ink py-1.5 text-center text-xs text-ink-foreground md:block">
+          Free delivery around ITPL Main Road on orders above ₹499 · Printing &amp; binding ready in
+          minutes
         </div>
 
-        <div className="ml-auto flex items-center gap-1.5 md:gap-2">
+        <div className="section-shell flex h-16 items-center gap-3 md:h-20 md:gap-6">
+          {/* Top-left Hamburger Menu (Three Lines ☰ Icon) */}
           <button
-            className="grid size-10 place-items-center rounded-full border border-border lg:hidden"
-            aria-label="Search"
-            onClick={() => setMobileSearch((v) => !v)}
+            className="grid size-10 shrink-0 place-items-center rounded-full border border-border lg:hidden transition-colors hover:bg-secondary cursor-pointer"
+            aria-label="Open menu"
+            onClick={() => setMobileMenuOpen(true)}
           >
-            <Search className="size-5" />
+            <Menu className="size-5 text-foreground" />
           </button>
 
-          <span className="hidden max-w-45 items-center gap-2 rounded-full border border-border px-3 py-2 text-left xl:flex">
-            <MapPin className="size-4 shrink-0 text-primary" />
-            <span className="min-w-0">
-              <span className="block text-[10px] text-muted-foreground uppercase">Store</span>
-              <span className="block truncate text-xs font-semibold">Kundalahalli, BLR</span>
+          <Link to="/" className="flex min-w-0 shrink-0 items-center gap-2.5">
+            <img src="/logo.png" alt="Clip N Copy" className="h-10 w-auto object-contain md:h-12" />
+          </Link>
+
+          <div className="hidden flex-1 lg:block">
+            <SearchBar />
+          </div>
+
+          <div className="ml-auto flex items-center gap-1.5 md:gap-2">
+            <button
+              className="grid size-10 place-items-center rounded-full border border-border lg:hidden"
+              aria-label="Search"
+              onClick={() => setMobileSearch((v) => !v)}
+            >
+              <Search className="size-5" />
+            </button>
+
+            <span className="hidden max-w-45 items-center gap-2 rounded-full border border-border px-3 py-2 text-left xl:flex">
+              <MapPin className="size-4 shrink-0 text-primary" />
+              <span className="min-w-0">
+                <span className="block text-[10px] text-muted-foreground uppercase">Store</span>
+                <span className="block truncate text-xs font-semibold">Kundalahalli, BLR</span>
+              </span>
             </span>
-          </span>
 
-          {/* User Account Menu */}
-          {user ? (
-            <DropdownMenu>
-              <div className="hidden md:flex items-center gap-1.5">
-                <DropdownMenuTrigger asChild>
-                  <button
-                    className="rounded-full border border-primary/30 bg-primary-soft/80 px-3.5 py-2 text-xs font-bold text-primary transition-colors hover:bg-primary-soft max-w-28 sm:max-w-44 truncate focus:outline-none focus:ring-2 focus:ring-primary cursor-pointer"
-                    aria-label="User Full Name"
-                  >
-                    {fullName}
-                  </button>
-                </DropdownMenuTrigger>
-                <DropdownMenuTrigger asChild>
-                  <button
-                    className="grid size-10 place-items-center rounded-full border border-primary bg-primary/10 text-primary transition-colors hover:bg-primary/20 focus:outline-none focus:ring-2 focus:ring-primary cursor-pointer"
-                    aria-label="User Account Menu"
-                  >
-                    <User className="size-5" />
-                  </button>
-                </DropdownMenuTrigger>
-              </div>
-
-              <DropdownMenuContent align="end" className="w-56 rounded-2xl p-2 shadow-lift">
-                <DropdownMenuLabel className="font-normal">
-                  <div className="flex flex-col space-y-1">
-                    <p className="text-sm font-bold leading-none truncate">{fullName}</p>
-                    <p className="text-xs text-muted-foreground truncate">{user.email}</p>
-                    {role === "admin" && (
-                      <span className="inline-flex w-fit items-center gap-1 rounded-full bg-primary/15 px-2 py-0.5 text-[10px] font-extrabold text-primary">
-                        <Shield className="size-3" /> Admin
-                      </span>
-                    )}
-                  </div>
-                </DropdownMenuLabel>
-                <DropdownMenuSeparator className="my-1.5" />
-                <DropdownMenuItem asChild>
-                  <Link to="/store" className="cursor-pointer font-medium">
-                    <UserCheck className="mr-2 size-4" /> My Account
-                  </Link>
-                </DropdownMenuItem>
-                {role === "admin" && (
-                  <DropdownMenuItem asChild>
-                    <Link to="/admin" className="cursor-pointer font-semibold text-primary">
-                      <Shield className="mr-2 size-4" /> Admin Dashboard
-                    </Link>
-                  </DropdownMenuItem>
-                )}
-                <DropdownMenuSeparator className="my-1.5" />
-                <DropdownMenuItem
-                  onClick={() => signOut()}
-                  className="cursor-pointer text-destructive focus:bg-destructive/10 font-medium"
-                >
-                  <LogOut className="mr-2 size-4" /> Logout
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-          ) : (
-            <div className="hidden md:flex items-center gap-1.5">
-              <Link
-                to="/login"
-                className="rounded-full border border-border bg-background px-4 py-2 text-xs font-semibold text-foreground transition-colors hover:bg-secondary"
-              >
-                Login
-              </Link>
+            {/* User Account Menu (Desktop) */}
+            {user ? (
               <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <button
-                    className="grid size-10 place-items-center rounded-full border border-border hover:bg-secondary transition-colors focus:outline-none focus:ring-2 focus:ring-primary cursor-pointer"
-                    aria-label="User Account Menu"
-                  >
-                    <User className="size-5" />
-                  </button>
-                </DropdownMenuTrigger>
+                <div className="hidden md:flex items-center gap-1.5">
+                  <DropdownMenuTrigger asChild>
+                    <button
+                      className="rounded-full border border-primary/30 bg-primary-soft/80 px-3.5 py-2 text-xs font-bold text-primary transition-colors hover:bg-primary-soft max-w-28 sm:max-w-44 truncate focus:outline-none focus:ring-2 focus:ring-primary cursor-pointer"
+                      aria-label="User Full Name"
+                    >
+                      {fullName}
+                    </button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuTrigger asChild>
+                    <button
+                      className="grid size-10 place-items-center rounded-full border border-primary bg-primary/10 text-primary transition-colors hover:bg-primary/20 focus:outline-none focus:ring-2 focus:ring-primary cursor-pointer"
+                      aria-label="User Account Menu"
+                    >
+                      <User className="size-5" />
+                    </button>
+                  </DropdownMenuTrigger>
+                </div>
+
                 <DropdownMenuContent align="end" className="w-56 rounded-2xl p-2 shadow-lift">
-                  <DropdownMenuLabel className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-                    Account Access
+                  <DropdownMenuLabel className="font-normal">
+                    <div className="flex flex-col space-y-1">
+                      <p className="text-sm font-bold leading-none truncate">{fullName}</p>
+                      <p className="text-xs text-muted-foreground truncate">{user.email}</p>
+                      {role === "admin" && (
+                        <span className="inline-flex w-fit items-center gap-1 rounded-full bg-primary/15 px-2 py-0.5 text-[10px] font-extrabold text-primary">
+                          <Shield className="size-3" /> Admin
+                        </span>
+                      )}
+                    </div>
                   </DropdownMenuLabel>
-                  <DropdownMenuSeparator className="my-1" />
+                  <DropdownMenuSeparator className="my-1.5" />
                   <DropdownMenuItem asChild>
-                    <Link to="/login" className="cursor-pointer font-semibold">
-                      Login
+                    <Link to="/store" className="cursor-pointer font-medium">
+                      <UserCheck className="mr-2 size-4" /> My Account &amp; Orders
                     </Link>
                   </DropdownMenuItem>
-                  <DropdownMenuItem asChild>
-                    <Link to="/signup" className="cursor-pointer font-semibold text-primary">
-                      Sign Up
-                    </Link>
+                  {role === "admin" && (
+                    <DropdownMenuItem asChild>
+                      <Link to="/admin" className="cursor-pointer font-semibold text-primary">
+                        <Shield className="mr-2 size-4" /> Admin Dashboard
+                      </Link>
+                    </DropdownMenuItem>
+                  )}
+                  <DropdownMenuSeparator className="my-1.5" />
+                  <DropdownMenuItem
+                    onClick={() => signOut()}
+                    className="cursor-pointer text-destructive focus:bg-destructive/10 font-medium"
+                  >
+                    <LogOut className="mr-2 size-4" /> Logout
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
-            </div>
-          )}
+            ) : (
+              <div className="hidden md:flex items-center gap-1.5">
+                <Link
+                  to="/login"
+                  className="rounded-full border border-border bg-background px-4 py-2 text-xs font-semibold text-foreground transition-colors hover:bg-secondary"
+                >
+                  Login
+                </Link>
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <button
+                      className="grid size-10 place-items-center rounded-full border border-border hover:bg-secondary transition-colors focus:outline-none focus:ring-2 focus:ring-primary cursor-pointer"
+                      aria-label="User Account Menu"
+                    >
+                      <User className="size-5" />
+                    </button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end" className="w-56 rounded-2xl p-2 shadow-lift">
+                    <DropdownMenuLabel className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                      Account Access
+                    </DropdownMenuLabel>
+                    <DropdownMenuSeparator className="my-1" />
+                    <DropdownMenuItem asChild>
+                      <Link to="/login" className="cursor-pointer font-semibold">
+                        Login
+                      </Link>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem asChild>
+                      <Link to="/signup" className="cursor-pointer font-semibold text-primary">
+                        Sign Up
+                      </Link>
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              </div>
+            )}
 
-          <Link
-            to="/wishlist"
-            className="relative grid size-10 place-items-center rounded-full border border-border"
-            aria-label="Wishlist"
-          >
-            <Heart className="size-5" />
-            {wishlist.length > 0 && <Badge>{wishlist.length}</Badge>}
-          </Link>
-
-          <button
-            onClick={() => setCartOpen(true)}
-            className="relative grid size-10 place-items-center rounded-full bg-ink text-ink-foreground transition-colors hover:bg-primary cursor-pointer"
-            aria-label="Open cart"
-          >
-            <ShoppingBag className="size-5" />
-            {cartCount > 0 && <Badge>{cartCount}</Badge>}
-          </button>
-        </div>
-      </div>
-
-      {mobileSearch && (
-        <div className="section-shell pb-3 lg:hidden">
-          <SearchBar autoFocus />
-        </div>
-      )}
-
-      {/* Desktop Category Bar */}
-      <nav className="hidden border-t border-border lg:block">
-        <div className="section-shell flex h-12 items-center gap-1 overflow-x-auto no-scrollbar">
-          {NAV_CATEGORIES.map((item) => (
             <Link
-              key={item.label}
-              to={item.to}
-              search={item.search as never}
-              className="shrink-0 rounded-full px-3.5 py-1.5 text-sm font-semibold text-muted-foreground transition-colors hover:bg-secondary hover:text-primary"
-              activeProps={{ className: "bg-primary-soft text-primary" }}
+              to="/wishlist"
+              className="relative grid size-10 place-items-center rounded-full border border-border"
+              aria-label="Wishlist"
             >
-              {item.label}
+              <Heart className="size-5" />
+              {wishlist.length > 0 && <Badge>{wishlist.length}</Badge>}
             </Link>
-          ))}
-          <a
-            href={`tel:${STORE.phoneRaw}`}
-            className="ml-auto hidden shrink-0 items-center gap-2 text-sm font-semibold text-primary xl:flex"
-          >
-            <Phone className="size-4" /> {STORE.phone}
-          </a>
-        </div>
-      </nav>
 
-      {/* Top-Left Side Menu Drawer (Opened when clicking top-left ☰ three-lines button) */}
+            <button
+              onClick={() => setCartOpen(true)}
+              className="relative grid size-10 place-items-center rounded-full bg-ink text-ink-foreground transition-colors hover:bg-primary cursor-pointer"
+              aria-label="Open cart"
+            >
+              <ShoppingBag className="size-5" />
+              {cartCount > 0 && <Badge>{cartCount}</Badge>}
+            </button>
+          </div>
+        </div>
+
+        {mobileSearch && (
+          <div className="section-shell pb-3 lg:hidden">
+            <SearchBar autoFocus />
+          </div>
+        )}
+
+        {/* Desktop Category Bar */}
+        <nav className="hidden border-t border-border lg:block">
+          <div className="section-shell flex h-12 items-center gap-1 overflow-x-auto no-scrollbar">
+            {NAV_CATEGORIES.map((item) => (
+              <Link
+                key={item.label}
+                to={item.to}
+                search={item.search as never}
+                className="shrink-0 rounded-full px-3.5 py-1.5 text-sm font-semibold text-muted-foreground transition-colors hover:bg-secondary hover:text-primary"
+                activeProps={{ className: "bg-primary-soft text-primary" }}
+              >
+                {item.label}
+              </Link>
+            ))}
+            <a
+              href={`tel:${STORE.phoneRaw}`}
+              className="ml-auto hidden shrink-0 items-center gap-2 text-sm font-semibold text-primary xl:flex"
+            >
+              <Phone className="size-4" /> {STORE.phone}
+            </a>
+          </div>
+        </nav>
+      </header>
+
+      {/* Mobile Slide-Out Navigation Drawer (rendered as sibling outside header) */}
       {mobileMenuOpen && (
-        <div className="fixed inset-0 z-60 lg:hidden">
-          <div className="absolute inset-0 bg-ink/50 backdrop-blur-xs" onClick={() => setMobileMenuOpen(false)} />
-          <div className="absolute inset-y-0 left-0 flex w-[85%] max-w-80 flex-col bg-background shadow-lift">
+        <div className="fixed inset-0 z-[100] lg:hidden">
+          {/* Backdrop (Tapping outside closes drawer) */}
+          <div
+            className="absolute inset-0 bg-ink/60 backdrop-blur-xs transition-opacity cursor-pointer"
+            onClick={() => setMobileMenuOpen(false)}
+          />
+
+          {/* Slide-out Drawer Panel */}
+          <div className="fixed inset-y-0 left-0 flex w-[85%] max-w-80 flex-col bg-background shadow-2xl z-[101]">
             
             {/* Drawer Header */}
-            <div className="flex items-center justify-between border-b border-border p-4">
-              <Link to="/" onClick={() => setMobileMenuOpen(false)} className="flex items-center gap-2">
+            <div className="flex h-16 shrink-0 items-center justify-between border-b border-border bg-background px-4">
+              <Link to="/" onClick={() => setMobileMenuOpen(false)} className="flex items-center gap-2.5">
                 <img src="/logo.png" alt="Clip N Copy" className="h-8 w-auto object-contain" />
               </Link>
               <button
                 onClick={() => setMobileMenuOpen(false)}
                 aria-label="Close menu"
-                className="grid size-9 place-items-center rounded-full border border-border hover:bg-secondary cursor-pointer"
+                className="grid size-9 place-items-center rounded-full border border-border hover:bg-secondary transition-colors cursor-pointer"
               >
                 <X className="size-5" />
               </button>
             </div>
 
-            {/* Scrollable Drawer Content — All Features Included */}
+            {/* Drawer Menu Options in Exact Order */}
             <div className="flex-1 overflow-y-auto p-4 space-y-4">
               
-              {/* User Account / Auth Section */}
-              {user ? (
-                <div className="rounded-2xl border border-primary/20 bg-primary/5 p-3.5 space-y-2">
-                  <div className="flex items-center gap-3">
-                    <div className="grid size-10 place-items-center rounded-full bg-primary/10 text-primary font-bold">
-                      <User className="size-5" />
-                    </div>
-                    <div className="min-w-0 flex-1">
-                      <p className="text-sm font-bold truncate text-foreground">{fullName}</p>
-                      <p className="text-xs text-muted-foreground truncate">{user.email}</p>
-                      {role === "admin" && (
-                        <span className="mt-1 inline-flex items-center gap-1 rounded-full bg-primary/20 px-2 py-0.5 text-[10px] font-extrabold text-primary">
-                          <Shield className="size-3" /> Admin Portal Authorized
-                        </span>
-                      )}
-                    </div>
-                  </div>
-                  <div className="pt-2 flex flex-col gap-1.5 border-t border-border/50">
-                    <Link
-                      to="/store"
-                      onClick={() => setMobileMenuOpen(false)}
-                      className="rounded-xl border border-border bg-background py-2 text-center text-xs font-bold text-foreground hover:bg-secondary"
-                    >
-                      My Account Details
-                    </Link>
-                    {role === "admin" && (
-                      <Link
-                        to="/admin"
-                        onClick={() => setMobileMenuOpen(false)}
-                        className="rounded-xl bg-primary py-2 text-center text-xs font-bold text-primary-foreground hover:bg-primary/90"
-                      >
-                        Open Admin Dashboard
-                      </Link>
-                    )}
-                    <button
-                      onClick={() => {
-                        signOut();
-                        setMobileMenuOpen(false);
-                      }}
-                      className="rounded-xl border border-destructive/20 bg-destructive/10 py-2 text-center text-xs font-bold text-destructive hover:bg-destructive/20 cursor-pointer"
-                    >
-                      Sign Out
-                    </button>
-                  </div>
-                </div>
-              ) : (
-                <div className="grid grid-cols-2 gap-2 rounded-2xl bg-secondary/60 p-2.5">
-                  <Link
-                    to="/login"
-                    onClick={() => setMobileMenuOpen(false)}
-                    className="rounded-xl border border-border bg-background py-2.5 text-center text-xs font-bold shadow-xs hover:bg-secondary"
-                  >
-                    Login
-                  </Link>
-                  <Link
-                    to="/signup"
-                    onClick={() => setMobileMenuOpen(false)}
-                    className="rounded-xl bg-primary py-2.5 text-center text-xs font-bold text-primary-foreground shadow-xs hover:bg-primary/90"
-                  >
-                    Sign Up
-                  </Link>
-                </div>
-              )}
-
-              {/* Navigation Categories & Pages */}
-              <div className="space-y-1">
-                <p className="px-2 text-[10px] font-extrabold uppercase tracking-wider text-muted-foreground mb-1">
-                  Shop Categories &amp; Services
-                </p>
-
+              <nav className="flex flex-col gap-1.5">
+                {/* 1. Home */}
                 <Link
                   to="/"
                   onClick={() => setMobileMenuOpen(false)}
-                  className="flex items-center justify-between rounded-xl px-3 py-2.5 text-xs font-bold hover:bg-secondary"
+                  className={getNavItemStyle(isHomeActive)}
                 >
-                  <span className="flex items-center gap-3">
-                    <Home className="size-4 text-primary" /> Home
-                  </span>
-                  <ChevronRight className="size-3.5 text-muted-foreground" />
+                  <div className="flex items-center gap-3">
+                    <Home className="size-5 shrink-0" />
+                    <span>Home</span>
+                  </div>
                 </Link>
+
+                {/* 2. Shop */}
+                <Link
+                  to="/shop"
+                  onClick={() => setMobileMenuOpen(false)}
+                  className={getNavItemStyle(isShopActive)}
+                >
+                  <div className="flex items-center gap-3">
+                    <Store className="size-5 shrink-0" />
+                    <span>Shop</span>
+                  </div>
+                </Link>
+
+                {/* 3. Discounts */}
+                <Link
+                  to="/offers"
+                  onClick={() => setMobileMenuOpen(false)}
+                  className={getNavItemStyle(isDiscountsActive)}
+                >
+                  <div className="flex items-center gap-3">
+                    <Tag className="size-5 shrink-0" />
+                    <span>Discounts</span>
+                  </div>
+                </Link>
+
+                {/* 4. Cart */}
+                <button
+                  onClick={() => {
+                    setMobileMenuOpen(false);
+                    setCartOpen(true);
+                  }}
+                  className={getNavItemStyle(isCartActive)}
+                >
+                  <div className="flex items-center gap-3">
+                    <ShoppingCart className="size-5 shrink-0" />
+                    <span>Cart</span>
+                  </div>
+                  {cartCount > 0 && (
+                    <span className="flex size-5 items-center justify-center rounded-full bg-primary text-[11px] font-extrabold text-primary-foreground shadow-xs">
+                      {cartCount}
+                    </span>
+                  )}
+                </button>
+
+                {/* 5. Account */}
+                <Link
+                  to={user ? "/store" : "/login"}
+                  onClick={() => setMobileMenuOpen(false)}
+                  className={getNavItemStyle(isAccountActive)}
+                >
+                  <div className="flex items-center gap-3 min-w-0">
+                    <User className="size-5 shrink-0" />
+                    <div className="flex flex-col text-left min-w-0">
+                      <span className="leading-tight">Account</span>
+                      <span className="text-xs font-normal text-muted-foreground truncate">
+                        {user ? fullName : "Sign In"}
+                      </span>
+                    </div>
+                  </div>
+                </Link>
+
+                {/* Admin Portal (ONLY for users with profiles.role === 'admin') */}
+                {user && role === "admin" && (
+                  <Link
+                    to="/admin"
+                    onClick={() => setMobileMenuOpen(false)}
+                    className={getNavItemStyle(isAdminActive)}
+                  >
+                    <div className="flex items-center gap-3">
+                      <Shield className="size-5 shrink-0 text-primary" />
+                      <span className="text-primary font-bold">Admin Portal</span>
+                    </div>
+                    <ChevronRight className="size-4 shrink-0 text-primary" />
+                  </Link>
+                )}
+              </nav>
+
+              {/* Logged in User Actions & Sign Out */}
+              {user && (
+                <div className="border-t border-border pt-3">
+                  <button
+                    onClick={() => {
+                      signOut();
+                      setMobileMenuOpen(false);
+                    }}
+                    className="flex w-full items-center justify-between rounded-xl px-4 py-2.5 text-xs font-bold text-destructive hover:bg-destructive/10 transition-colors cursor-pointer"
+                  >
+                    <span className="flex items-center gap-2">
+                      <LogOut className="size-4" /> Sign Out
+                    </span>
+                  </button>
+                </div>
+              )}
+
+              {/* Categories & Services */}
+              <div className="border-t border-border pt-3 space-y-1">
+                <p className="px-2 text-[10px] font-extrabold uppercase tracking-wider text-muted-foreground mb-1">
+                  Browse Categories
+                </p>
 
                 {NAV_CATEGORIES.map((item) => (
                   <Link
@@ -356,7 +415,7 @@ export function Header() {
                     to={item.to}
                     search={item.search as never}
                     onClick={() => setMobileMenuOpen(false)}
-                    className="flex items-center justify-between rounded-xl px-3 py-2.5 text-xs font-bold text-foreground hover:bg-secondary transition-colors"
+                    className="flex items-center justify-between rounded-xl px-3 py-2 text-xs font-bold text-foreground hover:bg-secondary transition-colors"
                   >
                     <span className="flex items-center gap-3">
                       {item.icon}
@@ -367,44 +426,10 @@ export function Header() {
                 ))}
               </div>
 
-              {/* Quick Action Utilities */}
-              <div className="border-t border-border pt-3 space-y-1">
-                <p className="px-2 text-[10px] font-extrabold uppercase tracking-wider text-muted-foreground mb-1">
-                  Quick Actions
-                </p>
-                <Link
-                  to="/wishlist"
-                  onClick={() => setMobileMenuOpen(false)}
-                  className="flex items-center justify-between rounded-xl px-3 py-2.5 text-xs font-bold hover:bg-secondary"
-                >
-                  <span className="flex items-center gap-3">
-                    <Heart className="size-4 text-primary" /> Saved Wishlist
-                  </span>
-                  <span className="rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-bold text-primary">
-                    {wishlist.length}
-                  </span>
-                </Link>
-
-                <button
-                  onClick={() => {
-                    setMobileMenuOpen(false);
-                    setCartOpen(true);
-                  }}
-                  className="flex w-full items-center justify-between rounded-xl px-3 py-2.5 text-xs font-bold hover:bg-secondary cursor-pointer"
-                >
-                  <span className="flex items-center gap-3">
-                    <ShoppingBag className="size-4 text-primary" /> View Cart
-                  </span>
-                  <span className="rounded-full bg-primary px-2 py-0.5 text-[10px] font-bold text-primary-foreground">
-                    {cartCount}
-                  </span>
-                </button>
-              </div>
-
             </div>
 
-            {/* Direct Call Store Footer */}
-            <div className="border-t border-border p-3">
+            {/* Call Store Footer */}
+            <div className="shrink-0 border-t border-border bg-background p-3.5 mb-0">
               <a
                 href={`tel:${STORE.phoneRaw}`}
                 className="inline-flex h-11 w-full items-center justify-center gap-2 rounded-full bg-primary font-bold text-xs text-primary-foreground shadow-glow"
@@ -415,7 +440,7 @@ export function Header() {
           </div>
         </div>
       )}
-    </header>
+    </>
   );
 }
 
@@ -424,61 +449,5 @@ function Badge({ children }: { children: React.ReactNode }) {
     <span className="absolute -top-1 -right-1 grid min-w-5 place-items-center rounded-full accent-gradient px-1 text-[10px] font-bold text-accent-foreground">
       {children}
     </span>
-  );
-}
-
-export function MobileBottomNav() {
-  const { cartCount, setCartOpen } = useShop();
-  const { user, profile } = useAuth();
-  const displayName = profile?.full_name?.split(" ")[0] || "Account";
-  const itemClass = "flex flex-1 flex-col items-center gap-1 py-2 text-[11px] font-semibold transition-colors cursor-pointer";
-
-  return (
-    <nav className="fixed inset-x-0 bottom-0 z-50 flex border-t border-border bg-background/95 pb-[env(safe-area-inset-bottom)] backdrop-blur-xl lg:hidden">
-      <Link
-        to="/"
-        className={cn(itemClass, "text-muted-foreground")}
-        activeProps={{ className: "text-primary" }}
-        activeOptions={{ exact: true }}
-      >
-        <Home className="size-5" /> Home
-      </Link>
-
-      <Link
-        to="/shop"
-        className={cn(itemClass, "text-muted-foreground")}
-        activeProps={{ className: "text-primary" }}
-      >
-        <Sparkles className="size-5" /> Shop
-      </Link>
-
-      <Link
-        to="/offers"
-        className={cn(itemClass, "text-muted-foreground")}
-        activeProps={{ className: "text-primary" }}
-      >
-        <Tag className="size-5" /> Offers
-      </Link>
-
-      <Link
-        to={user ? "/store" : "/login"}
-        className={cn(itemClass, "text-muted-foreground")}
-        activeProps={{ className: "text-primary" }}
-      >
-        <User className="size-5" /> {user ? displayName : "Account"}
-      </Link>
-
-      <button
-        onClick={() => setCartOpen(true)}
-        className={cn(itemClass, "relative text-muted-foreground")}
-      >
-        <ShoppingBag className="size-5" /> Cart
-        {cartCount > 0 && (
-          <span className="absolute top-1 right-1/4 grid min-w-4.5 place-items-center rounded-full bg-primary px-1 text-[10px] font-bold text-primary-foreground">
-            {cartCount}
-          </span>
-        )}
-      </button>
-    </nav>
   );
 }

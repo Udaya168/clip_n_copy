@@ -11,7 +11,7 @@ import { useEffect, type ReactNode } from "react";
 
 import appCss from "../styles.css?url";
 import { reportLovableError } from "../lib/lovable-error-reporting";
-import { Header, MobileBottomNav } from "@/components/Header";
+import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
 import { CartDrawer } from "@/components/CartDrawer";
 import { ShopProvider } from "@/lib/shop-store";
@@ -124,14 +124,13 @@ function RootComponent() {
         <ShopProvider>
           <div className="flex min-h-screen flex-col">
             <Header />
-            <main className="flex-1 pb-16 lg:pb-0">
+            <main className="flex-1">
               {/* Required: nested routes render here. Removing <Outlet /> breaks all child routes. */}
               <Outlet />
             </main>
             <Footer />
           </div>
           <CartDrawer />
-          <MobileBottomNav />
           <Toaster position="bottom-right" />
         </ShopProvider>
       </AuthProvider>
