@@ -30,7 +30,8 @@ export function Footer() {
             Total solutions in stationery &amp; xerox — school and office stationery, house keeping
             materials, project binding and printing since day one.
           </p>
-          <div className="flex gap-2">
+          <p className="text-xs text-ink-foreground/60">Associated under Mavros Tech Pvt Ltd.</p>
+          <div className="flex gap-2 pt-2">
             {[Instagram, Facebook, Twitter, Youtube].map((Icon, i) => (
               <a
                 key={i}
