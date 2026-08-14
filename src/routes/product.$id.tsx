@@ -3,7 +3,7 @@ import { Check, Heart, ShoppingBag, Star, Truck, Minus, Plus, Store } from "luci
 import { useState } from "react";
 import { toast } from "sonner";
 import { ProductCard } from "@/components/ProductCard";
-import { CATEGORY_NAME, REVIEWS, discountOf } from "@/lib/data";
+import { CATEGORY_NAME, REVIEWS } from "@/lib/data";
 import { supabase } from "@/lib/supabase";
 import {
   mapSupabaseProduct,
@@ -106,18 +106,14 @@ function ProductDetail() {
             <img
               src={gallery[active]}
               alt={product.name}
-              className="size-full object-cover transition-transform duration-300"
+              className="size-full object-contain object-center transition-transform duration-300"
               style={
                 zoom
                   ? { transform: "scale(1.9)", transformOrigin: `${zoom.x}% ${zoom.y}%` }
                   : undefined
               }
             />
-            {discountOf(product) > 0 && (
-              <span className="absolute top-4 left-4 rounded-full bg-primary px-3 py-1 text-xs font-bold text-primary-foreground">
-                {discountOf(product)}% OFF
-              </span>
-            )}
+
             <span className="absolute right-4 bottom-4 rounded-full bg-card/90 px-3 py-1 text-xs font-medium text-muted-foreground backdrop-blur">
               Hover to zoom
             </span>
@@ -136,7 +132,7 @@ function ProductDetail() {
                   src={g}
                   alt={`${product.name} view ${i + 1}`}
                   loading="lazy"
-                  className="size-full object-cover"
+                  className="size-full object-contain object-center"
                 />
               </button>
             ))}
@@ -181,10 +177,6 @@ function ProductDetail() {
           <div className="surface-card p-5">
             <div className="flex flex-wrap items-baseline gap-3">
               <span className="font-display text-3xl font-black">{inr(product.price)}</span>
-              <span className="text-lg text-muted-foreground line-through">{inr(product.mrp)}</span>
-              <span className="rounded-full bg-success/12 px-2 py-0.5 text-sm font-bold text-success">
-                Save {inr(product.mrp - product.price)}
-              </span>
             </div>
             <p className="mt-1 text-xs text-muted-foreground">Inclusive of all taxes</p>
 

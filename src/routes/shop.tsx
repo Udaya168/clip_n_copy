@@ -3,7 +3,7 @@ import { SlidersHorizontal, X } from "lucide-react";
 import { useMemo, useState } from "react";
 import { ProductCard, ProductSkeleton } from "@/components/ProductCard";
 import { isProductMatch } from "@/components/SearchBar";
-import { BRANDS, CATEGORIES, CATEGORY_NAME, RAW_CATEGORIES, discountOf } from "@/lib/data";
+import { BRANDS, CATEGORIES, CATEGORY_NAME, RAW_CATEGORIES } from "@/lib/data";
 import { useSupabaseProducts } from "@/lib/supabase-products";
 import { inr } from "@/lib/shop-store";
 import { cn } from "@/lib/utils";
@@ -45,7 +45,6 @@ const SORTS = [
   "Price: Low to High",
   "Price: High to Low",
   "Highest Rated",
-  "Biggest Discount",
 ] as const;
 
 function Shop() {
@@ -54,7 +53,6 @@ function Shop() {
   const [maxPrice, setMaxPrice] = useState(5000);
   const [brands, setBrands] = useState<string[]>([]);
   const [minRating, setMinRating] = useState(0);
-  const [minDiscount, setMinDiscount] = useState(0);
   const [inStockOnly, setInStockOnly] = useState(false);
   const [sort, setSort] = useState<(typeof SORTS)[number]>("Popularity");
   const [filtersOpen, setFiltersOpen] = useState(false);
@@ -75,7 +73,6 @@ function Shop() {
       if (p.price > maxPrice) return false;
       if (brands.length && !brands.includes(p.brand)) return false;
       if (p.rating < minRating) return false;
-      if (discountOf(p) < minDiscount) return false;
       if (inStockOnly && !p.stock) return false;
       return true;
     });
@@ -83,10 +80,9 @@ function Shop() {
     if (sort === "Price: Low to High") list.sort((a, b) => a.price - b.price);
     if (sort === "Price: High to Low") list.sort((a, b) => b.price - a.price);
     if (sort === "Highest Rated") list.sort((a, b) => b.rating - a.rating);
-    if (sort === "Biggest Discount") list.sort((a, b) => discountOf(b) - discountOf(a));
     if (sort === "Popularity") list.sort((a, b) => b.reviews - a.reviews);
     return list;
-  }, [products, category, q, tag, maxPrice, brands, minRating, minDiscount, inStockOnly, sort]);
+  }, [products, category, q, tag, maxPrice, brands, minRating, inStockOnly, sort]);
 
   const title = category ? CATEGORY_NAME[category] : q ? `Results for “${q}”` : "All Products";
 
@@ -174,22 +170,6 @@ function Shop() {
         </div>
       </FilterBlock>
 
-      <FilterBlock title="Discount">
-        <div className="space-y-1.5">
-          {[0, 10, 20, 25].map((d) => (
-            <label key={d} className="flex items-center gap-2 text-sm">
-              <input
-                type="radio"
-                name="discount"
-                checked={minDiscount === d}
-                onChange={() => setMinDiscount(d)}
-                className="size-4 accent-[var(--primary)]"
-              />
-              {d === 0 ? "Any discount" : `${d}% or more`}
-            </label>
-          ))}
-        </div>
-      </FilterBlock>
 
       <FilterBlock title="Availability">
         <label className="flex items-center gap-2 text-sm">

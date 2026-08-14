@@ -69,7 +69,6 @@ function Wishlist() {
                 </Link>
                 <p className="mt-1 flex items-baseline gap-2">
                   <span className="font-display text-lg font-bold">{inr(p.price)}</span>
-                  <span className="text-sm text-muted-foreground line-through">{inr(p.mrp)}</span>
                 </p>
               </div>
               <div className="flex shrink-0 gap-2">

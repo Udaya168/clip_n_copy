@@ -1,15 +1,15 @@
-import imgPens from "@/assets/cat-pens.jpg";
-import imgNotebooks from "@/assets/cat-notebooks.jpg";
-import imgBooks from "@/assets/cat-books.jpg";
-import imgArt from "@/assets/cat-art.jpg";
-import imgSchool from "@/assets/cat-school.jpg";
-import imgFiles from "@/assets/cat-files.jpg";
-import imgCalc from "@/assets/cat-calculators.jpg";
-import imgBags from "@/assets/cat-bags.jpg";
+import imgPens from "@/assets/cat-pens.png";
+import imgNotebooks from "@/assets/cat-notebooks.png";
+import imgBooks from "@/assets/cat-books.png";
+import imgArt from "@/assets/cat-art.png";
+import imgSchool from "@/assets/cat-school.png";
+import imgFiles from "@/assets/cat-files.png";
+import imgCalc from "@/assets/cat-calculators.png";
+import imgBags from "@/assets/cat-bags.png";
 import imgHighlighters from "@/assets/cat-highlighters.jpg";
-import imgSticky from "@/assets/cat-sticky.jpg";
+import imgSticky from "@/assets/cat-sticky.png";
 import imgPaper from "@/assets/cat-paper.jpg";
-import imgTools from "@/assets/cat-office-tools.jpg";
+import imgTools from "@/assets/cat-office-tools.png";
 
 export const STORE = {
   name: "Clip N Copy",

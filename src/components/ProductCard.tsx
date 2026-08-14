@@ -1,13 +1,12 @@
 import { Link } from "@tanstack/react-router";
 import { Heart, ShoppingBag, Star } from "lucide-react";
-import { discountOf, type Product } from "@/lib/data";
+import { type Product } from "@/lib/data";
 import { inr, useShop } from "@/lib/shop-store";
 import { cn } from "@/lib/utils";
 
 export function ProductCard({ product, compact }: { product: Product; compact?: boolean }) {
   const { addToCart, toggleWishlist, inWishlist } = useShop();
   const saved = inWishlist(product.id);
-  const discount = discountOf(product);
 
   return (
     <article className="group surface-card card-lift relative flex h-full flex-col overflow-hidden">
@@ -20,13 +19,9 @@ export function ProductCard({ product, compact }: { product: Product; compact?: 
           src={product.image}
           alt={product.name}
           loading="lazy"
-          className="size-full object-cover transition-transform duration-500 group-hover:scale-108"
+          className="size-full object-contain object-center p-2 transition-transform duration-500 group-hover:scale-108"
         />
-        {discount > 0 && (
-          <span className="absolute top-3 left-3 rounded-full bg-primary px-2.5 py-1 text-[11px] font-bold text-primary-foreground shadow-soft">
-            {discount}% OFF
-          </span>
-        )}
+
       </Link>
 
       <button
@@ -80,7 +75,6 @@ export function ProductCard({ product, compact }: { product: Product; compact?: 
         </div>
         <div className="mt-auto flex flex-wrap items-baseline gap-2">
           <span className="font-display text-lg font-bold">{inr(product.price)}</span>
-          <span className="text-sm text-muted-foreground line-through">{inr(product.mrp)}</span>
         </div>
         <button
           onClick={() => addToCart(product.id)}

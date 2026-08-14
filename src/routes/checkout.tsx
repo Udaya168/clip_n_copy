@@ -92,7 +92,7 @@ function Checkout() {
             Order Placed Successfully 🎉
           </h1>
           <p className="mt-3 text-sm text-muted-foreground">
-            Thank you for shopping with Clip N Copy. Your order has been placed and transmitted to the Store Admin Portal.
+            Thank you for shopping with Clip N Copy.
           </p>
           <div className="mt-6 grid gap-3 sm:grid-cols-2">
             <div className="rounded-2xl bg-secondary p-4">

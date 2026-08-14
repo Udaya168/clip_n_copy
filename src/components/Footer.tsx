@@ -8,7 +8,6 @@ const SHOP = [
   { label: "School Supplies", to: "/shop", search: { category: "school-supplies" } },
   { label: "Office Supplies", to: "/shop", search: { category: "office-supplies" } },
   { label: "Art & Craft", to: "/shop", search: { category: "art-craft" } },
-  { label: "Offers", to: "/offers" },
 ];
 
 const SERVICES = ["Printing", "Photocopy", "Binding", "Project Printing", "Resume Printing"];

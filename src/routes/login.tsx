@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useAuth } from "@/lib/auth-store";
 import { supabase } from "@/lib/supabase";
-import { AlertCircle, CheckCircle2, Loader2, Lock, Mail, ArrowLeft, Send } from "lucide-react";
+import { AlertCircle, CheckCircle2, Loader2, Lock, Mail, ArrowLeft, Send, Zap, Edit3, Layers, Cloud } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
@@ -185,189 +185,261 @@ function LoginPage() {
   };
 
   return (
-    <div className="section-shell flex min-h-[70vh] items-center justify-center py-12">
-      <div className="w-full max-w-md">
-        <Link
-          to="/"
-          className="mb-6 inline-flex items-center gap-2 text-xs font-semibold text-muted-foreground transition-colors hover:text-foreground"
-        >
-          <ArrowLeft className="size-4" /> Back to Home
-        </Link>
-
-        <div className="card-lift rounded-3xl border border-border bg-background p-6 shadow-soft sm:p-8">
-          <div className="text-center">
-            <Link to="/" className="inline-block">
-              <img src="/logo.png" alt="Clip N Copy" className="mx-auto h-10 w-auto object-contain" />
-            </Link>
-            <h1 className="mt-4 font-display text-2xl font-black tracking-tight sm:text-3xl">
-              {resetMode ? "Reset Password" : "Welcome Back"}
+    <div className="flex min-h-screen bg-background">
+      {/* Left Promotional Column */}
+      <div className="hidden lg:flex lg:w-1/2 flex-col justify-center bg-muted/30 p-12 lg:p-24 border-r border-border">
+        <div>
+          <Link to="/" className="inline-block mb-16">
+            <img src="/logo.png" alt="Clip N Copy" className="h-10 w-auto object-contain" />
+          </Link>
+          <div className="max-w-md">
+            <h1 className="font-display text-4xl font-black tracking-tight text-foreground sm:text-5xl">
+              Create. Edit. Copy.
             </h1>
-            <p className="mt-1 text-sm text-muted-foreground">
-              {resetMode
-                ? "Enter your email to receive password reset instructions"
-                : "Sign in to manage your orders & account"}
+            <p className="mt-4 text-lg text-muted-foreground">
+              Your creative workspace starts here. Clip N Copy helps you create, edit, organize, and manage your content with ease.
             </p>
-          </div>
-
-          {errorMessage && (
-            <div className="mt-4 rounded-2xl border border-destructive/20 bg-destructive/10 p-3.5 text-xs font-medium text-destructive space-y-2">
-              <div className="flex items-start gap-2.5">
-                <AlertCircle className="size-4 shrink-0 mt-0.5" />
-                <span>{errorMessage}</span>
+            <div className="mt-10 space-y-6">
+              <div className="flex items-center gap-4">
+                <div className="flex size-10 items-center justify-center rounded-full bg-primary/10 text-primary">
+                  <Zap className="size-5" />
+                </div>
+                <div>
+                  <h3 className="font-bold text-foreground">Fast content creation</h3>
+                  <p className="text-sm text-muted-foreground">Streamline your workflow.</p>
+                </div>
               </div>
-              {/* Requirement 4: Resend confirmation email button */}
-              {showResend && (
+              <div className="flex items-center gap-4">
+                <div className="flex size-10 items-center justify-center rounded-full bg-primary/10 text-primary">
+                  <Edit3 className="size-5" />
+                </div>
+                <div>
+                  <h3 className="font-bold text-foreground">Smart editing tools</h3>
+                  <p className="text-sm text-muted-foreground">Everything you need to polish your work.</p>
+                </div>
+              </div>
+              <div className="flex items-center gap-4">
+                <div className="flex size-10 items-center justify-center rounded-full bg-primary/10 text-primary">
+                  <Layers className="size-5" />
+                </div>
+                <div>
+                  <h3 className="font-bold text-foreground">Easy project management</h3>
+                  <p className="text-sm text-muted-foreground">Organize your projects efficiently.</p>
+                </div>
+              </div>
+              <div className="flex items-center gap-4">
+                <div className="flex size-10 items-center justify-center rounded-full bg-primary/10 text-primary">
+                  <Cloud className="size-5" />
+                </div>
+                <div>
+                  <h3 className="font-bold text-foreground">Secure cloud storage</h3>
+                  <p className="text-sm text-muted-foreground">Keep your data safe and accessible.</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Right Login Column */}
+      <div className="flex flex-1 flex-col items-center justify-center p-6 sm:p-12 relative">
+        <div className="w-full max-w-md">
+          <Link
+            to="/"
+            className="absolute top-6 left-6 sm:top-12 sm:left-12 inline-flex items-center gap-2 text-xs font-semibold text-muted-foreground transition-colors hover:text-foreground"
+          >
+            <ArrowLeft className="size-4" /> Back to Home
+          </Link>
+
+          <div className="card-lift rounded-3xl border border-border bg-background p-6 shadow-soft sm:p-8 mt-12 sm:mt-0">
+            <div className="text-center">
+              <Link to="/" className="inline-block lg:hidden mb-4">
+                <img src="/logo.png" alt="Clip N Copy" className="mx-auto h-10 w-auto object-contain" />
+              </Link>
+              {!resetMode && (
+                <div className="mx-auto mb-4 w-fit rounded-full bg-primary/10 px-3 py-1 text-[10px] font-bold uppercase tracking-widest text-primary">
+                  Welcome Back
+                </div>
+              )}
+              <h2 className="font-display text-2xl font-black tracking-tight sm:text-3xl">
+                {resetMode ? "Reset Password" : "Sign In"}
+              </h2>
+              <p className="mt-1 text-sm text-muted-foreground">
+                {resetMode
+                  ? "Enter your email to receive password reset instructions."
+                  : "Sign in to continue creating with Clip N Copy."}
+              </p>
+            </div>
+
+            {errorMessage && (
+              <div className="mt-6 rounded-2xl border border-destructive/20 bg-destructive/10 p-3.5 text-xs font-medium text-destructive space-y-2">
+                <div className="flex items-start gap-2.5">
+                  <AlertCircle className="size-4 shrink-0 mt-0.5" />
+                  <span>{errorMessage}</span>
+                </div>
+                {/* Requirement 4: Resend confirmation email button */}
+                {showResend && (
+                  <Button
+                    type="button"
+                    onClick={handleResend}
+                    disabled={resending}
+                    className="mt-1 h-8 w-full rounded-xl bg-destructive/20 text-destructive font-bold text-xs hover:bg-destructive/30 cursor-pointer"
+                  >
+                    {resending ? (
+                      <span className="flex items-center justify-center gap-1.5">
+                        <Loader2 className="size-3.5 animate-spin" /> Resending...
+                      </span>
+                    ) : (
+                      <span className="flex items-center justify-center gap-1.5">
+                        <Send className="size-3.5" /> Resend confirmation email
+                      </span>
+                    )}
+                  </Button>
+                )}
+              </div>
+            )}
+
+            {successMessage && (
+              <div className="mt-6 flex items-start gap-2.5 rounded-2xl border border-primary/20 bg-primary/10 p-3.5 text-xs font-medium text-primary">
+                <CheckCircle2 className="size-4 shrink-0 mt-0.5" />
+                <span>{successMessage}</span>
+              </div>
+            )}
+
+            {!resetMode ? (
+              <form onSubmit={handleLogin} className="mt-6 space-y-4">
+                <div className="space-y-1.5">
+                  <Label htmlFor="email" className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
+                    Email Address
+                  </Label>
+                  <div className="relative">
+                    <Mail className="absolute left-3.5 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+                    <Input
+                      id="email"
+                      type="email"
+                      placeholder="you@example.com"
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      required
+                      className="h-11 rounded-xl pl-10 text-sm border-border bg-background focus-visible:ring-primary"
+                    />
+                  </div>
+                </div>
+
+                <div className="space-y-1.5">
+                  <div className="flex items-center justify-between">
+                    <Label htmlFor="password" className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
+                      Password
+                    </Label>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setResetMode(true);
+                        setErrorMessage(null);
+                        setSuccessMessage(null);
+                      }}
+                      className="text-xs font-semibold text-primary hover:underline cursor-pointer"
+                    >
+                      Forgot Password?
+                    </button>
+                  </div>
+                  <div className="relative">
+                    <Lock className="absolute left-3.5 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+                    <Input
+                      id="password"
+                      type="password"
+                      placeholder="••••••••"
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      required
+                      className="h-11 rounded-xl pl-10 text-sm border-border bg-background focus-visible:ring-primary"
+                    />
+                  </div>
+                </div>
+
                 <Button
-                  type="button"
-                  onClick={handleResend}
-                  disabled={resending}
-                  className="mt-1 h-8 w-full rounded-xl bg-destructive/20 text-destructive font-bold text-xs hover:bg-destructive/30 cursor-pointer"
+                  type="submit"
+                  disabled={loading}
+                  className="mt-4 h-11 w-full rounded-full bg-primary font-bold text-primary-foreground transition-transform active:scale-[0.98] hover:bg-primary/90 cursor-pointer"
                 >
-                  {resending ? (
-                    <span className="flex items-center justify-center gap-1.5">
-                      <Loader2 className="size-3.5 animate-spin" /> Resending...
+                  {loading ? (
+                    <span className="flex items-center justify-center gap-2">
+                      <Loader2 className="size-4 animate-spin" /> Signing in...
                     </span>
                   ) : (
-                    <span className="flex items-center justify-center gap-1.5">
-                      <Send className="size-3.5" /> Resend confirmation email
-                    </span>
+                    "Sign In"
                   )}
                 </Button>
-              )}
-            </div>
-          )}
-
-          {successMessage && (
-            <div className="mt-4 flex items-start gap-2.5 rounded-2xl border border-primary/20 bg-primary/10 p-3.5 text-xs font-medium text-primary">
-              <CheckCircle2 className="size-4 shrink-0 mt-0.5" />
-              <span>{successMessage}</span>
-            </div>
-          )}
-
-          {!resetMode ? (
-            <form onSubmit={handleLogin} className="mt-6 space-y-4">
-              <div className="space-y-1.5">
-                <Label htmlFor="email" className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
-                  Email Address
-                </Label>
-                <div className="relative">
-                  <Mail className="absolute left-3.5 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
-                  <Input
-                    id="email"
-                    type="email"
-                    placeholder="you@example.com"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    required
-                    className="h-11 rounded-xl pl-10 text-sm border-border bg-background focus-visible:ring-primary"
-                  />
+                
+                <div className="relative mt-6 flex items-center justify-center py-4">
+                  <div className="absolute inset-0 flex items-center">
+                    <div className="w-full border-t border-border" />
+                  </div>
+                  <div className="relative bg-background px-4 text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
+                    Or
+                  </div>
                 </div>
-              </div>
-
-              <div className="space-y-1.5">
-                <div className="flex items-center justify-between">
-                  <Label htmlFor="password" className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
-                    Password
+              </form>
+            ) : (
+              <form onSubmit={handleForgotPassword} className="mt-6 space-y-4">
+                <div className="space-y-1.5">
+                  <Label htmlFor="reset-email" className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
+                    Email Address
                   </Label>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setResetMode(true);
-                      setErrorMessage(null);
-                      setSuccessMessage(null);
-                    }}
-                    className="text-xs font-semibold text-primary hover:underline cursor-pointer"
-                  >
-                    Forgot Password?
-                  </button>
+                  <div className="relative">
+                    <Mail className="absolute left-3.5 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+                    <Input
+                      id="reset-email"
+                      type="email"
+                      placeholder="you@example.com"
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      required
+                      className="h-11 rounded-xl pl-10 text-sm border-border bg-background focus-visible:ring-primary"
+                    />
+                  </div>
                 </div>
-                <div className="relative">
-                  <Lock className="absolute left-3.5 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
-                  <Input
-                    id="password"
-                    type="password"
-                    placeholder="••••••••"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    required
-                    className="h-11 rounded-xl pl-10 text-sm border-border bg-background focus-visible:ring-primary"
-                  />
-                </div>
-              </div>
 
-              <Button
-                type="submit"
-                disabled={loading}
-                className="mt-2 h-11 w-full rounded-full bg-primary font-bold text-primary-foreground transition-transform active:scale-[0.98] hover:bg-primary/90 cursor-pointer"
-              >
-                {loading ? (
-                  <span className="flex items-center justify-center gap-2">
-                    <Loader2 className="size-4 animate-spin" /> Signing in...
-                  </span>
-                ) : (
-                  "Login"
-                )}
-              </Button>
-            </form>
-          ) : (
-            <form onSubmit={handleForgotPassword} className="mt-6 space-y-4">
-              <div className="space-y-1.5">
-                <Label htmlFor="reset-email" className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
-                  Email Address
-                </Label>
-                <div className="relative">
-                  <Mail className="absolute left-3.5 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
-                  <Input
-                    id="reset-email"
-                    type="email"
-                    placeholder="you@example.com"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    required
-                    className="h-11 rounded-xl pl-10 text-sm border-border bg-background focus-visible:ring-primary"
-                  />
-                </div>
-              </div>
+                <Button
+                  type="submit"
+                  disabled={loading}
+                  className="mt-2 h-11 w-full rounded-full bg-primary font-bold text-primary-foreground transition-transform active:scale-[0.98] hover:bg-primary/90 cursor-pointer"
+                >
+                  {loading ? (
+                    <span className="flex items-center justify-center gap-2">
+                      <Loader2 className="size-4 animate-spin" /> Sending link...
+                    </span>
+                  ) : (
+                    "Send Reset Link"
+                  )}
+                </Button>
 
-              <Button
-                type="submit"
-                disabled={loading}
-                className="mt-2 h-11 w-full rounded-full bg-primary font-bold text-primary-foreground transition-transform active:scale-[0.98] hover:bg-primary/90 cursor-pointer"
-              >
-                {loading ? (
-                  <span className="flex items-center justify-center gap-2">
-                    <Loader2 className="size-4 animate-spin" /> Sending link...
-                  </span>
-                ) : (
-                  "Send Reset Link"
-                )}
-              </Button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setResetMode(false);
+                    setErrorMessage(null);
+                    setSuccessMessage(null);
+                  }}
+                  className="w-full text-center text-xs font-semibold text-muted-foreground hover:text-foreground cursor-pointer"
+                >
+                  Back to Login
+                </button>
+              </form>
+            )}
 
-              <button
-                type="button"
-                onClick={() => {
-                  setResetMode(false);
-                  setErrorMessage(null);
-                  setSuccessMessage(null);
-                }}
-                className="w-full text-center text-xs font-semibold text-muted-foreground hover:text-foreground cursor-pointer"
-              >
-                Back to Login
-              </button>
-            </form>
-          )}
-
-          <div className="mt-6 border-t border-border pt-6 text-center">
-            <p className="text-xs text-muted-foreground">
-              Don't have an account yet?{" "}
-              <Link
-                to="/signup"
-                search={redirect ? { redirect } : {}}
-                className="font-bold text-primary hover:underline"
-              >
-                Sign Up
-              </Link>
-            </p>
+            <div className="mt-2 pt-2 text-center">
+              <p className="text-xs text-muted-foreground">
+                Don't have an account?{" "}
+                <Link
+                  to="/signup"
+                  search={redirect ? { redirect } : {}}
+                  className="font-bold text-primary hover:underline"
+                >
+                  Create an account
+                </Link>
+              </p>
+            </div>
           </div>
         </div>
       </div>

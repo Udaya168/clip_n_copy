@@ -1,16 +1,16 @@
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "./supabase";
 import { type Product, INITIAL_PRODUCTS, setProductsCache } from "./data";
-import imgPens from "@/assets/cat-pens.jpg";
-import imgNotebooks from "@/assets/cat-notebooks.jpg";
-import imgBooks from "@/assets/cat-books.jpg";
-import imgArt from "@/assets/cat-art.jpg";
-import imgSchool from "@/assets/cat-school.jpg";
-import imgFiles from "@/assets/cat-files.jpg";
-import imgCalc from "@/assets/cat-calculators.jpg";
-import imgBags from "@/assets/cat-bags.jpg";
-import imgSticky from "@/assets/cat-sticky.jpg";
-import imgTools from "@/assets/cat-office-tools.jpg";
+import imgPens from "@/assets/cat-pens.png";
+import imgNotebooks from "@/assets/cat-notebooks.png";
+import imgBooks from "@/assets/cat-books.png";
+import imgArt from "@/assets/cat-art.png";
+import imgSchool from "@/assets/cat-school.png";
+import imgFiles from "@/assets/cat-files.png";
+import imgCalc from "@/assets/cat-calculators.png";
+import imgBags from "@/assets/cat-bags.png";
+import imgSticky from "@/assets/cat-sticky.png";
+import imgTools from "@/assets/cat-office-tools.png";
 
 export type SupabaseProduct = {
   id: string;

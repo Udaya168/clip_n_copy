@@ -54,7 +54,6 @@ const NAV_CATEGORIES: NavItem[] = [
   { label: "Calculators", to: "/shop", search: { category: "calculators" }, icon: <Calculator className="size-4 text-primary" /> },
   { label: "Bags & Backpacks", to: "/shop", search: { category: "bags" }, icon: <Backpack className="size-4 text-primary" /> },
   { label: "Printing & Services", to: "/services", icon: <Printer className="size-4 text-primary" /> },
-  { label: "Discounts & Deals", to: "/offers", icon: <Tag className="size-4 text-primary" /> },
 ];
 
 export function Header() {
@@ -69,7 +68,6 @@ export function Header() {
   // Active state calculations
   const isHomeActive = pathname === "/";
   const isShopActive = pathname === "/shop";
-  const isDiscountsActive = pathname === "/offers";
   const isCartActive = pathname === "/checkout";
   const isAccountActive = pathname === "/account" || pathname === "/store" || pathname === "/login" || pathname === "/signup";
   const isAdminActive = pathname.startsWith("/admin");
@@ -322,17 +320,6 @@ export function Header() {
                   </div>
                 </Link>
 
-                {/* 3. Discounts */}
-                <Link
-                  to="/offers"
-                  onClick={() => setMobileMenuOpen(false)}
-                  className={getNavItemStyle(isDiscountsActive)}
-                >
-                  <div className="flex items-center gap-3">
-                    <Tag className="size-5 shrink-0" />
-                    <span>Discounts</span>
-                  </div>
-                </Link>
 
                 {/* 4. Cart */}
                 <button

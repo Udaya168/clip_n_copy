@@ -14,7 +14,6 @@ import {
   PRINT_SERVICES,
   PRODUCTS,
   STUDENT_ESSENTIALS,
-  discountOf,
   inCategory,
   withTag,
 } from "@/lib/data";
@@ -155,10 +154,6 @@ function Home() {
                     </p>
                     <div className="flex items-baseline gap-1.5">
                       <span className="font-display text-base font-bold">{inr(p.price)}</span>
-                      <span className="text-xs text-muted-foreground line-through">
-                        {inr(p.mrp)}
-                      </span>
-                      <span className="text-xs font-bold text-success">{discountOf(p)}%</span>
                     </div>
                     <button
                       onClick={() => addToCart(p.id)}

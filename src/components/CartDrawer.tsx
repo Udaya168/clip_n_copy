@@ -117,7 +117,7 @@ export function CartDrawer() {
             <footer className="space-y-3 border-t border-border p-4">
               <div className="space-y-1.5 text-sm">
                 <Row label="Subtotal" value={inr(subtotal)} />
-                <Row label="Discount" value={`− ${inr(savings)}`} tone="success" />
+
                 <div className="flex items-center justify-between border-t border-border pt-2 font-display text-base font-extrabold">
                   <span>Total</span>
                   <span>{inr(total)}</span>
