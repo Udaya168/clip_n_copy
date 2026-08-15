@@ -185,22 +185,22 @@ function LoginPage() {
   };
 
   return (
-    <div className="flex min-h-screen bg-background">
+    <div className="flex flex-col lg:flex-row flex-1 w-full bg-background">
       {/* Left Promotional Column */}
-      <div className="hidden lg:flex lg:w-1/2 flex-col justify-center bg-muted/30 p-12 lg:p-24 border-r border-border">
-        <div>
-          <Link to="/" className="inline-block mb-16">
-            <img src="/logo.png" alt="Clip N Copy" className="h-10 w-auto object-contain" />
+      <div className="hidden lg:flex lg:w-1/2 flex-col justify-center bg-muted/30 p-8 lg:px-12 lg:py-8 border-r border-border">
+        <div className="w-full max-w-md mx-auto">
+          <Link to="/" className="inline-block mb-6">
+            <img src="/logo.png" alt="Clip N Copy" className="h-8 w-auto object-contain" />
           </Link>
-          <div className="max-w-md">
-            <h1 className="font-display text-4xl font-black tracking-tight text-foreground sm:text-5xl">
+          <div>
+            <h1 className="font-display text-3xl font-black tracking-tight text-foreground">
               Create. Edit. Copy.
             </h1>
-            <p className="mt-4 text-lg text-muted-foreground">
+            <p className="mt-2 text-sm text-muted-foreground">
               Your creative workspace starts here. Clip N Copy helps you create, edit, organize, and manage your content with ease.
             </p>
-            <div className="mt-10 space-y-6">
-              <div className="flex items-center gap-4">
+            <div className="mt-6 space-y-3">
+              <div className="flex items-center gap-3">
                 <div className="flex size-10 items-center justify-center rounded-full bg-primary/10 text-primary">
                   <Zap className="size-5" />
                 </div>
@@ -242,29 +242,29 @@ function LoginPage() {
       </div>
 
       {/* Right Login Column */}
-      <div className="flex flex-1 flex-col items-center justify-center p-6 sm:p-12 relative">
-        <div className="w-full max-w-md">
+      <div className="flex flex-1 flex-col items-center justify-center p-4 sm:p-6 lg:p-8 relative">
+        <div className="w-full max-w-md mx-auto">
           <Link
             to="/"
-            className="absolute top-6 left-6 sm:top-12 sm:left-12 inline-flex items-center gap-2 text-xs font-semibold text-muted-foreground transition-colors hover:text-foreground"
+            className="absolute top-4 left-4 sm:top-6 sm:left-6 inline-flex items-center gap-2 text-xs font-semibold text-muted-foreground transition-colors hover:text-foreground"
           >
             <ArrowLeft className="size-4" /> Back to Home
           </Link>
 
-          <div className="card-lift rounded-3xl border border-border bg-background p-6 shadow-soft sm:p-8 mt-12 sm:mt-0">
+          <div className="card-lift rounded-3xl border border-border bg-background p-5 sm:p-6 shadow-soft">
             <div className="text-center">
-              <Link to="/" className="inline-block lg:hidden mb-4">
-                <img src="/logo.png" alt="Clip N Copy" className="mx-auto h-10 w-auto object-contain" />
+              <Link to="/" className="inline-block lg:hidden mb-3">
+                <img src="/logo.png" alt="Clip N Copy" className="mx-auto h-8 w-auto object-contain" />
               </Link>
               {!resetMode && (
-                <div className="mx-auto mb-4 w-fit rounded-full bg-primary/10 px-3 py-1 text-[10px] font-bold uppercase tracking-widest text-primary">
+                <div className="mx-auto mb-2 w-fit rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-bold uppercase tracking-widest text-primary">
                   Welcome Back
                 </div>
               )}
-              <h2 className="font-display text-2xl font-black tracking-tight sm:text-3xl">
+              <h2 className="font-display text-xl font-black tracking-tight sm:text-2xl">
                 {resetMode ? "Reset Password" : "Sign In"}
               </h2>
-              <p className="mt-1 text-sm text-muted-foreground">
+              <p className="mt-1 text-xs text-muted-foreground">
                 {resetMode
                   ? "Enter your email to receive password reset instructions."
                   : "Sign in to continue creating with Clip N Copy."}
@@ -272,8 +272,8 @@ function LoginPage() {
             </div>
 
             {errorMessage && (
-              <div className="mt-6 rounded-2xl border border-destructive/20 bg-destructive/10 p-3.5 text-xs font-medium text-destructive space-y-2">
-                <div className="flex items-start gap-2.5">
+              <div className="mt-4 rounded-xl border border-destructive/20 bg-destructive/10 p-3 text-xs font-medium text-destructive space-y-2">
+                <div className="flex items-start gap-2">
                   <AlertCircle className="size-4 shrink-0 mt-0.5" />
                   <span>{errorMessage}</span>
                 </div>
@@ -300,20 +300,20 @@ function LoginPage() {
             )}
 
             {successMessage && (
-              <div className="mt-6 flex items-start gap-2.5 rounded-2xl border border-primary/20 bg-primary/10 p-3.5 text-xs font-medium text-primary">
+              <div className="mt-4 flex items-start gap-2 rounded-xl border border-primary/20 bg-primary/10 p-3 text-xs font-medium text-primary">
                 <CheckCircle2 className="size-4 shrink-0 mt-0.5" />
                 <span>{successMessage}</span>
               </div>
             )}
 
             {!resetMode ? (
-              <form onSubmit={handleLogin} className="mt-6 space-y-4">
-                <div className="space-y-1.5">
-                  <Label htmlFor="email" className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
+              <form onSubmit={handleLogin} className="mt-4 space-y-3">
+                <div className="space-y-1">
+                  <Label htmlFor="email" className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
                     Email Address
                   </Label>
                   <div className="relative">
-                    <Mail className="absolute left-3.5 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+                    <Mail className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
                     <Input
                       id="email"
                       type="email"
@@ -321,14 +321,14 @@ function LoginPage() {
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
                       required
-                      className="h-11 rounded-xl pl-10 text-sm border-border bg-background focus-visible:ring-primary"
+                      className="h-10 rounded-xl pl-9 text-sm border-border bg-background focus-visible:ring-primary"
                     />
                   </div>
                 </div>
 
-                <div className="space-y-1.5">
+                <div className="space-y-1">
                   <div className="flex items-center justify-between">
-                    <Label htmlFor="password" className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
+                    <Label htmlFor="password" className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
                       Password
                     </Label>
                     <button
@@ -338,13 +338,13 @@ function LoginPage() {
                         setErrorMessage(null);
                         setSuccessMessage(null);
                       }}
-                      className="text-xs font-semibold text-primary hover:underline cursor-pointer"
+                      className="text-[10px] font-semibold text-primary hover:underline cursor-pointer"
                     >
                       Forgot Password?
                     </button>
                   </div>
                   <div className="relative">
-                    <Lock className="absolute left-3.5 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+                    <Lock className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
                     <Input
                       id="password"
                       type="password"
@@ -352,7 +352,7 @@ function LoginPage() {
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
                       required
-                      className="h-11 rounded-xl pl-10 text-sm border-border bg-background focus-visible:ring-primary"
+                      className="h-10 rounded-xl pl-9 text-sm border-border bg-background focus-visible:ring-primary"
                     />
                   </div>
                 </div>
@@ -360,7 +360,7 @@ function LoginPage() {
                 <Button
                   type="submit"
                   disabled={loading}
-                  className="mt-4 h-11 w-full rounded-full bg-primary font-bold text-primary-foreground transition-transform active:scale-[0.98] hover:bg-primary/90 cursor-pointer"
+                  className="mt-3 h-10 w-full rounded-full bg-primary font-bold text-primary-foreground transition-transform active:scale-[0.98] hover:bg-primary/90 cursor-pointer"
                 >
                   {loading ? (
                     <span className="flex items-center justify-center gap-2">
@@ -371,23 +371,23 @@ function LoginPage() {
                   )}
                 </Button>
                 
-                <div className="relative mt-6 flex items-center justify-center py-4">
+                <div className="relative mt-4 flex items-center justify-center py-2">
                   <div className="absolute inset-0 flex items-center">
                     <div className="w-full border-t border-border" />
                   </div>
-                  <div className="relative bg-background px-4 text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
+                  <div className="relative bg-background px-3 text-[9px] font-bold uppercase tracking-widest text-muted-foreground">
                     Or
                   </div>
                 </div>
               </form>
             ) : (
-              <form onSubmit={handleForgotPassword} className="mt-6 space-y-4">
-                <div className="space-y-1.5">
-                  <Label htmlFor="reset-email" className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
+              <form onSubmit={handleForgotPassword} className="mt-4 space-y-3">
+                <div className="space-y-1">
+                  <Label htmlFor="reset-email" className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
                     Email Address
                   </Label>
                   <div className="relative">
-                    <Mail className="absolute left-3.5 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+                    <Mail className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
                     <Input
                       id="reset-email"
                       type="email"
@@ -395,7 +395,7 @@ function LoginPage() {
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
                       required
-                      className="h-11 rounded-xl pl-10 text-sm border-border bg-background focus-visible:ring-primary"
+                      className="h-10 rounded-xl pl-9 text-sm border-border bg-background focus-visible:ring-primary"
                     />
                   </div>
                 </div>
@@ -403,7 +403,7 @@ function LoginPage() {
                 <Button
                   type="submit"
                   disabled={loading}
-                  className="mt-2 h-11 w-full rounded-full bg-primary font-bold text-primary-foreground transition-transform active:scale-[0.98] hover:bg-primary/90 cursor-pointer"
+                  className="mt-2 h-10 w-full rounded-full bg-primary font-bold text-primary-foreground transition-transform active:scale-[0.98] hover:bg-primary/90 cursor-pointer"
                 >
                   {loading ? (
                     <span className="flex items-center justify-center gap-2">
@@ -428,7 +428,7 @@ function LoginPage() {
               </form>
             )}
 
-            <div className="mt-2 pt-2 text-center">
+            <div className="mt-1 pt-1 text-center">
               <p className="text-xs text-muted-foreground">
                 Don't have an account?{" "}
                 <Link

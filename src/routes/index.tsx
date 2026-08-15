@@ -78,7 +78,7 @@ function Home() {
           ctaLabel="All products"
           to="/shop"
         />
-        <div className="-mx-4 flex gap-4 overflow-x-auto px-4 pb-3 no-scrollbar md:mx-0 md:grid md:grid-cols-5 md:px-0">
+        <div className="-mx-4 flex gap-4 overflow-x-auto px-4 pb-3 no-scrollbar md:mx-0 md:grid md:grid-cols-4 md:px-0">
           {categoriesWithCounts.map((c) => (
             <Link
               key={c.slug}

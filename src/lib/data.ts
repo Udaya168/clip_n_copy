@@ -5,9 +5,7 @@ import imgArt from "@/assets/cat-art.png";
 import imgSchool from "@/assets/cat-school.png";
 import imgFiles from "@/assets/cat-files.png";
 import imgCalc from "@/assets/cat-calculators.png";
-import imgBags from "@/assets/cat-bags.png";
 import imgHighlighters from "@/assets/cat-highlighters.jpg";
-import imgSticky from "@/assets/cat-sticky.png";
 import imgPaper from "@/assets/cat-paper.jpg";
 import imgTools from "@/assets/cat-office-tools.png";
 
@@ -45,15 +43,13 @@ export type Product = {
 
 export const RAW_CATEGORIES = [
   { slug: "books", name: "Books", image: imgBooks },
-  { slug: "pens-pencils", name: "Pens & Pencils", image: imgPens },
+  { slug: "pens-pencils", name: "Stationery", image: imgPens },
   { slug: "notebooks", name: "Notebooks", image: imgNotebooks },
   { slug: "school-supplies", name: "School Supplies", image: imgSchool },
   { slug: "office-supplies", name: "Office Supplies", image: imgTools },
   { slug: "art-craft", name: "Art & Craft", image: imgArt },
   { slug: "files-folders", name: "Files & Folders", image: imgFiles },
   { slug: "calculators", name: "Calculators", image: imgCalc },
-  { slug: "bags", name: "Bags", image: imgBags },
-  { slug: "exam-essentials", name: "Exam Essentials", image: imgSticky },
 ];
 
 export const CATEGORY_NAME: Record<string, string> = Object.fromEntries(
@@ -68,9 +64,7 @@ const IMG: Record<string, string> = {
   school: imgSchool,
   files: imgFiles,
   calc: imgCalc,
-  bags: imgBags,
   highlighters: imgHighlighters,
-  sticky: imgSticky,
   paper: imgPaper,
   tools: imgTools,
 };

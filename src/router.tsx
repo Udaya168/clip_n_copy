@@ -14,3 +14,4 @@ export const getRouter = () => {
 
   return router;
 };
+// Trigger Vite HMR to pick up contact.tsx

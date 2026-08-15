@@ -4,7 +4,7 @@ import { StoreSection } from "@/components/StoreSection";
 import { MyOrdersList } from "@/components/orders/MyOrdersList";
 import { useAuth } from "@/lib/auth-store";
 import { STORE } from "@/lib/data";
-import { User, ShoppingBag, Shield, LogOut, Loader2, MapPin } from "lucide-react";
+import { User, ShoppingBag, Shield, LogOut, Loader2, MapPin, ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 export const Route = createFileRoute("/store")({
@@ -68,6 +68,16 @@ function StorePage() {
     <div className="section-shell py-8 sm:py-12">
       <div className="max-w-4xl mx-auto space-y-8">
         
+        {/* Back Link */}
+        <div>
+          <Link
+            to="/"
+            className="inline-flex items-center gap-2 text-xs font-semibold text-muted-foreground transition-colors hover:text-foreground"
+          >
+            <ArrowLeft className="size-4" /> Back to Home
+          </Link>
+        </div>
+
         {/* Header Profile Banner */}
         <div className="card-lift rounded-3xl border border-primary/20 bg-gradient-to-r from-primary/10 via-primary/5 to-background p-6 shadow-soft sm:p-8 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div className="flex items-center gap-4">

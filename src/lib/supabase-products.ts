@@ -8,8 +8,6 @@ import imgArt from "@/assets/cat-art.png";
 import imgSchool from "@/assets/cat-school.png";
 import imgFiles from "@/assets/cat-files.png";
 import imgCalc from "@/assets/cat-calculators.png";
-import imgBags from "@/assets/cat-bags.png";
-import imgSticky from "@/assets/cat-sticky.png";
 import imgTools from "@/assets/cat-office-tools.png";
 
 export type SupabaseProduct = {
@@ -35,8 +33,6 @@ const CATEGORY_FALLBACK_IMAGES: Record<string, string> = {
   "school-supplies": imgSchool,
   "files-folders": imgFiles,
   calculators: imgCalc,
-  bags: imgBags,
-  "exam-essentials": imgSticky,
   "office-supplies": imgTools,
 };
 

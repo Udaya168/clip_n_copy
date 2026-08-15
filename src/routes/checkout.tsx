@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { Banknote, CheckCircle2, CreditCard, Smartphone, Store, Truck, Zap, Loader2 } from "lucide-react";
+import { ArrowLeft, Banknote, CheckCircle2, CreditCard, Smartphone, Store, Truck, Zap, Loader2 } from "lucide-react";
 import { inr, useShop } from "@/lib/shop-store";
 import { useAuth, isEmailConfirmed } from "@/lib/auth-store";
 import { saveOrder, OrderRecord } from "@/lib/orders-store";
@@ -121,6 +121,15 @@ function Checkout() {
 
   return (
     <div className="section-shell py-10">
+      <div className="mb-6">
+        <Link
+          to="/"
+          className="inline-flex items-center gap-2 text-sm font-semibold text-primary hover:underline"
+        >
+          <ArrowLeft className="size-4" />
+          Back to Home
+        </Link>
+      </div>
       <h1 className="font-display text-2xl font-extrabold sm:text-3xl">Checkout</h1>
       <p className="text-sm text-muted-foreground">
         Signed in as <span className="font-semibold text-foreground">{userFullName || user.email}</span>.

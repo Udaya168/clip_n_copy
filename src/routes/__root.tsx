@@ -3,6 +3,7 @@ import {
   Outlet,
   Link,
   createRootRouteWithContext,
+  useLocation,
   useRouter,
   HeadContent,
   Scripts,
@@ -117,20 +118,30 @@ function RootShell({ children }: { children: ReactNode }) {
 
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
+  const location = useLocation();
+  const pathname = location.pathname.toLowerCase();
+
+  const isHome = pathname === "/";
+  // This covers /admin, /admin/*, /admin-portal, /admin-portal/*
+  const isAdmin = pathname.startsWith("/admin");
+  const isLogin = pathname === "/login";
+  const isCheckout = pathname === "/checkout";
+  const isStore = pathname === "/store";
+  const hideStorefrontNavigation = isAdmin || isLogin || isCheckout || isStore;
 
   return (
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
         <ShopProvider>
-          <div className="flex min-h-screen flex-col">
-            <Header />
-            <main className="flex-1">
+          <div className={`flex flex-col ${isLogin ? 'h-[100dvh] overflow-hidden' : 'min-h-screen'}`}>
+            {!hideStorefrontNavigation && <Header />}
+            <main className={`flex-1 flex flex-col ${isLogin ? 'min-h-0 overflow-hidden' : ''}`}>
               {/* Required: nested routes render here. Removing <Outlet /> breaks all child routes. */}
               <Outlet />
             </main>
-            <Footer />
+            {isHome && <Footer />}
           </div>
-          <CartDrawer />
+          {!hideStorefrontNavigation && <CartDrawer />}
           <Toaster position="bottom-right" />
         </ShopProvider>
       </AuthProvider>

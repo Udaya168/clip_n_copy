@@ -10,9 +10,19 @@ const SHOP = [
   { label: "Art & Craft", to: "/shop", search: { category: "art-craft" } },
 ];
 
-const SERVICES = ["Printing", "Photocopy", "Binding", "Project Printing", "Resume Printing"];
+const SERVICES = [
+  { label: "Printing", to: "/services" },
+  { label: "Photocopy", to: "/services" },
+  { label: "Binding", to: "/services" },
+  { label: "Project Printing", to: "/services" },
+];
 
-const SUPPORT = ["Contact Us", "Track Order", "Returns", "Help"];
+const SUPPORT = [
+  { label: "Contact Us", to: "/contact" },
+  { label: "Track Order", to: "/store" },
+  { label: "Returns", to: "/store" },
+  { label: "Help", to: "/help" },
+];
 
 export function Footer() {
   return (
@@ -63,9 +73,9 @@ export function Footer() {
             <h3 className="font-display text-sm font-bold tracking-wide uppercase">Services</h3>
             <ul className="mt-4 space-y-2.5 text-sm text-ink-foreground/70">
               {SERVICES.map((s) => (
-                <li key={s}>
-                  <Link to="/services" className="hover:text-accent">
-                    {s}
+                <li key={s.label}>
+                  <Link to={s.to} className="hover:text-accent">
+                    {s.label}
                   </Link>
                 </li>
               ))}
@@ -77,9 +87,9 @@ export function Footer() {
             </h3>
             <ul className="mt-4 space-y-2.5 text-sm text-ink-foreground/70">
               {SUPPORT.map((s) => (
-                <li key={s}>
-                  <Link to="/store" className="hover:text-accent">
-                    {s}
+                <li key={s.label}>
+                  <Link to={s.to} className="hover:text-accent">
+                    {s.label}
                   </Link>
                 </li>
               ))}
@@ -107,7 +117,6 @@ export function Footer() {
       <div className="border-t border-ink-foreground/10">
         <div className="section-shell flex flex-col gap-2 py-5 text-xs text-ink-foreground/60 sm:flex-row sm:items-center sm:justify-between">
           <p>© 2026 Clip N Copy, Kundalahalli Colony, Bengaluru. All rights reserved.</p>
-          <p>Demo storefront · prices and stock are indicative</p>
         </div>
       </div>
     </footer>

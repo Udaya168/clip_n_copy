@@ -45,6 +45,7 @@ import {
 type NavItem = { label: string; to: string; icon?: React.ReactNode; search?: Record<string, string> };
 
 const NAV_CATEGORIES: NavItem[] = [
+  { label: "Home", to: "/", icon: <Home className="size-4 text-primary" /> },
   { label: "Stationery", to: "/shop", search: { category: "pens-pencils" }, icon: <PenTool className="size-4 text-primary" /> },
   { label: "Books", to: "/shop", search: { category: "books" }, icon: <BookOpen className="size-4 text-primary" /> },
   { label: "School Supplies", to: "/shop", search: { category: "school-supplies" }, icon: <School className="size-4 text-primary" /> },
@@ -52,7 +53,6 @@ const NAV_CATEGORIES: NavItem[] = [
   { label: "Art & Craft", to: "/shop", search: { category: "art-craft" }, icon: <Palette className="size-4 text-primary" /> },
   { label: "Files & Folders", to: "/shop", search: { category: "files-folders" }, icon: <Folder className="size-4 text-primary" /> },
   { label: "Calculators", to: "/shop", search: { category: "calculators" }, icon: <Calculator className="size-4 text-primary" /> },
-  { label: "Bags & Backpacks", to: "/shop", search: { category: "bags" }, icon: <Backpack className="size-4 text-primary" /> },
   { label: "Printing & Services", to: "/services", icon: <Printer className="size-4 text-primary" /> },
 ];
 

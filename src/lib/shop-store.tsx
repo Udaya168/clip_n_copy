@@ -228,7 +228,7 @@ export function ShopProvider({ children }: { children: ReactNode }) {
         return product ? { product, qty: l.qty } : null;
       })
       .filter(Boolean) as { product: Product; qty: number }[];
-    const subtotal = lines.reduce((s, l) => s + l.product.mrp * l.qty, 0);
+    const subtotal = lines.reduce((s, l) => s + l.product.price * l.qty, 0);
     const total = lines.reduce((s, l) => s + l.product.price * l.qty, 0);
     return {
       cart,
@@ -247,7 +247,7 @@ export function ShopProvider({ children }: { children: ReactNode }) {
       cartCount: cart.reduce((s, l) => s + l.qty, 0),
       lines,
       subtotal,
-      savings: subtotal - total,
+      savings: 0,
       total,
     };
   }, [
