@@ -55,7 +55,11 @@ export function normalizeCategorySlug(category: string): string {
 export function mapSupabaseProduct(p: SupabaseProduct): Product {
   const normalizedCategory = normalizeCategorySlug(p.category);
   const fallbackImage = CATEGORY_FALLBACK_IMAGES[normalizedCategory] || imgNotebooks;
-  const image = p.image_url && p.image_url.trim() !== "" ? p.image_url : fallbackImage;
+  let rawUrl = p.image_url && p.image_url.trim() !== "" ? p.image_url : null;
+  if (rawUrl && rawUrl.startsWith('/products/')) {
+    rawUrl = rawUrl.replace(/\.(jpg|jpeg|png)$/i, '.webp');
+  }
+  const image = rawUrl || fallbackImage;
   const price = Number(p.price) || 0;
   const rawMrp = Number(p.original_price ?? p.price) || price;
   const mrp = rawMrp < price ? price : rawMrp;
