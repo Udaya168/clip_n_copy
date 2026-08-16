@@ -56,7 +56,7 @@ export default function LoginPage() {
           <div className="mt-8">
             <Button
               onClick={() => navigate({ to: redirectTarget })}
-              className="w-full h-[56px] rounded-xl bg-[#0647E8] font-bold text-[16px] text-white hover:bg-[#062BCB] cursor-pointer"
+              className="w-full h-[52px] rounded-xl bg-[#0647E8] font-bold text-[16px] text-white hover:bg-[#062BCB] cursor-pointer"
             >
               Continue {redirectTarget === "/checkout" ? "to Checkout" : "Shopping"}
             </Button>
@@ -70,7 +70,7 @@ export default function LoginPage() {
 }
 
 // ----------------------------------------------------------------------
-// NEW COMPONENT STRUCTURE AS REQUESTED
+// COMPONENT STRUCTURE
 // ----------------------------------------------------------------------
 
 function SignInPage({ initialSuccessMessage }: { initialSuccessMessage: string | null }) {
@@ -85,7 +85,7 @@ function SignInPage({ initialSuccessMessage }: { initialSuccessMessage: string |
           <FeatureList />
         </HeroContent>
         
-        <div className="w-full lg:w-[50%] flex flex-col items-center justify-center p-6 lg:p-8 xl:p-12 relative">
+        <div className="w-full lg:w-[50%] flex flex-col items-center justify-center p-6 lg:p-8 relative z-10 mt-10 lg:mt-0">
           <LoginCard>
             <LoginForm initialSuccessMessage={initialSuccessMessage} />
           </LoginCard>
@@ -98,11 +98,11 @@ function SignInPage({ initialSuccessMessage }: { initialSuccessMessage: string |
 function FullScreenBlueBackground({ children }: { children: ReactNode }) {
   return (
     <div 
-      className="min-h-screen w-full overflow-hidden relative font-sans"
+      className="min-h-screen lg:h-screen w-full lg:overflow-hidden relative font-sans flex flex-col"
       style={{ background: "linear-gradient(135deg, #062BCB 0%, #064FEA 55%, #1236C9 100%)" }}
     >
-      {/* Decorative Elements */}
-      <div className="absolute inset-0 pointer-events-none z-0">
+      {/* Decorative Elements Layer */}
+      <div className="absolute inset-0 pointer-events-none z-0 overflow-hidden">
         <div 
           className="absolute top-0 right-0 w-[400px] h-[400px] opacity-[0.08]" 
           style={{ backgroundImage: "radial-gradient(circle at 2px 2px, rgba(255,255,255,0.9) 2px, transparent 0)", backgroundSize: "32px 32px" }} 
@@ -114,7 +114,7 @@ function FullScreenBlueBackground({ children }: { children: ReactNode }) {
         <div className="absolute -top-[10%] -left-[10%] w-[50%] h-[50%] rounded-full bg-white opacity-5 blur-[120px]" />
         <div className="absolute bottom-[20%] right-[10%] w-[40%] h-[40%] rounded-full bg-[#1236C9] opacity-40 blur-[100px]" />
         
-        <svg className="absolute bottom-0 left-0 w-full h-auto opacity-[0.15]" viewBox="0 0 1440 320" preserveAspectRatio="none">
+        <svg className="absolute bottom-0 left-0 w-full h-auto opacity-[0.15] max-h-[25vh]" viewBox="0 0 1440 320" preserveAspectRatio="none">
           <path fill="none" stroke="white" strokeWidth="2" d="M0,160L48,170.7C96,181,192,203,288,197.3C384,192,480,160,576,149.3C672,139,768,149,864,170.7C960,192,1056,224,1152,213.3C1248,203,1344,149,1392,122.7L1440,96" />
           <path fill="none" stroke="white" strokeWidth="1" d="M0,224L48,213.3C96,203,192,181,288,186.7C384,192,480,224,576,218.7C672,213,768,171,864,149.3C960,128,1056,128,1152,144C1248,160,1344,192,1392,208L1440,224" />
         </svg>
@@ -129,7 +129,7 @@ function BackToHome() {
   return (
     <Link 
       to="/" 
-      className="absolute top-8 left-8 lg:top-10 lg:left-12 flex items-center gap-2 text-white hover:text-white/80 transition-colors text-[16px] font-medium z-30"
+      className="absolute top-[32px] left-6 lg:left-[48px] flex items-center gap-2 text-white hover:text-white/80 transition-colors text-[15px] font-medium z-30"
     >
       <ArrowLeft className="w-[18px] h-[18px]" /> Back to Home
     </Link>
@@ -138,8 +138,8 @@ function BackToHome() {
 
 function HeroContent({ children }: { children: ReactNode }) {
   return (
-    <div className="w-full lg:w-[45%] lg:max-w-[50%] flex flex-col justify-center px-8 lg:px-[80px] py-24 lg:py-16 xl:py-24">
-      <div className="max-w-[560px]">
+    <div className="w-full lg:w-[45%] lg:max-w-[50%] flex flex-col justify-center px-8 lg:px-[60px] xl:px-[80px] pt-[100px] lg:pt-[80px] pb-8 relative z-10">
+      <div className="max-w-[620px]">
         {children}
       </div>
     </div>
@@ -148,15 +148,15 @@ function HeroContent({ children }: { children: ReactNode }) {
 
 function Logo() {
   return (
-    <div className="mb-12">
-      <img src="/logo.png" alt="Clip N Copy" className="h-10 w-auto brightness-0 invert" />
+    <div className="mb-[35px]">
+      <img src="/logo.png" alt="Clip N Copy" className="h-[36px] w-auto brightness-0 invert" />
     </div>
   );
 }
 
 function Heading() {
   return (
-    <h1 className="text-[42px] lg:text-[52px] font-black text-white leading-[1.1] mb-6 tracking-tight">
+    <h1 className="text-[36px] lg:text-[48px] font-black text-white leading-[1.1] mb-[16px] tracking-tight">
       <span className="text-white">Create. </span>
       <span className="text-[#60A5FA]">Edit. </span>
       <span className="text-white">Copy.</span>
@@ -166,7 +166,7 @@ function Heading() {
 
 function Description() {
   return (
-    <p className="text-white/95 text-[16px] lg:text-[18px] mb-12 max-w-[500px] leading-relaxed font-medium">
+    <p className="text-white/95 text-[15px] lg:text-[17px] mb-[28px] max-w-[500px] leading-relaxed font-medium">
       Your creative workspace starts here. Clip N Copy helps you create, edit, organize, and manage your content with ease.
     </p>
   );
@@ -181,7 +181,7 @@ function FeatureList() {
   ];
 
   return (
-    <div className="flex flex-col gap-6 lg:gap-8">
+    <div className="flex flex-col gap-[16px]">
       {features.map((f, i) => (
         <FeatureItem key={i} icon={f.icon} title={f.title} desc={f.desc} />
       ))}
@@ -191,13 +191,13 @@ function FeatureList() {
 
 function FeatureItem({ icon: Icon, title, desc }: { icon: any; title: string; desc: string }) {
   return (
-    <div className="flex items-center gap-6">
-      <div className="w-14 h-14 md:w-[56px] md:h-[56px] bg-white rounded-2xl flex items-center justify-center shadow-lg shrink-0">
-        <Icon className="w-6 h-6 md:w-[24px] md:h-[24px] text-[#0647E8]" />
+    <div className="flex items-center gap-[20px]">
+      <div className="w-[48px] h-[48px] md:w-[56px] md:h-[56px] bg-white rounded-2xl flex items-center justify-center shadow-md shrink-0">
+        <Icon className="w-[22px] h-[22px] md:w-[24px] md:h-[24px] text-[#0647E8]" />
       </div>
       <div>
-        <h3 className="text-white font-bold text-[17px] md:text-[18px]">{title}</h3>
-        <p className="text-[#E0E7FF] text-[14px] md:text-[15px] mt-1">{desc}</p>
+        <h3 className="text-white font-bold text-[16px]">{title}</h3>
+        <p className="text-[#E0E7FF] text-[13px] mt-0.5">{desc}</p>
       </div>
     </div>
   );
@@ -206,15 +206,12 @@ function FeatureItem({ icon: Icon, title, desc }: { icon: any; title: string; de
 function LoginCard({ children }: { children: ReactNode }) {
   return (
     <div 
-      className="w-full bg-[#FFFFFF] relative z-10"
+      className="w-full bg-[#FFFFFF] relative z-20 mx-auto"
       style={{ 
-        maxWidth: 'calc(100vw - 40px)',
-        width: '480px',
+        maxWidth: '480px',
         borderRadius: '24px',
-        padding: '40px',
-        boxShadow: '0 25px 60px rgba(0,0,0,0.20)',
-        maxHeight: 'calc(100vh - 80px)',
-        overflowY: 'auto'
+        padding: '36px',
+        boxShadow: '0 25px 60px rgba(0,0,0,0.20)'
       }}
     >
       {children}
@@ -346,17 +343,19 @@ function LoginForm({ initialSuccessMessage }: { initialSuccessMessage: string | 
 
   return (
     <>
-      <div className="flex flex-col items-center text-center mb-8">
+      <div className="flex flex-col items-center text-center">
         {!resetMode && (
-          <span className="bg-[#EFF6FF] text-[#0647E8] text-[12px] font-bold px-4 py-1.5 rounded-full tracking-widest uppercase mb-6">
+          <span 
+            className="bg-[#EFF6FF] text-[#0647E8] text-[11px] font-bold px-3 py-1 rounded-full tracking-widest uppercase mb-[16px]"
+          >
             WELCOME BACK
           </span>
         )}
         
-        <h2 className="text-[32px] md:text-[36px] font-black text-slate-900 mb-2 tracking-tight">
+        <h2 className="text-[28px] md:text-[32px] font-black text-slate-900 mb-[8px] tracking-tight">
           {resetMode ? "Reset Password" : "Sign In"}
         </h2>
-        <p className="text-slate-600 text-[15px]">
+        <p className="text-slate-500 text-[14px] mb-[24px]">
           {resetMode 
             ? "Enter your email to receive password reset instructions." 
             : "Sign in to continue creating with Clip N Copy."}
@@ -364,9 +363,9 @@ function LoginForm({ initialSuccessMessage }: { initialSuccessMessage: string | 
       </div>
 
       {errorMessage && (
-        <div className="mb-6 rounded-[16px] border border-red-200 bg-red-50 p-4 text-[14px] font-medium text-red-700 space-y-3">
-          <div className="flex items-start gap-3">
-            <AlertCircle className="w-5 h-5 shrink-0 mt-0.5" />
+        <div className="mb-[16px] rounded-[12px] border border-red-200 bg-red-50 p-3 text-[13px] font-medium text-red-700 space-y-2">
+          <div className="flex items-start gap-2">
+            <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
             <span>{errorMessage}</span>
           </div>
           {showResend && (
@@ -374,15 +373,15 @@ function LoginForm({ initialSuccessMessage }: { initialSuccessMessage: string | 
               type="button"
               onClick={handleResend}
               disabled={resending}
-              className="h-[40px] w-full rounded-[12px] bg-red-100 text-red-700 font-bold text-[13px] hover:bg-red-200 shadow-none cursor-pointer"
+              className="h-[36px] w-full rounded-[8px] bg-red-100 text-red-700 font-bold text-[12px] hover:bg-red-200 shadow-none cursor-pointer"
             >
               {resending ? (
                 <span className="flex items-center gap-2">
-                  <Loader2 className="w-4 h-4 animate-spin" /> Resending...
+                  <Loader2 className="w-3 h-3 animate-spin" /> Resending...
                 </span>
               ) : (
                 <span className="flex items-center gap-2">
-                  <Send className="w-4 h-4" /> Resend confirmation email
+                  <Send className="w-3 h-3" /> Resend confirmation email
                 </span>
               )}
             </Button>
@@ -391,20 +390,20 @@ function LoginForm({ initialSuccessMessage }: { initialSuccessMessage: string | 
       )}
 
       {successMessage && (
-        <div className="mb-6 flex items-start gap-3 rounded-[16px] border border-blue-200 bg-blue-50 p-4 text-[14px] font-medium text-blue-700">
-          <CheckCircle2 className="w-5 h-5 shrink-0 mt-0.5" />
+        <div className="mb-[16px] flex items-start gap-2 rounded-[12px] border border-blue-200 bg-blue-50 p-3 text-[13px] font-medium text-blue-700">
+          <CheckCircle2 className="w-4 h-4 shrink-0 mt-0.5" />
           <span>{successMessage}</span>
         </div>
       )}
 
       {!resetMode ? (
-        <form onSubmit={handleLogin} className="space-y-5">
-          <div className="space-y-2">
-            <Label htmlFor="email" className="text-[12px] font-bold uppercase tracking-wider text-slate-500 ml-1">
+        <form onSubmit={handleLogin} className="space-y-[18px]">
+          <div className="space-y-[6px]">
+            <Label htmlFor="email" className="text-[11px] font-bold uppercase tracking-wider text-slate-500 ml-1">
               EMAIL ADDRESS
             </Label>
             <div className="relative">
-              <Mail className="absolute left-4 top-1/2 w-5 h-5 -translate-y-1/2 text-slate-400" />
+              <Mail className="absolute left-4 top-1/2 w-[18px] h-[18px] -translate-y-1/2 text-slate-400" />
               <Input
                 id="email"
                 type="email"
@@ -412,14 +411,14 @@ function LoginForm({ initialSuccessMessage }: { initialSuccessMessage: string | 
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
-                className="h-[56px] rounded-[16px] pl-[48px] text-[15px] border-slate-200 bg-white focus-visible:ring-[#0647E8] focus-visible:border-[#0647E8] transition-all hover:border-slate-300 shadow-sm"
+                className="h-[52px] rounded-[14px] pl-[44px] text-[15px] border-slate-200 bg-white focus-visible:ring-[#0647E8] focus-visible:border-[#0647E8] transition-all hover:border-slate-300 shadow-sm"
               />
             </div>
           </div>
 
-          <div className="space-y-2">
+          <div className="space-y-[6px]">
             <div className="flex items-center justify-between ml-1">
-              <Label htmlFor="password" className="text-[12px] font-bold uppercase tracking-wider text-slate-500">
+              <Label htmlFor="password" className="text-[11px] font-bold uppercase tracking-wider text-slate-500">
                 PASSWORD
               </Label>
               <button
@@ -429,13 +428,13 @@ function LoginForm({ initialSuccessMessage }: { initialSuccessMessage: string | 
                   setErrorMessage(null);
                   setSuccessMessage(null);
                 }}
-                className="text-[13px] font-semibold text-[#0647E8] hover:underline transition-all cursor-pointer"
+                className="text-[12px] font-semibold text-[#0647E8] hover:underline transition-all cursor-pointer"
               >
                 Forgot Password?
               </button>
             </div>
             <div className="relative">
-              <Lock className="absolute left-4 top-1/2 w-5 h-5 -translate-y-1/2 text-slate-400" />
+              <Lock className="absolute left-4 top-1/2 w-[18px] h-[18px] -translate-y-1/2 text-slate-400" />
               <Input
                 id="password"
                 type="password"
@@ -443,7 +442,7 @@ function LoginForm({ initialSuccessMessage }: { initialSuccessMessage: string | 
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
-                className="h-[56px] rounded-[16px] pl-[48px] text-[15px] border-slate-200 bg-white focus-visible:ring-[#0647E8] focus-visible:border-[#0647E8] transition-all hover:border-slate-300 shadow-sm"
+                className="h-[52px] rounded-[14px] pl-[44px] text-[15px] border-slate-200 bg-white focus-visible:ring-[#0647E8] focus-visible:border-[#0647E8] transition-all hover:border-slate-300 shadow-sm"
               />
             </div>
           </div>
@@ -454,9 +453,9 @@ function LoginForm({ initialSuccessMessage }: { initialSuccessMessage: string | 
               id="remember"
               checked={rememberMe}
               onChange={(e) => setRememberMe(e.target.checked)}
-              className="rounded text-[#0647E8] focus:ring-[#0647E8] w-4 h-4 border-slate-300 cursor-pointer"
+              className="rounded text-[#0647E8] focus:ring-[#0647E8] w-[14px] h-[14px] border-slate-300 cursor-pointer"
             />
-            <Label htmlFor="remember" className="text-[14px] text-slate-600 font-medium cursor-pointer">
+            <Label htmlFor="remember" className="text-[13px] text-slate-600 font-medium cursor-pointer">
               Remember me
             </Label>
           </div>
@@ -464,29 +463,29 @@ function LoginForm({ initialSuccessMessage }: { initialSuccessMessage: string | 
           <Button
             type="submit"
             disabled={loading}
-            className="mt-6 h-[56px] w-full rounded-[14px] border-0 text-white font-bold text-[16px] shadow-[0_12px_24px_-12px_rgba(6,71,232,0.6)] transition-all hover:translate-y-[-2px] hover:shadow-[0_16px_32px_-12px_rgba(6,71,232,0.7)] active:translate-y-[0px] cursor-pointer"
+            className="mt-[24px] h-[52px] w-full rounded-[14px] border-0 text-white font-bold text-[15px] shadow-[0_8px_16px_-8px_rgba(6,71,232,0.6)] transition-all hover:translate-y-[-1px] hover:shadow-[0_12px_24px_-8px_rgba(6,71,232,0.7)] active:translate-y-[0px] cursor-pointer"
             style={{ background: "linear-gradient(to right, #062BCB, #0647E8)" }}
           >
             {loading ? (
               <span className="flex items-center gap-2">
-                <Loader2 className="w-5 h-5 animate-spin" /> Signing in...
+                <Loader2 className="w-4 h-4 animate-spin" /> Signing in...
               </span>
             ) : (
               "Sign In"
             )}
           </Button>
           
-          <div className="relative mt-8 flex items-center justify-center py-4">
+          <div className="relative mt-[20px] flex items-center justify-center py-[4px]">
             <div className="absolute inset-0 flex items-center">
               <div className="w-full border-t border-slate-200" />
             </div>
-            <div className="relative bg-white px-4 text-[12px] font-bold uppercase tracking-widest text-slate-400">
+            <div className="relative bg-white px-3 text-[11px] font-bold uppercase tracking-widest text-slate-400">
               OR
             </div>
           </div>
 
-          <div className="mt-4 text-center">
-            <p className="text-[15px] text-slate-600">
+          <div className="mt-[16px] text-center">
+            <p className="text-[14px] text-slate-600">
               Don't have an account?{" "}
               <Link
                 to="/signup"
@@ -499,13 +498,13 @@ function LoginForm({ initialSuccessMessage }: { initialSuccessMessage: string | 
           </div>
         </form>
       ) : (
-        <form onSubmit={handleForgotPassword} className="space-y-6">
-          <div className="space-y-2.5">
-            <Label htmlFor="reset-email" className="text-[12px] font-bold uppercase tracking-wider text-slate-500 ml-1">
+        <form onSubmit={handleForgotPassword} className="space-y-[18px]">
+          <div className="space-y-[6px]">
+            <Label htmlFor="reset-email" className="text-[11px] font-bold uppercase tracking-wider text-slate-500 ml-1">
               EMAIL ADDRESS
             </Label>
             <div className="relative">
-              <Mail className="absolute left-5 top-1/2 w-5 h-5 -translate-y-1/2 text-slate-400" />
+              <Mail className="absolute left-4 top-1/2 w-[18px] h-[18px] -translate-y-1/2 text-slate-400" />
               <Input
                 id="reset-email"
                 type="email"
@@ -513,7 +512,7 @@ function LoginForm({ initialSuccessMessage }: { initialSuccessMessage: string | 
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
-                className="h-[56px] rounded-[16px] pl-[48px] text-[15px] border-slate-200 bg-white focus-visible:ring-[#0647E8] focus-visible:border-[#0647E8] transition-all hover:border-slate-300 shadow-sm"
+                className="h-[52px] rounded-[14px] pl-[44px] text-[15px] border-slate-200 bg-white focus-visible:ring-[#0647E8] focus-visible:border-[#0647E8] transition-all hover:border-slate-300 shadow-sm"
               />
             </div>
           </div>
@@ -521,12 +520,12 @@ function LoginForm({ initialSuccessMessage }: { initialSuccessMessage: string | 
           <Button
             type="submit"
             disabled={loading}
-            className="mt-6 h-[56px] w-full rounded-[14px] border-0 text-white font-bold text-[16px] shadow-[0_12px_24px_-12px_rgba(6,71,232,0.6)] transition-all hover:translate-y-[-2px] hover:shadow-[0_16px_32px_-12px_rgba(6,71,232,0.7)] active:translate-y-[0px] cursor-pointer"
+            className="mt-[24px] h-[52px] w-full rounded-[14px] border-0 text-white font-bold text-[15px] shadow-[0_8px_16px_-8px_rgba(6,71,232,0.6)] transition-all hover:translate-y-[-1px] hover:shadow-[0_12px_24px_-8px_rgba(6,71,232,0.7)] active:translate-y-[0px] cursor-pointer"
             style={{ background: "linear-gradient(to right, #062BCB, #0647E8)" }}
           >
             {loading ? (
               <span className="flex items-center gap-2">
-                <Loader2 className="w-5 h-5 animate-spin" /> Sending link...
+                <Loader2 className="w-4 h-4 animate-spin" /> Sending link...
               </span>
             ) : (
               "Send Reset Link"
@@ -540,7 +539,7 @@ function LoginForm({ initialSuccessMessage }: { initialSuccessMessage: string | 
               setErrorMessage(null);
               setSuccessMessage(null);
             }}
-            className="w-full mt-6 text-[15px] font-semibold text-slate-500 hover:text-slate-900 transition-colors cursor-pointer"
+            className="w-full mt-[16px] text-[14px] font-semibold text-slate-500 hover:text-slate-900 transition-colors cursor-pointer"
           >
             Back to Login
           </button>
