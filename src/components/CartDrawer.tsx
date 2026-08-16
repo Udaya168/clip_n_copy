@@ -5,7 +5,7 @@ import { useAuth, isEmailConfirmed } from "@/lib/auth-store";
 import { toast } from "sonner";
 
 export function CartDrawer() {
-  const { cartOpen, setCartOpen, lines, setQty, removeFromCart, subtotal, savings, total } =
+  const { cartOpen, setCartOpen, lines, setQty, removeFromCart, totalMrp, subtotal, savings, total } =
     useShop();
   const { user } = useAuth();
   const navigate = useNavigate();
@@ -101,9 +101,14 @@ export function CartDrawer() {
                           <Plus className="size-3.5" />
                         </button>
                       </div>
-                      <span className="font-display text-sm font-bold">
-                        {inr(product.price * qty)}
-                      </span>
+                      <div className="flex items-center gap-1.5 font-display text-sm font-bold">
+                        {product.mrp > product.price && (
+                          <span className="text-xs text-muted-foreground line-through font-normal">
+                            {inr(product.mrp * qty)}
+                          </span>
+                        )}
+                        <span>{inr(product.price * qty)}</span>
+                      </div>
                       <button
                         onClick={() => removeFromCart(product.id, variant)}
                         className="text-muted-foreground hover:text-destructive"
@@ -119,11 +124,15 @@ export function CartDrawer() {
 
             <footer className="space-y-3 border-t border-border p-4">
               <div className="space-y-1.5 text-sm">
+                <Row label="Total MRP" value={inr(totalMrp)} />
+                {savings > 0 && (
+                  <Row label="Discount" value={`-${inr(savings)}`} tone="success" />
+                )}
                 <Row label="Subtotal" value={inr(subtotal)} />
 
                 <div className="flex items-center justify-between border-t border-border pt-2 font-display text-base font-extrabold">
                   <span>Total</span>
-                  <span>{inr(total)}</span>
+                  <span className="text-primary">{inr(total)}</span>
                 </div>
               </div>
               <button

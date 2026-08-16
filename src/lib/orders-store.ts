@@ -137,7 +137,7 @@ export async function saveOrder(
       .maybeSingle();
 
     if (error) {
-      console.log("[OrdersStore] Supabase orders table notice:", error.message);
+      // Supabase orders table fallback
     } else if (data && items && items.length > 0) {
       // Insert related order_items
       const itemRows = items.map((item, idx) => ({
@@ -150,13 +150,10 @@ export async function saveOrder(
         image_url: item.image_url || null,
       }));
 
-      const { error: itemsError } = await supabase.from("order_items").insert(itemRows);
-      if (itemsError) {
-        console.log("[OrdersStore] Supabase order_items notice:", itemsError.message);
-      }
+      await supabase.from("order_items").insert(itemRows);
     }
   } catch (err) {
-    console.log("[OrdersStore] Supabase insert skipped/fallback to local store:", err);
+    // Fallback to local store
   }
 
   return newOrder;
@@ -193,7 +190,7 @@ export async function fetchAllOrders(): Promise<OrderRecord[]> {
       return dbOrders;
     }
   } catch (err) {
-    console.log("[OrdersStore] Using local orders fallback:", err);
+    // Fallback to local orders
   }
 
   return localOrders;
@@ -219,6 +216,6 @@ export async function updateOrderStatus(
       })
       .eq("id", orderId);
   } catch (err) {
-    console.log("[OrdersStore] Supabase update skipped/fallback:", err);
+    // Supabase update skipped/fallback
   }
 }

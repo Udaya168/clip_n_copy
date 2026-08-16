@@ -164,7 +164,7 @@ function SignupPage() {
         <div className="card-lift rounded-3xl border border-border bg-background p-6 shadow-soft sm:p-8">
           <div className="text-center">
             <Link to="/" className="inline-block">
-              <img src="/logo.webp" alt="Clip N Copy" className="mx-auto h-10 w-auto object-contain" />
+              <img src="/logo.webp" alt="Clip N Copy" className="mx-auto h-14 md:h-16 w-auto object-contain" />
             </Link>
             <h1 className="mt-4 font-display text-2xl font-black tracking-tight sm:text-3xl">
               Create Account
@@ -198,6 +198,7 @@ function SignupPage() {
                 <Input
                   id="full-name"
                   type="text"
+                  autoComplete="name"
                   placeholder="John Doe"
                   value={fullName}
                   onChange={(e) => setFullName(e.target.value)}
@@ -216,6 +217,7 @@ function SignupPage() {
                 <Input
                   id="email"
                   type="email"
+                  autoComplete="email"
                   placeholder="you@example.com"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
@@ -234,6 +236,7 @@ function SignupPage() {
                 <Input
                   id="password"
                   type="password"
+                  autoComplete="new-password"
                   placeholder="At least 6 characters"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
@@ -253,6 +256,7 @@ function SignupPage() {
                 <Input
                   id="confirm-password"
                   type="password"
+                  autoComplete="new-password"
                   placeholder="Re-enter password"
                   value={confirmPassword}
                   onChange={(e) => setConfirmPassword(e.target.value)}

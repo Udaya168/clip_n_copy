@@ -607,11 +607,29 @@ export const INITIAL_PRODUCTS: Product[] = RAW.map(
 
 export let PRODUCTS: Product[] = INITIAL_PRODUCTS;
 
+type ProductsListener = () => void;
+const productsListeners: ProductsListener[] = [];
+
+export function subscribeProducts(listener: ProductsListener) {
+  productsListeners.push(listener);
+  return () => {
+    const idx = productsListeners.indexOf(listener);
+    if (idx !== -1) productsListeners.splice(idx, 1);
+  };
+}
+
 export function setProductsCache(newProducts: Product[]) {
   PRODUCTS = newProducts.length > 0 ? newProducts : INITIAL_PRODUCTS;
   const updated = getCategories(PRODUCTS);
   CATEGORIES.length = 0;
   CATEGORIES.push(...updated);
+  productsListeners.forEach((fn) => {
+    try {
+      fn();
+    } catch {
+      // ignore
+    }
+  });
 }
 
 export const discountOf = (p: Product) =>

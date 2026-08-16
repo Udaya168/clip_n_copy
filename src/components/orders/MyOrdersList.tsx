@@ -28,10 +28,6 @@ export function MyOrdersList() {
         .eq("user_id", user.id)
         .order("created_at", { ascending: false });
 
-      if (error) {
-        console.warn("[MyOrders] Supabase query notice:", error.message);
-      }
-
       if (data && data.length > 0) {
         dbOrders = data.map((d: any) => ({
           id: d.id,
@@ -109,8 +105,7 @@ export function MyOrdersList() {
           table: "orders",
           filter: `user_id=eq.${user.id}`,
         },
-        (payload) => {
-          console.log("[MyOrders] Realtime update received:", payload);
+        () => {
           toast.info("Order status updated!");
           fetchOrders();
         }

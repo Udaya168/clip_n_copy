@@ -4,8 +4,66 @@ import { toast } from "sonner";
 
 export function UploadPrintModal({ onClose }: { onClose: () => void }) {
   const [fileName, setFileName] = useState<string | null>(null);
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [fileError, setFileError] = useState<string | null>(null);
   const [done, setDone] = useState(false);
   const input = useRef<HTMLInputElement>(null);
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setFileError(null);
+
+    // Reject video files explicitly
+    if (file.type.startsWith("video/") || /\.(mp4|mov|avi|mkv|webm|wmv|flv)$/i.test(file.name)) {
+      const msg = "Video files are not supported for printing. Please select a PDF, Word document, or Image.";
+      setFileError(msg);
+      toast.error(msg);
+      setSelectedFile(null);
+      setFileName(null);
+      if (input.current) input.current.value = "";
+      return;
+    }
+
+    // Validate allowed file types (PDF, Word, Images)
+    const ext = "." + (file.name.split(".").pop()?.toLowerCase() || "");
+    const allowedTypes = [
+      "application/pdf",
+      "application/msword",
+      "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+    ];
+    const allowedExtensions = [".pdf", ".doc", ".docx", ".jpg", ".jpeg", ".png", ".webp"];
+
+    const isAllowed =
+      file.type.startsWith("image/") ||
+      allowedTypes.includes(file.type) ||
+      allowedExtensions.includes(ext);
+
+    if (!isAllowed) {
+      const msg = "Unsupported file type. Please upload a PDF, Word document, or Image.";
+      setFileError(msg);
+      toast.error(msg);
+      setSelectedFile(null);
+      setFileName(null);
+      if (input.current) input.current.value = "";
+      return;
+    }
+
+    // Validate size limit (25MB)
+    if (file.size > 25 * 1024 * 1024) {
+      const msg = "File size exceeds 25 MB limit.";
+      setFileError(msg);
+      toast.error(msg);
+      setSelectedFile(null);
+      setFileName(null);
+      if (input.current) input.current.value = "";
+      return;
+    }
+
+    setSelectedFile(file);
+    setFileName(file.name);
+  };
 
   return (
     <div className="fixed inset-0 z-70 grid place-items-center p-4">
@@ -38,6 +96,12 @@ export function UploadPrintModal({ onClose }: { onClose: () => void }) {
             className="space-y-4"
             onSubmit={(e) => {
               e.preventDefault();
+              if (!selectedFile) {
+                const msg = "Please select a PDF, Word document, or Image file to proceed.";
+                setFileError(msg);
+                toast.error(msg);
+                return;
+              }
               setDone(true);
               toast.success("Print request received");
             }}
@@ -49,22 +113,28 @@ export function UploadPrintModal({ onClose }: { onClose: () => void }) {
               </p>
             </div>
 
-            <button
-              type="button"
-              onClick={() => input.current?.click()}
-              className="flex w-full flex-col items-center gap-2 rounded-2xl border-2 border-dashed border-border p-6 text-center transition-colors hover:border-primary hover:bg-primary-soft/40"
-            >
-              <FileUp className="size-7 text-primary" />
-              <span className="text-sm font-semibold">
-                {fileName ?? "Select a PDF, DOCX or image"}
-              </span>
-              <span className="text-xs text-muted-foreground">Max 25 MB</span>
-            </button>
+            <div>
+              <button
+                type="button"
+                onClick={() => input.current?.click()}
+                className="flex w-full flex-col items-center gap-2 rounded-2xl border-2 border-dashed border-border p-6 text-center transition-colors hover:border-primary hover:bg-primary-soft/40"
+              >
+                <FileUp className="size-7 text-primary" />
+                <span className="text-sm font-semibold">
+                  {fileName ?? "Select a PDF, DOCX or image"}
+                </span>
+                <span className="text-xs text-muted-foreground">Max 25 MB (PDF, Word, Images only)</span>
+              </button>
+              {fileError && (
+                <p className="mt-1.5 text-xs font-semibold text-destructive">{fileError}</p>
+              )}
+            </div>
             <input
               ref={input}
               type="file"
+              accept=".pdf,.doc,.docx,.jpg,.jpeg,.png,.webp,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,image/*"
               className="hidden"
-              onChange={(e) => setFileName(e.target.files?.[0]?.name ?? null)}
+              onChange={handleFileChange}
             />
 
             <div className="grid gap-3 sm:grid-cols-2">

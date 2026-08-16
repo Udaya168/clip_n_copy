@@ -39,7 +39,7 @@ const PAYMENTS = [
 ];
 
 function Checkout() {
-  const { lines, subtotal, savings, total, clearCart, validateAndProcessCheckout } = useShop();
+  const { lines, totalMrp, subtotal, savings, total, clearCart, validateAndProcessCheckout } = useShop();
   const { user, profile, loading } = useAuth();
   const navigate = useNavigate();
 
@@ -281,22 +281,33 @@ function Checkout() {
                     {variant && <p className="text-primary font-semibold">Colour: {variant}</p>}
                     <p className="text-muted-foreground mt-0.5">Qty {qty}</p>
                   </div>
-                  <p className="font-bold shrink-0">{inr(product.price * qty)}</p>
+                  <div className="text-right shrink-0">
+                    {product.mrp > product.price && (
+                      <span className="block text-[11px] text-muted-foreground line-through font-normal">
+                        {inr(product.mrp * qty)}
+                      </span>
+                    )}
+                    <span className="font-bold">{inr(product.price * qty)}</span>
+                  </div>
                 </li>
               ))}
             </ul>
 
             <div className="mt-4 space-y-2 border-t border-border pt-4 text-xs">
               <div className="flex justify-between">
-                <span className="text-muted-foreground">Subtotal</span>
-                <span>{inr(subtotal)}</span>
+                <span className="text-muted-foreground">Total MRP</span>
+                <span>{inr(totalMrp)}</span>
               </div>
               {savings > 0 && (
-                <div className="flex justify-between text-success">
-                  <span>Savings</span>
+                <div className="flex justify-between text-success font-semibold">
+                  <span>Discount</span>
                   <span>-{inr(savings)}</span>
                 </div>
               )}
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">Subtotal</span>
+                <span>{inr(subtotal)}</span>
+              </div>
               <div className="flex justify-between">
                 <span className="text-muted-foreground">Shipping</span>
                 <span>{shipping === 0 ? "FREE" : inr(shipping)}</span>

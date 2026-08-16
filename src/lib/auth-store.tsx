@@ -57,8 +57,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
 
     try {
-      console.log("[AuthStore] Authenticated User ID:", currentUser.id);
-
       // 1. Fetch profile from Supabase profiles table
       const { data, error } = await supabase
         .from("profiles")
@@ -66,10 +64,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         .eq("id", currentUser.id)
         .maybeSingle();
 
-      console.log("[AuthStore] Profile query result:", data, error);
-
       if (data) {
-        console.log("[AuthStore] Profile role:", data.role);
         setProfile(data as UserProfile);
       } else {
         if (error) {

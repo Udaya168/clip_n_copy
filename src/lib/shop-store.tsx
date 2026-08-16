@@ -8,7 +8,7 @@ import {
   type ReactNode,
 } from "react";
 import { toast } from "sonner";
-import { PRODUCTS, setProductsCache, byId, type Product } from "./data";
+import { PRODUCTS, setProductsCache, subscribeProducts, byId, type Product } from "./data";
 import { supabase } from "./supabase";
 import {
   fetchSupabaseProducts,
@@ -34,6 +34,7 @@ type ShopState = {
   validateAndProcessCheckout: () => Promise<boolean>;
   cartCount: number;
   lines: { product: Product; qty: number; variant?: string }[];
+  totalMrp: number;
   subtotal: number;
   savings: number;
   total: number;
@@ -55,25 +56,28 @@ function read<T>(key: string, fallback: T): T {
 }
 
 export function ShopProvider({ children }: { children: ReactNode }) {
-  const [cart, setCart] = useState<CartLine[]>([]);
-  const [wishlist, setWishlist] = useState<string[]>([]);
+  const [cart, setCart] = useState<CartLine[]>(() => read<CartLine[]>(CART_KEY, []));
+  const [wishlist, setWishlist] = useState<string[]>(() => read<string[]>(WISH_KEY, []));
   const [cartOpen, setCartOpen] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const [hydrated, setHydrated] = useState(false);
+  const [productsVersion, setProductsVersion] = useState(0);
 
   useEffect(() => {
-    setCart(read<CartLine[]>(CART_KEY, []));
-    setWishlist(read<string[]>(WISH_KEY, []));
-    setHydrated(true);
+    fetchSupabaseProducts().catch(() => {});
+    return subscribeProducts(() => setProductsVersion((v) => v + 1));
   }, []);
 
   useEffect(() => {
-    if (hydrated) window.localStorage.setItem(CART_KEY, JSON.stringify(cart));
-  }, [cart, hydrated]);
+    if (typeof window !== "undefined") {
+      window.localStorage.setItem(CART_KEY, JSON.stringify(cart));
+    }
+  }, [cart]);
 
   useEffect(() => {
-    if (hydrated) window.localStorage.setItem(WISH_KEY, JSON.stringify(wishlist));
-  }, [wishlist, hydrated]);
+    if (typeof window !== "undefined") {
+      window.localStorage.setItem(WISH_KEY, JSON.stringify(wishlist));
+    }
+  }, [wishlist]);
 
   const addToCart = useCallback((id: string, qty = 1, variant?: string) => {
     const product = byId(id);
@@ -237,11 +241,13 @@ export function ShopProvider({ children }: { children: ReactNode }) {
         ...(l.variant ? { variant: l.variant } : {}),
       }))
       .filter((l) => l.product);
-  }, [cart]);
+  }, [cart, productsVersion]);
 
   const value = useMemo<ShopState>(() => {
+    const totalMrp = lines.reduce((s, l) => s + (l.product.mrp || l.product.price) * l.qty, 0);
     const subtotal = lines.reduce((s, l) => s + l.product.price * l.qty, 0);
-    const total = lines.reduce((s, l) => s + l.product.price * l.qty, 0);
+    const savings = Math.max(0, totalMrp - subtotal);
+    const total = subtotal;
     return {
       cart,
       wishlist,
@@ -258,8 +264,9 @@ export function ShopProvider({ children }: { children: ReactNode }) {
       validateAndProcessCheckout,
       cartCount: cart.reduce((s, l) => s + l.qty, 0),
       lines,
+      totalMrp,
       subtotal,
-      savings: 0,
+      savings,
       total,
     };
   }, [

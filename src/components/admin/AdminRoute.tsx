@@ -24,14 +24,12 @@ export function AdminRoute({ children }: AdminRouteProps) {
         } = await supabase.auth.getSession();
 
         if (sessionError || !session?.user) {
-          console.log("[AdminGuard] No active session found.");
           if (isMounted) setAuthStatus("unauthenticated");
           return;
         }
 
         // 2. Get session.user.id
         const userId = session.user.id;
-        console.log("[AdminGuard] Authenticated User ID:", userId);
 
         // 3. Query profiles table: select id, full_name, role by exact ID
         const { data: profile, error: profileError } = await supabase
@@ -40,24 +38,18 @@ export function AdminRoute({ children }: AdminRouteProps) {
           .eq("id", userId)
           .single();
 
-        console.log("[AdminGuard] Profile query result:", profile, profileError);
-
         if (profileError || !profile) {
-          console.warn("[AdminGuard] Profile query error or missing row for User ID:", userId);
           if (isMounted) setAuthStatus("denied");
           return;
         }
 
         const userRole = profile.role;
-        console.log("[AdminGuard] Profile role:", userRole);
 
         // 4 & 5. Check EXACTLY profile.role === 'admin'
         if (userRole === "admin") {
-          console.log("[AdminGuard] ACCESS GRANTED: Role is admin. Opening Admin Portal.");
           if (isMounted) setAuthStatus("authorized");
         } else {
           // 6 & 7. If role is 'user' or non-admin, deny access
-          console.warn("[AdminGuard] ACCESS DENIED: Role is not admin:", userRole);
           if (isMounted) setAuthStatus("denied");
         }
       } catch (err) {

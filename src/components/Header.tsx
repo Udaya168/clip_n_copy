@@ -106,7 +106,7 @@ export function Header() {
           </button>
 
           <Link to="/" className="flex min-w-0 shrink-0 items-center gap-2.5">
-            <img src="/logo.webp" alt="Clip N Copy" className="h-10 w-auto object-contain md:h-12" />
+            <img src="/logo.webp" alt="Clip N Copy" className="h-13 w-auto object-contain sm:h-15 md:h-16 lg:h-[68px]" />
           </Link>
 
           <div className="hidden flex-1 lg:block">
@@ -254,7 +254,7 @@ export function Header() {
           <div className="section-shell flex h-12 items-center gap-1 overflow-x-auto no-scrollbar">
             {NAV_CATEGORIES.map((item) => {
               const isRouteActive = pathname === item.to;
-              const isSearchMatch = !item.search?.category || location.search?.category === item.search.category;
+              const isSearchMatch = !item.search?.['category'] || (location.search as Record<string, unknown>)?.['category'] === item.search['category'];
               const isActive = isRouteActive && isSearchMatch;
               
               return (
@@ -336,7 +336,7 @@ export function Header() {
               </div>
               <div className="flex items-center justify-between">
                 <Link to="/" onClick={() => setMobileMenuOpen(false)} className="flex items-center animate-in fade-in slide-in-from-top-4 duration-500" style={{ animationFillMode: 'both', animationDelay: '100ms' }}>
-                  <img src="/logo.webp" alt="Clip N Copy" className="h-10 w-auto object-contain drop-shadow-sm" />
+                  <img src="/logo.webp" alt="Clip N Copy" className="h-14 w-auto object-contain drop-shadow-sm" />
                 </Link>
                 <button
                   onClick={() => setMobileMenuOpen(false)}

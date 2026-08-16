@@ -33,7 +33,7 @@ export function Footer() {
             <img
               src="/logo.webp"
               alt="Clip N Copy"
-              className="h-14 w-auto object-contain bg-white/90 rounded-lg p-1.5 shadow-sm"
+              className="h-16 w-auto object-contain bg-white/95 rounded-xl p-2 shadow-sm sm:h-20"
             />
           </div>
           <p className="text-sm text-ink-foreground/70">
