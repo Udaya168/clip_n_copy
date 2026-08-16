@@ -10,10 +10,10 @@ export const Route = createFileRoute("/wishlist")({
       {
         name: "description",
         content:
-          "Products you saved at Clip N Copy. Move stationery, books and office supplies to your cart whenever you are ready.",
+          "Products you saved at Clip N Copy. Move stationery and office supplies to your cart whenever you are ready.",
       },
       { property: "og:title", content: "Your Wishlist — Clip N Copy" },
-      { property: "og:description", content: "Saved stationery, books and office supplies." },
+      { property: "og:description", content: "Saved stationery and office supplies." },
     ],
   }),
   component: Wishlist,

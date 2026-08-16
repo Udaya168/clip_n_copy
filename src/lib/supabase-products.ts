@@ -3,7 +3,6 @@ import { supabase } from "./supabase";
 import { type Product, INITIAL_PRODUCTS, setProductsCache } from "./data";
 import imgPens from "@/assets/cat-pens.webp";
 import imgNotebooks from "@/assets/cat-notebooks.webp";
-import imgBooks from "@/assets/cat-books.webp";
 import imgArt from "@/assets/cat-art.webp";
 import imgSchool from "@/assets/cat-school.webp";
 import imgFiles from "@/assets/cat-files.webp";
@@ -28,7 +27,6 @@ export type SupabaseProduct = {
 const CATEGORY_FALLBACK_IMAGES: Record<string, string> = {
   notebooks: imgNotebooks,
   "pens-pencils": imgPens,
-  books: imgBooks,
   "art-craft": imgArt,
   "school-supplies": imgSchool,
   "files-folders": imgFiles,
@@ -41,7 +39,6 @@ export function normalizeCategorySlug(category: string): string {
   const lower = category.toLowerCase().trim();
   if (lower.includes("notebook")) return "notebooks";
   if (lower.includes("pen") || lower.includes("pencil")) return "pens-pencils";
-  if (lower.includes("book")) return "books";
   if (lower.includes("school")) return "school-supplies";
   if (lower.includes("office")) return "office-supplies";
   if (lower.includes("art") || lower.includes("craft")) return "art-craft";

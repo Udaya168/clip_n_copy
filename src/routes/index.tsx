@@ -7,7 +7,6 @@ import { SectionHead } from "@/components/SectionHead";
 import { StoreSection } from "@/components/StoreSection";
 import { UploadPrintModal } from "@/components/UploadPrintModal";
 import {
-  BOOK_CATEGORIES,
   CATEGORIES,
   RAW_CATEGORIES,
   OFFICE_ESSENTIALS,
@@ -26,17 +25,17 @@ import { useSupabaseProducts } from "@/lib/supabase-products";
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
-      { title: "Clip N Copy — Stationery, Books & Printing Store in Kundalahalli" },
+      { title: "Clip N Copy — Stationery & Printing Store in Kundalahalli" },
       {
         name: "description",
         content:
-          "Buy notebooks, pens, books, school and office supplies online from Clip N Copy, ITPL Main Road Bengaluru. Printing, photocopy and binding with fast delivery.",
+          "Buy notebooks, pens, school and office supplies online from Clip N Copy, ITPL Main Road Bengaluru. Printing, photocopy and binding with fast delivery.",
       },
       { property: "og:title", content: "Clip N Copy — Everything You Need. One Place." },
       {
         property: "og:description",
         content:
-          "Stationery, books, office supplies, printing and binding from Clip N Copy, Kundalahalli Colony, Bengaluru.",
+          "Stationery, office supplies, printing and binding from Clip N Copy, Kundalahalli Colony, Bengaluru.",
       },
     ],
   }),
@@ -62,7 +61,6 @@ function Home() {
     products.filter((p) => p.tags?.includes("student")).length > 0
       ? products.filter((p) => p.tags?.includes("student")).slice(0, 8)
       : products.slice(0, 8);
-  const books = products.filter((p) => p.category === "books").slice(0, 8);
   const office = products.filter((p) => p.category === "office-supplies").slice(0, 8);
 
   return (
@@ -263,35 +261,6 @@ function Home() {
               Shop Student Essentials <ArrowRight className="size-4" />
             </Link>
           </div>
-        </div>
-      </section>
-
-      {/* Books */}
-      <section className="section-shell py-12">
-        <SectionHead
-          eyebrow="Bookshelf"
-          title="Books for every syllabus"
-          sub="Engineering, programming, school, competitive exams and good fiction."
-          ctaLabel="All books"
-          to="/shop"
-          search={{ category: "books" }}
-        />
-        <div className="-mx-4 mb-6 flex gap-2 overflow-x-auto px-4 no-scrollbar md:mx-0 md:flex-wrap md:px-0">
-          {BOOK_CATEGORIES.map((b) => (
-            <Link
-              key={b}
-              to="/shop"
-              search={{ category: "books", q: b }}
-              className="shrink-0 rounded-full border border-border bg-card px-4 py-2 text-sm font-semibold transition-colors hover:border-primary hover:text-primary"
-            >
-              {b}
-            </Link>
-          ))}
-        </div>
-        <div className="grid-products">
-          {books.map((p) => (
-            <ProductCard key={p.id} product={p} />
-          ))}
         </div>
       </section>
 

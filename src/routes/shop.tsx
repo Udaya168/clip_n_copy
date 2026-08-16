@@ -24,16 +24,16 @@ export const Route = createFileRoute("/shop")({
   }),
   head: () => ({
     meta: [
-      { title: "Shop Stationery, Books & Office Supplies — Clip N Copy" },
+      { title: "Shop Stationery & Office Supplies — Clip N Copy" },
       {
         name: "description",
         content:
-          "Filter and compare notebooks, pens, books, art supplies and office essentials at Clip N Copy Bengaluru. Sort by price, rating or discount.",
+          "Filter and compare notebooks, pens, art supplies and office essentials at Clip N Copy Bengaluru. Sort by price, rating or discount.",
       },
       { property: "og:title", content: "Shop all products — Clip N Copy" },
       {
         property: "og:description",
-        content: "Notebooks, pens, books, art and office supplies with student-friendly prices.",
+        content: "Notebooks, pens, art and office supplies with student-friendly prices.",
       },
     ],
   }),

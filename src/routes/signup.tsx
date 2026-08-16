@@ -17,7 +17,7 @@ export const Route = createFileRoute("/signup")({
   head: () => ({
     meta: [
       { title: "Sign Up — Clip N Copy" },
-      { name: "description", content: "Create a new Clip N Copy account to start ordering stationery and books." },
+      { name: "description", content: "Create a new Clip N Copy account to start ordering stationery and school supplies." },
     ],
   }),
   component: SignupPage,

@@ -1,6 +1,5 @@
 import imgPens from "@/assets/cat-pens.webp";
 import imgNotebooks from "@/assets/cat-notebooks.webp";
-import imgBooks from "@/assets/cat-books.webp";
 import imgArt from "@/assets/cat-art.webp";
 import imgSchool from "@/assets/cat-school.webp";
 import imgFiles from "@/assets/cat-files.webp";
@@ -42,7 +41,6 @@ export type Product = {
 };
 
 export const RAW_CATEGORIES = [
-  { slug: "books", name: "Books", image: imgBooks },
   { slug: "pens-pencils", name: "Stationery", image: imgPens },
   { slug: "notebooks", name: "Notebooks", image: imgNotebooks },
   { slug: "school-supplies", name: "School Supplies", image: imgSchool },
@@ -59,7 +57,6 @@ export const CATEGORY_NAME: Record<string, string> = Object.fromEntries(
 const IMG: Record<string, string> = {
   pens: imgPens,
   notebooks: imgNotebooks,
-  books: imgBooks,
   art: imgArt,
   school: imgSchool,
   files: imgFiles,
@@ -408,114 +405,6 @@ const RAW: Raw[] = [
     "best,office",
   ],
   [
-    "engineering-drawing",
-    "Engineering Drawing Textbook",
-    "Charotar",
-    "books",
-    389,
-    495,
-    4.6,
-    890,
-    "books",
-    "book:Engineering,best",
-  ],
-  [
-    "let-us-c",
-    "Let Us C — Programming Fundamentals",
-    "BPB",
-    "books",
-    349,
-    450,
-    4.5,
-    1520,
-    "books",
-    "book:Programming,best",
-  ],
-  [
-    "robotics-basics",
-    "Introduction to Robotics",
-    "Pearson",
-    "books",
-    599,
-    799,
-    4.4,
-    240,
-    "books",
-    "book:Robotics",
-  ],
-  [
-    "ncert-science",
-    "School Science Reference Guide Class 10",
-    "Navneet",
-    "books",
-    289,
-    350,
-    4.3,
-    640,
-    "books",
-    "book:School,student",
-  ],
-  [
-    "gate-guide",
-    "Competitive Exam Complete Guide 2026",
-    "Arihant",
-    "books",
-    549,
-    725,
-    4.4,
-    1090,
-    "books",
-    "book:Competitive Exams,exam",
-  ],
-  [
-    "fiction-novel",
-    "The Quiet Monsoon — A Novel",
-    "Penguin",
-    "books",
-    299,
-    399,
-    4.5,
-    430,
-    "books",
-    "book:Fiction",
-  ],
-  [
-    "non-fiction-history",
-    "India After Midnight — Non-Fiction",
-    "HarperCollins",
-    "books",
-    419,
-    550,
-    4.6,
-    355,
-    "books",
-    "book:Non-Fiction",
-  ],
-  [
-    "business-book",
-    "Business Strategy Essentials",
-    "Wiley",
-    "books",
-    469,
-    620,
-    4.3,
-    210,
-    "books",
-    "book:Business,office",
-  ],
-  [
-    "self-dev",
-    "Deep Focus — Habits That Compound",
-    "Random House",
-    "books",
-    329,
-    450,
-    4.7,
-    1860,
-    "books",
-    "book:Self Development,best",
-  ],
-  [
     "whiteboard-marker",
     "Whiteboard Markers (Pack of 4)",
     "Camlin",
@@ -675,18 +564,6 @@ export const BRANDS = getBrands();
 export const CATEGORIES: { slug: string; name: string; image: string; count: number }[] =
   getCategories();
 
-export const BOOK_CATEGORIES = [
-  "Engineering",
-  "Programming",
-  "Robotics",
-  "School",
-  "Competitive Exams",
-  "Fiction",
-  "Non-Fiction",
-  "Business",
-  "Self Development",
-];
-
 export const STUDENT_ESSENTIALS = [
   "Notebooks",
   "Pens",
@@ -730,7 +607,6 @@ export const POPULAR_SEARCHES = [
   "Notebooks",
   "Pens",
   "Calculators",
-  "Engineering Books",
   "Art Supplies",
 ];
 

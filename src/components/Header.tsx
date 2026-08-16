@@ -47,7 +47,6 @@ type NavItem = { label: string; to: string; icon?: React.ReactNode; search?: Rec
 const NAV_CATEGORIES: NavItem[] = [
   { label: "Home", to: "/", icon: <Home className="size-4 text-primary" /> },
   { label: "Stationery", to: "/shop", search: { category: "pens-pencils" }, icon: <PenTool className="size-4 text-primary" /> },
-  { label: "Books", to: "/shop", search: { category: "books" }, icon: <BookOpen className="size-4 text-primary" /> },
   { label: "School Supplies", to: "/shop", search: { category: "school-supplies" }, icon: <School className="size-4 text-primary" /> },
   { label: "Office Supplies", to: "/shop", search: { category: "office-supplies" }, icon: <Briefcase className="size-4 text-primary" /> },
   { label: "Art & Craft", to: "/shop", search: { category: "art-craft" }, icon: <Palette className="size-4 text-primary" /> },

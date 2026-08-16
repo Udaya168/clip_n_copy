@@ -84,11 +84,11 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "Clip N Copy — Stationery, Books & Printing in Bengaluru" },
+      { title: "Clip N Copy — Stationery & Printing in Bengaluru" },
       {
         name: "description",
         content:
-          "Shop stationery, books, school and office supplies from Clip N Copy, Kundalahalli. Printing, photocopy and binding with same-day delivery.",
+          "Shop stationery, school and office supplies from Clip N Copy, Kundalahalli. Printing, photocopy and binding with same-day delivery.",
       },
       { name: "author", content: "Clip N Copy" },
       { property: "og:type", content: "website" },
