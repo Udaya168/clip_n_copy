@@ -53,7 +53,7 @@ export function AdminSidebar({ activeTab, setActiveTab }: AdminSidebarProps) {
       <aside className="hidden w-64 shrink-0 flex-col border-r border-border bg-background p-4 lg:flex min-h-[calc(100vh-4rem)]">
         <div className="mb-6 px-3 py-2">
           <Link to="/" className="flex items-center gap-2.5">
-            <img src="/logo.png" alt="Clip N Copy" className="h-8 w-auto object-contain" />
+            <img src="/logo.webp" alt="Clip N Copy" className="h-8 w-auto object-contain" />
           </Link>
           <p className="mt-2 text-[10px] font-extrabold tracking-wider text-primary uppercase">
             Admin Portal

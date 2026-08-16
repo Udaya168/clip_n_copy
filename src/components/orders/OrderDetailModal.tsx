@@ -83,7 +83,7 @@ export function OrderDetailModal({ order, onClose }: OrderDetailModalProps) {
                 {items.map((item) => (
                   <li key={item.id} className="flex items-center gap-3.5 p-3.5 text-xs">
                     <img
-                      src={item.image_url || "/logo.png"}
+                      src={item.image_url || "/logo.webp"}
                       alt={item.product_name}
                       className="size-12 shrink-0 rounded-xl object-cover border border-border/60 bg-secondary/40"
                     />

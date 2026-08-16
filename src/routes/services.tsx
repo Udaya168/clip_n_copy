@@ -3,7 +3,7 @@ import { ArrowRight, Clock, FileCheck2, Printer, Sparkles } from "lucide-react";
 import { useState } from "react";
 import { UploadPrintModal } from "@/components/UploadPrintModal";
 import { PRINT_SERVICES, STORE } from "@/lib/data";
-import slidePrinting from "@/assets/slide-printing.jpg";
+import slidePrinting from "@/assets/slide-printing.webp";
 
 export const Route = createFileRoute("/services")({
   head: () => ({

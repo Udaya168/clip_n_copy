@@ -31,7 +31,7 @@ export function Footer() {
         <div className="space-y-4">
           <div className="flex items-center gap-2.5">
             <img
-              src="/logo.png"
+              src="/logo.webp"
               alt="Clip N Copy"
               className="h-14 w-auto object-contain bg-white/90 rounded-lg p-1.5 shadow-sm"
             />

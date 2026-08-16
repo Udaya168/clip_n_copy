@@ -18,8 +18,8 @@ import {
   withTag,
 } from "@/lib/data";
 import { inr, useShop } from "@/lib/shop-store";
-import slideCollege from "@/assets/slide-college.jpg";
-import slideOffice from "@/assets/slide-office.jpg";
+import slideCollege from "@/assets/slide-college.webp";
+import slideOffice from "@/assets/slide-office.webp";
 
 import { useSupabaseProducts } from "@/lib/supabase-products";
 

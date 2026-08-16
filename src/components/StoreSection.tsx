@@ -11,7 +11,7 @@ export function StoreSection() {
       <div className="grid gap-6 lg:grid-cols-2">
         <div className="surface-card overflow-hidden">
           <img
-            src="/storefront.jpg"
+            src="/storefront.webp"
             alt="Clip N Copy storefront on ITPL Main Road, Kundalahalli"
             loading="lazy"
             className="h-64 w-full object-cover sm:h-80"
@@ -73,7 +73,7 @@ export function StoreSection() {
         <div className="space-y-6">
           <div className="surface-card relative overflow-hidden">
             <img
-              src="/shelves.jpg"
+              src="/shelves.webp"
               alt="Stationery shelves stocked inside Clip N Copy"
               loading="lazy"
               className="h-52 w-full object-cover sm:h-60"

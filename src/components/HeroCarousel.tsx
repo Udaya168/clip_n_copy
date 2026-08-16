@@ -1,10 +1,10 @@
 import { Link } from "@tanstack/react-router";
 import { ArrowRight, Star, Truck, Printer, BadgeCheck } from "lucide-react";
 import { useEffect, useState } from "react";
-import hero from "@/assets/hero.jpg";
-import slideCollege from "@/assets/slide-college.jpg";
-import slidePrinting from "@/assets/slide-printing.jpg";
-import slideOffice from "@/assets/slide-office.jpg";
+import hero from "@/assets/hero.webp";
+import slideCollege from "@/assets/slide-college.webp";
+import slidePrinting from "@/assets/slide-printing.webp";
+import slideOffice from "@/assets/slide-office.webp";
 import { STORE } from "@/lib/data";
 import { cn } from "@/lib/utils";
 

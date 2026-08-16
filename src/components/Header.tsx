@@ -99,7 +99,7 @@ export function Header() {
           </button>
 
           <Link to="/" className="flex min-w-0 shrink-0 items-center gap-2.5">
-            <img src="/logo.png" alt="Clip N Copy" className="h-10 w-auto object-contain md:h-12" />
+            <img src="/logo.webp" alt="Clip N Copy" className="h-10 w-auto object-contain md:h-12" />
           </Link>
 
           <div className="hidden flex-1 lg:block">
@@ -281,7 +281,7 @@ export function Header() {
             {/* Drawer Header */}
             <div className="flex h-16 shrink-0 items-center justify-between border-b border-border bg-background px-4">
               <Link to="/" onClick={() => setMobileMenuOpen(false)} className="flex items-center gap-2.5">
-                <img src="/logo.png" alt="Clip N Copy" className="h-8 w-auto object-contain" />
+                <img src="/logo.webp" alt="Clip N Copy" className="h-8 w-auto object-contain" />
               </Link>
               <button
                 onClick={() => setMobileMenuOpen(false)}
