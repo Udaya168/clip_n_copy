@@ -61,8 +61,8 @@ export function CartDrawer() {
         ) : (
           <>
             <div className="flex-1 space-y-3 overflow-y-auto p-4">
-              {lines.map(({ product, qty }) => (
-                <div key={product.id} className="flex gap-3 rounded-2xl border border-border p-3">
+              {lines.map(({ product, qty, variant }) => (
+                <div key={`${product.id}-${variant || ''}`} className="flex gap-3 rounded-2xl border border-border p-3">
                   <img
                     src={product.image}
                     alt={product.name}
@@ -79,10 +79,13 @@ export function CartDrawer() {
                       {product.name}
                     </Link>
                     <p className="text-xs text-muted-foreground">{product.brand}</p>
+                    {variant && (
+                      <p className="mt-1 text-xs font-semibold text-primary">Colour: {variant}</p>
+                    )}
                     <div className="mt-2 flex items-center justify-between gap-2">
                       <div className="flex items-center gap-1 rounded-full border border-border">
                         <button
-                          onClick={() => setQty(product.id, qty - 1)}
+                          onClick={() => setQty(product.id, qty - 1, variant)}
                           className="grid size-8 place-items-center rounded-full hover:bg-secondary"
                           aria-label="Decrease quantity"
                         >
@@ -90,7 +93,7 @@ export function CartDrawer() {
                         </button>
                         <span className="w-6 text-center text-sm font-bold">{qty}</span>
                         <button
-                          onClick={() => setQty(product.id, qty + 1)}
+                          onClick={() => setQty(product.id, qty + 1, variant)}
                           disabled={qty >= product.stock}
                           className="grid size-8 place-items-center rounded-full hover:bg-secondary disabled:opacity-40"
                           aria-label="Increase quantity"
@@ -102,7 +105,7 @@ export function CartDrawer() {
                         {inr(product.price * qty)}
                       </span>
                       <button
-                        onClick={() => removeFromCart(product.id)}
+                        onClick={() => removeFromCart(product.id, variant)}
                         className="text-muted-foreground hover:text-destructive"
                         aria-label="Remove item"
                       >

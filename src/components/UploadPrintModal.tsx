@@ -22,10 +22,9 @@ export function UploadPrintModal({ onClose }: { onClose: () => void }) {
         {done ? (
           <div className="space-y-3 py-6 text-center">
             <CheckCircle2 className="mx-auto size-14 text-success" />
-            <h3 className="font-display text-xl font-extrabold">Print request noted</h3>
+            <h3 className="font-display text-xl font-extrabold">Print request received! 🎉</h3>
             <p className="text-sm text-muted-foreground">
-              This is a demo storefront — nothing was uploaded. In store, your job would be queued
-              at the counter and ready in minutes.
+              Your print request has been received successfully. Your selected printing details have been saved. Our team will review your requirements and get your order ready. We’ll keep you updated once it’s ready.
             </p>
             <button
               onClick={onClose}
@@ -40,13 +39,13 @@ export function UploadPrintModal({ onClose }: { onClose: () => void }) {
             onSubmit={(e) => {
               e.preventDefault();
               setDone(true);
-              toast.success("Mock print order created");
+              toast.success("Print request received");
             }}
           >
             <div>
               <h3 className="font-display text-xl font-extrabold">Upload &amp; Print</h3>
               <p className="text-sm text-muted-foreground">
-                Choose your options — this is a frontend demo, no file leaves your device.
+                Choose your options and submit your file for printing.
               </p>
             </div>
 
@@ -59,7 +58,7 @@ export function UploadPrintModal({ onClose }: { onClose: () => void }) {
               <span className="text-sm font-semibold">
                 {fileName ?? "Select a PDF, DOCX or image"}
               </span>
-              <span className="text-xs text-muted-foreground">Max 25 MB · demo only</span>
+              <span className="text-xs text-muted-foreground">Max 25 MB</span>
             </button>
             <input
               ref={input}

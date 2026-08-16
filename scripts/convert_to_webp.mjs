@@ -35,24 +35,24 @@ async function run() {
       images.push(...findFiles(dir, EXTS, false));
     }
   }
-  
+
   console.log(`Found ${images.length} images.`);
-  
+
   const conversions = [];
-  
+
   for (const imgPath of images) {
     const dir = path.dirname(imgPath);
     const ext = path.extname(imgPath);
     const basename = path.basename(imgPath, ext);
     const newPath = path.join(dir, `${basename}.webp`);
-    
+
     // Store original name and new name for regex replacement
     // E.g. "logo.png" -> "logo.webp"
     const originalName = path.basename(imgPath);
     const newName = `${basename}.webp`;
-    
+
     conversions.push({ imgPath, newPath, originalName, newName });
-    
+
     console.log(`Converting ${originalName} -> ${newName}`);
     try {
       await sharp(imgPath).webp({ quality: 90 }).toFile(newPath);
@@ -61,7 +61,7 @@ async function run() {
       console.error(`Failed to convert ${imgPath}`, err);
     }
   }
-  
+
   console.log('Updating references in code files...');
   let codeFiles = [];
   for (const dir of DIRS_TO_SEARCH.concat(['.'])) {
@@ -74,11 +74,11 @@ async function run() {
       }
     }
   }
-  
+
   for (const codeFile of codeFiles) {
     let content = fs.readFileSync(codeFile, 'utf8');
     let changed = false;
-    
+
     for (const { originalName, newName } of conversions) {
       // Escape for regex
       const escapedOriginal = originalName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
@@ -92,13 +92,13 @@ async function run() {
         changed = true;
       }
     }
-    
+
     if (changed) {
       console.log(`Updated references in ${codeFile}`);
       fs.writeFileSync(codeFile, content, 'utf8');
     }
   }
-  
+
   console.log('Done.');
 }
 

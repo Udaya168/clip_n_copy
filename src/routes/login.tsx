@@ -44,7 +44,7 @@ export default function LoginPage() {
   if (user) {
     const userDisplayName = profile?.full_name || (user.user_metadata?.["full_name"] as string) || user.email;
     return (
-      <div className="flex min-h-screen items-center justify-center p-6 bg-blue-50 font-sans">
+      <div className="flex min-h-[100dvh] items-center justify-center p-6 bg-blue-50 font-sans">
         <div className="w-full max-w-md rounded-3xl border border-slate-200 bg-white p-8 text-center shadow-lg">
           <div className="mx-auto flex size-14 items-center justify-center rounded-full bg-[#0647E8]/10 text-[#0647E8]">
             <CheckCircle2 className="size-8" />
@@ -77,7 +77,7 @@ function SignInPage({ initialSuccessMessage }: { initialSuccessMessage: string |
   return (
     <FullScreenBlueBackground>
       <BackToHome />
-      <div className="flex flex-col lg:flex-row w-full h-full relative z-10">
+      <div className="flex flex-col lg:flex-row w-full flex-1 relative z-10">
         <HeroContent>
           <Logo />
           <Heading />
@@ -98,7 +98,7 @@ function SignInPage({ initialSuccessMessage }: { initialSuccessMessage: string |
 function FullScreenBlueBackground({ children }: { children: ReactNode }) {
   return (
     <div 
-      className="min-h-screen lg:h-screen w-full lg:overflow-hidden relative font-sans flex flex-col"
+      className="min-h-[100dvh] lg:h-screen w-full lg:overflow-hidden relative font-sans flex flex-col"
       style={{ background: "linear-gradient(135deg, #062BCB 0%, #064FEA 55%, #1236C9 100%)" }}
     >
       {/* Decorative Elements Layer */}

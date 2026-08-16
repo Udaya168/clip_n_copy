@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { SlidersHorizontal, X } from "lucide-react";
-import { useMemo, useState } from "react";
+import { useMemo, useState, useEffect } from "react";
 import { ProductCard, ProductSkeleton } from "@/components/ProductCard";
 import { isProductMatch } from "@/components/SearchBar";
 import { BRANDS, CATEGORIES, CATEGORY_NAME, RAW_CATEGORIES } from "@/lib/data";
@@ -50,12 +50,67 @@ const SORTS = [
 function Shop() {
   const { category, q, tag } = Route.useSearch();
   const { data: products = [], isLoading, isError, error, refetch } = useSupabaseProducts();
-  const [maxPrice, setMaxPrice] = useState(5000);
+  const catalogMaxPrice = useMemo(() => {
+    if (!products || !Array.isArray(products) || products.length === 0) return 5000;
+    
+    let max = 0;
+    for (const p of products) {
+      const price = Number(p?.price);
+      if (!isNaN(price) && price > max) {
+        max = price;
+      }
+    }
+    
+    if (max <= 0) return 100;
+    if (max <= 100) return 100;
+    if (max <= 1000) return Math.ceil(max / 100) * 100;
+    if (max <= 5000) return Math.ceil(max / 500) * 500;
+    return Math.ceil(max / 1000) * 1000;
+  }, [products]);
+
+  const [maxPrice, setMaxPrice] = useState<number | null>(null);
+  const currentMaxPrice = maxPrice !== null ? Math.min(maxPrice, catalogMaxPrice) : catalogMaxPrice;
+
   const [brands, setBrands] = useState<string[]>([]);
   const [minRating, setMinRating] = useState(0);
   const [inStockOnly, setInStockOnly] = useState(false);
   const [sort, setSort] = useState<(typeof SORTS)[number]>("Popularity");
   const [filtersOpen, setFiltersOpen] = useState(false);
+
+  const availableBrands = useMemo(() => {
+    if (!products || !Array.isArray(products)) return [];
+    const term = q?.trim().toLowerCase();
+    
+    const brandSet = new Set<string>();
+    for (const p of products) {
+      if (category && p.category !== category) continue;
+      if (tag && !p.tags?.includes(tag)) continue;
+      if (term && !isProductMatch(p, term)) continue;
+      
+      if (p.brand && typeof p.brand === 'string') {
+        const b = p.brand.trim();
+        if (b) brandSet.add(b);
+      }
+    }
+    return Array.from(brandSet).sort((a, b) => a.localeCompare(b));
+  }, [products, category, q, tag]);
+
+  // Sync maxPrice if catalogMaxPrice changes and no custom maxPrice is set
+  useEffect(() => {
+    if (maxPrice === null) {
+      setMaxPrice(catalogMaxPrice);
+    }
+  }, [catalogMaxPrice, maxPrice]);
+
+  // Clear invalid brands when category or search changes
+  useEffect(() => {
+    setBrands((prev) => {
+      if (prev.length === 0) return prev;
+      const valid = prev.filter((b) => availableBrands.includes(b));
+      if (valid.length !== prev.length) return valid;
+      return prev;
+    });
+  }, [availableBrands]);
 
   const categoriesWithCounts = useMemo(() => {
     return RAW_CATEGORIES.map((c) => ({
@@ -70,7 +125,7 @@ function Shop() {
       if (category && p.category !== category) return false;
       if (tag && !p.tags?.includes(tag)) return false;
       if (term && !isProductMatch(p, term)) return false;
-      if (p.price > maxPrice) return false;
+      if (p.price > currentMaxPrice) return false;
       if (brands.length && !brands.includes(p.brand)) return false;
       if (p.rating < minRating) return false;
       if (inStockOnly && !p.stock) return false;
@@ -82,7 +137,7 @@ function Shop() {
     if (sort === "Highest Rated") list.sort((a, b) => b.rating - a.rating);
     if (sort === "Popularity") list.sort((a, b) => b.reviews - a.reviews);
     return list;
-  }, [products, category, q, tag, maxPrice, brands, minRating, inStockOnly, sort]);
+  }, [products, category, q, tag, currentMaxPrice, brands, minRating, inStockOnly, sort]);
 
   const title = category ? CATEGORY_NAME[category] : q ? `Results for “${q}”` : "All Products";
 
@@ -119,23 +174,23 @@ function Shop() {
         <input
           type="range"
           min={0}
-          max={5000}
-          step={50}
-          value={maxPrice}
+          max={catalogMaxPrice}
+          step={catalogMaxPrice <= 100 ? 10 : 50}
+          value={currentMaxPrice}
           onChange={(e) => setMaxPrice(Number(e.target.value))}
           className="w-full accent-[var(--primary)]"
         />
         <div className="flex justify-between text-xs text-muted-foreground">
           <span>₹0</span>
           <span className="font-semibold text-foreground">
-            up to {maxPrice >= 5000 ? "₹5,000+" : inr(maxPrice)}
+            up to {inr(currentMaxPrice)}
           </span>
         </div>
       </FilterBlock>
 
       <FilterBlock title="Brand">
         <div className="max-h-44 space-y-1.5 overflow-y-auto pr-1">
-          {BRANDS.map((b) => (
+          {availableBrands.map((b) => (
             <label key={b} className="flex items-center gap-2 text-sm">
               <input
                 type="checkbox"

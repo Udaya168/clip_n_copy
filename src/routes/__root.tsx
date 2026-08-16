@@ -133,9 +133,9 @@ function RootComponent() {
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
         <ShopProvider>
-          <div className={`flex flex-col ${isLogin ? 'h-[100dvh] overflow-hidden' : 'min-h-screen'}`}>
+          <div className="flex flex-col min-h-[100dvh]">
             {!hideStorefrontNavigation && <Header />}
-            <main className={`flex-1 flex flex-col ${isLogin ? 'min-h-0 overflow-hidden' : ''}`}>
+            <main className="flex-1 flex flex-col">
               {/* Required: nested routes render here. Removing <Outlet /> breaks all child routes. */}
               <Outlet />
             </main>

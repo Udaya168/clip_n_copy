@@ -145,13 +145,17 @@ function Checkout() {
           const ok = await validateAndProcessCheckout();
           if (ok) {
             const orderNum = "CNC-2026-" + Math.floor(10000 + Math.random() * 90000);
-            const orderItemsInput = lines.map(({ product, qty }) => ({
-              product_id: product.id,
-              product_name: product.name,
-              quantity: qty,
-              price: product.price,
-              image_url: product.image,
-            }));
+            const orderItemsInput = lines.map((l) => {
+              const { product, qty } = l;
+              return {
+                product_id: product.id,
+                product_name: product.name,
+                quantity: qty,
+                price: product.price,
+                image_url: product.image,
+                ...(l.variant ? { variant: l.variant } : {}),
+              };
+            });
 
             const saved = await saveOrder(
               {
@@ -265,8 +269,8 @@ function Checkout() {
             <h2 className="font-display text-lg font-bold">Order Summary</h2>
 
             <ul className="mt-4 divide-y divide-border">
-              {lines.map(({ product, qty }) => (
-                <li key={product.id} className="flex gap-3 py-3 text-xs">
+              {lines.map(({ product, qty, variant }) => (
+                <li key={`${product.id}-${variant || ''}`} className="flex gap-3 py-3 text-xs">
                   <img
                     src={product.image}
                     alt={product.name}
@@ -274,7 +278,8 @@ function Checkout() {
                   />
                   <div className="flex-1 min-w-0">
                     <p className="font-bold truncate">{product.name}</p>
-                    <p className="text-muted-foreground">Qty {qty}</p>
+                    {variant && <p className="text-primary font-semibold">Colour: {variant}</p>}
+                    <p className="text-muted-foreground mt-0.5">Qty {qty}</p>
                   </div>
                   <p className="font-bold shrink-0">{inr(product.price * qty)}</p>
                 </li>

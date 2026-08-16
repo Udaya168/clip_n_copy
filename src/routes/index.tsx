@@ -1,25 +1,14 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { ArrowRight, Clock, Printer, Sparkles, Star } from "lucide-react";
+import { ChevronRight, FileText, BookOpen, Printer, Layers, Box, ShieldCheck, Zap } from "lucide-react";
 import { useMemo, useState } from "react";
-import { HeroCarousel } from "@/components/HeroCarousel";
+import { motion } from "framer-motion";
+import { HeroSection } from "@/components/HeroSection";
 import { ProductCard, ProductSkeleton } from "@/components/ProductCard";
 import { SectionHead } from "@/components/SectionHead";
 import { StoreSection } from "@/components/StoreSection";
 import { UploadPrintModal } from "@/components/UploadPrintModal";
-import {
-  CATEGORIES,
-  RAW_CATEGORIES,
-  OFFICE_ESSENTIALS,
-  PRINT_SERVICES,
-  PRODUCTS,
-  STUDENT_ESSENTIALS,
-  inCategory,
-  withTag,
-} from "@/lib/data";
-import { inr, useShop } from "@/lib/shop-store";
-import slideCollege from "@/assets/slide-college.webp";
-import slideOffice from "@/assets/slide-office.webp";
-
+import { RAW_CATEGORIES } from "@/lib/data";
+import { useShop } from "@/lib/shop-store";
 import { useSupabaseProducts } from "@/lib/supabase-products";
 
 export const Route = createFileRoute("/")({
@@ -54,317 +43,159 @@ function Home() {
     }));
   }, [products]);
 
-  const flash = products.filter((p) => p.tags?.includes("flash"));
-  const flashItems = flash.length > 0 ? flash : products.slice(0, 5);
   const best = products.slice(0, 12);
-  const student =
-    products.filter((p) => p.tags?.includes("student")).length > 0
-      ? products.filter((p) => p.tags?.includes("student")).slice(0, 8)
-      : products.slice(0, 8);
-  const office = products.filter((p) => p.category === "office-supplies").slice(0, 8);
 
   return (
     <>
-      <HeroCarousel />
+      <HeroSection />
 
-      {/* Categories */}
+      {/* Categories - Compact Premium Cards */}
       <section className="section-shell py-12">
         <SectionHead
-          eyebrow="Shop by category"
-          title="Browse the whole shop"
-          sub="Ten aisles, thousands of products — tap a category to jump straight in."
-          ctaLabel="All products"
+          title="Shop by Category"
+          ctaLabel="View All →"
           to="/shop"
         />
-        <div className="-mx-4 flex gap-4 overflow-x-auto px-4 pb-3 no-scrollbar md:mx-0 md:grid md:grid-cols-4 md:px-0">
-          {categoriesWithCounts.map((c) => (
-            <Link
+        <div className="grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-4 lg:gap-6">
+          {categoriesWithCounts.map((c, i) => (
+            <motion.div
               key={c.slug}
-              to="/shop"
-              search={{ category: c.slug }}
-              className="group surface-card card-lift w-40 shrink-0 overflow-hidden md:w-auto"
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true, margin: "-50px" }}
+              transition={{ duration: 0.4, delay: i * 0.1, ease: "easeOut" }}
             >
-              <div className="aspect-square overflow-hidden bg-secondary">
-                <img
-                  src={c.image}
-                  alt={c.name}
-                  loading="lazy"
-                  className="size-full object-cover transition-transform duration-500 group-hover:scale-110"
-                />
-              </div>
-              <div className="p-3">
-                <p className="truncate text-sm font-bold">{c.name}</p>
-                <p className="text-xs text-muted-foreground">{c.count} items</p>
-              </div>
-            </Link>
-          ))}
-        </div>
-      </section>
-
-      {/* Flash deals */}
-      <section className="section-shell py-6">
-        <div className="overflow-hidden rounded-3xl bg-ink p-6 text-ink-foreground sm:p-8">
-          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between sm:gap-4">
-            <div className="min-w-0">
-              <p className="flex items-center gap-2 text-xs font-bold tracking-widest text-accent uppercase">
-                <Sparkles className="size-3.5" /> Flash deals
-              </p>
-              <h2 className="mt-1 font-display text-2xl font-extrabold sm:text-3xl">
-                Today&apos;s best prices
-              </h2>
-            </div>
-            <span className="flex w-fit shrink-0 items-center gap-2 rounded-full bg-ink-foreground/10 px-3 py-2 text-xs font-semibold">
-              <Clock className="size-4 text-accent" /> Ends at 9:30 PM
-            </span>
-          </div>
-          <div className="mt-6 grid grid-cols-2 gap-3 md:grid-cols-3 md:gap-5 xl:grid-cols-5">
-            {isLoading ? (
-              Array.from({ length: 5 }).map((_, i) => (
-                <div key={i} className="aspect-square animate-pulse rounded-2xl bg-secondary" />
-              ))
-            ) : isError ? (
-              <div className="col-span-full py-6 text-center text-sm text-accent">
-                Failed to load deals from Supabase.
-              </div>
-            ) : flashItems.length === 0 ? (
-              <div className="col-span-full py-6 text-center text-sm text-ink-foreground/70">
-                No deal products available.
-              </div>
-            ) : (
-              flashItems.map((p) => (
-                <div key={p.id} className="surface-card card-lift overflow-hidden text-foreground">
-                  <Link
-                    to="/product/$id"
-                    params={{ id: p.id }}
-                    className="block aspect-square overflow-hidden bg-secondary"
-                  >
-                    <img
-                      src={p.image}
-                      alt={p.name}
-                      loading="lazy"
-                      className="size-full object-cover transition-transform duration-500 hover:scale-108"
-                    />
-                  </Link>
-                  <div className="space-y-1.5 p-3">
-                    <p className="line-clamp-2 text-xs font-semibold">{p.name}</p>
-                    <p className="flex items-center gap-1 text-[11px] text-muted-foreground">
-                      <Star className="size-3 fill-accent text-accent" /> {p.rating.toFixed(1)}
-                    </p>
-                    <div className="flex items-baseline gap-1.5">
-                      <span className="font-display text-base font-bold">{inr(p.price)}</span>
-                    </div>
-                    <button
-                      onClick={() => addToCart(p.id)}
-                      className="h-9 w-full rounded-full bg-primary text-xs font-bold text-primary-foreground transition-transform active:scale-97"
-                    >
-                      Add to Cart
-                    </button>
-                  </div>
+              <Link
+                to="/shop"
+                search={{ category: c.slug }}
+                className="group relative flex items-center gap-4 overflow-hidden rounded-[1.25rem] bg-white p-3 shadow-[0_4px_16px_-4px_rgba(11,92,255,0.08)] ring-1 ring-[#EAF2FF] transition-all duration-300 hover:scale-[1.03] hover:-translate-y-1 hover:shadow-[0_12px_28px_-6px_rgba(11,92,255,0.15)] hover:ring-[#DCEBFF]"
+              >
+                <div className="grid size-14 shrink-0 place-items-center rounded-xl bg-[#F4F8FF] transition-transform duration-500 group-hover:scale-105 group-hover:bg-[#EAF2FF]">
+                  <img
+                    src={c.image}
+                    alt={c.name}
+                    loading="lazy"
+                    className="size-8 object-contain mix-blend-multiply transition-all duration-500 group-hover:scale-110 group-hover:rotate-6 group-hover:-translate-y-1"
+                  />
                 </div>
-              ))
-            )}
-          </div>
+                <div className="flex flex-1 flex-col justify-center min-w-0 pr-2">
+                  <h3 className="truncate font-bold text-[#0B2455] transition-colors group-hover:text-[#075BFF] text-sm sm:text-[15px]">
+                    {c.name}
+                  </h3>
+                  <p className="mt-0.5 truncate text-[12px] font-medium text-[#075BFF]/70">{c.count} Products</p>
+                </div>
+                <ChevronRight className="absolute right-4 size-4 text-[#0B2455]/20 opacity-0 transition-all duration-300 group-hover:translate-x-1 group-hover:opacity-100 group-hover:text-[#075BFF]" />
+              </Link>
+            </motion.div>
+          ))}
         </div>
       </section>
 
       {/* Best sellers */}
       <section className="section-shell py-12">
-        <SectionHead
-          eyebrow="Loved by customers"
-          title="Best Sellers"
-          sub="The products our regulars keep coming back for."
-          ctaLabel="View All Products"
-          to="/shop"
-        />
-        {isLoading ? (
-          <div className="grid-products">
-            {Array.from({ length: 4 }).map((_, i) => (
-              <ProductSkeleton key={i} />
-            ))}
-          </div>
-        ) : isError ? (
-          <div className="surface-card space-y-4 p-8 text-center border border-destructive/20">
-            <p className="font-display text-lg font-bold text-destructive">
-              Failed to load products from Supabase
-            </p>
-            <p className="text-sm text-muted-foreground">{error?.message}</p>
-            <button
-              onClick={() => refetch()}
-              className="inline-flex h-10 items-center justify-center rounded-full bg-primary px-5 text-sm font-semibold text-primary-foreground"
-            >
-              Try Again
-            </button>
-          </div>
-        ) : products.length === 0 ? (
-          <div className="surface-card p-8 text-center">
-            <p className="font-display text-lg font-bold">No products found</p>
-            <p className="text-sm text-muted-foreground">
-              The Supabase products table is currently empty.
-            </p>
-          </div>
-        ) : (
-          <div className="grid-products">
-            {best.map((p) => (
-              <ProductCard key={p.id} product={p} />
-            ))}
-          </div>
-        )}
-      </section>
-
-      {/* Student essentials */}
-      <section className="section-shell py-6">
-        <SectionHead
-          eyebrow="For students"
-          title="Student Essentials"
-          sub="Everything for lectures, labs, submissions and exams."
-          ctaLabel="Shop student picks"
-          to="/shop"
-          search={{ tag: "student" }}
-        />
-        <div className="flex flex-wrap gap-2">
-          {STUDENT_ESSENTIALS.map((s) => (
-            <Link
-              key={s}
-              to="/shop"
-              search={{ q: s }}
-              className="rounded-full border border-border bg-card px-4 py-2 text-sm font-semibold shadow-soft transition-colors hover:border-primary hover:text-primary"
-            >
-              {s}
-            </Link>
-          ))}
-        </div>
-        <div className="mt-6 grid-products">
-          {student.map((p) => (
-            <ProductCard key={p.id} product={p} />
-          ))}
-        </div>
-
-        <div className="relative mt-8 overflow-hidden rounded-3xl">
-          <img
-            src={slideCollege}
-            alt="College notebooks and pens"
-            loading="lazy"
-            width={1400}
-            height={900}
-            className="h-56 w-full object-cover sm:h-64"
+        <div className="rounded-[2.5rem] bg-white p-6 shadow-[0_4px_24px_-8px_rgba(11,92,255,0.08)] border border-[#EAF2FF] sm:p-10 lg:p-12">
+          <SectionHead
+            title="Best Sellers"
+            ctaLabel="View All →"
+            to="/shop"
           />
-          <div className="absolute inset-0 bg-linear-to-r from-ink/85 via-ink/60 to-transparent" />
-          <div className="absolute inset-0 flex flex-col justify-center gap-3 p-6 text-ink-foreground sm:p-10">
-            <h3 className="max-w-md font-display text-2xl font-black sm:text-3xl">
-              Your College Essentials, Sorted.
-            </h3>
-            <Link
-              to="/shop"
-              search={{ tag: "student" }}
-              className="inline-flex h-11 w-fit items-center gap-2 rounded-full accent-gradient px-5 text-sm font-bold text-accent-foreground"
-            >
-              Shop Student Essentials <ArrowRight className="size-4" />
-            </Link>
-          </div>
-        </div>
-      </section>
-
-      {/* Office */}
-      <section className="section-shell py-6">
-        <SectionHead
-          eyebrow="For work"
-          title="Office Essentials"
-          sub="Paper, files, markers and desk supplies — bulk friendly."
-          ctaLabel="Shop office"
-          to="/shop"
-          search={{ category: "office-supplies" }}
-        />
-        <div className="mb-6 flex flex-wrap gap-2">
-          {OFFICE_ESSENTIALS.map((s) => (
-            <Link
-              key={s}
-              to="/shop"
-              search={{ q: s }}
-              className="rounded-full border border-border bg-card px-4 py-2 text-sm font-semibold transition-colors hover:border-primary hover:text-primary"
-            >
-              {s}
-            </Link>
-          ))}
-        </div>
-        <div className="grid-products">
-          {office.map((p) => (
-            <ProductCard key={p.id} product={p} />
-          ))}
-        </div>
-        <div className="relative mt-8 overflow-hidden rounded-3xl">
-          <img
-            src={slideOffice}
-            alt="Office desk supplies"
-            loading="lazy"
-            width={1400}
-            height={900}
-            className="h-56 w-full object-cover sm:h-64"
-          />
-          <div className="absolute inset-0 bg-linear-to-r from-primary/90 via-primary/60 to-transparent" />
-          <div className="absolute inset-0 flex flex-col justify-center gap-3 p-6 text-primary-foreground sm:p-10">
-            <h3 className="max-w-md font-display text-2xl font-black sm:text-3xl">
-              Everything Your Workspace Needs.
-            </h3>
-            <Link
-              to="/shop"
-              search={{ category: "office-supplies" }}
-              className="inline-flex h-11 w-fit items-center gap-2 rounded-full bg-card px-5 text-sm font-bold text-primary"
-            >
-              Shop Office Supplies <ArrowRight className="size-4" />
-            </Link>
-          </div>
-        </div>
-      </section>
-
-      {/* Printing */}
-      <section className="section-shell py-12">
-        <SectionHead
-          eyebrow="In-store services"
-          title="Print. Bind. Done."
-          sub="Walk in with a file, walk out with a finished document."
-          ctaLabel="All services"
-          to="/services"
-        />
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {PRINT_SERVICES.map((s) => (
-            <div key={s.name} className="surface-card card-lift p-5">
-              <span className="grid size-11 place-items-center rounded-xl bg-primary-soft text-primary">
-                <Printer className="size-5" />
-              </span>
-              <h3 className="mt-4 font-display text-lg font-bold">{s.name}</h3>
-              <p className="text-sm font-semibold text-primary">{s.price}</p>
-              <p className="mt-1 text-sm text-muted-foreground">{s.note}</p>
+          {isLoading ? (
+            <div className="grid-products">
+              {Array.from({ length: 4 }).map((_, i) => (
+                <ProductSkeleton key={i} />
+              ))}
             </div>
-          ))}
+          ) : isError ? (
+            <div className="surface-card space-y-4 p-8 text-center border border-destructive/20">
+              <p className="font-display text-lg font-bold text-destructive">
+                Failed to load products from Supabase
+              </p>
+              <p className="text-sm text-muted-foreground">{error?.message}</p>
+              <button
+                onClick={() => refetch()}
+                className="inline-flex h-10 items-center justify-center rounded-full bg-[#0B2455] px-5 text-sm font-semibold text-white"
+              >
+                Try Again
+              </button>
+            </div>
+          ) : products.length === 0 ? (
+            <div className="surface-card p-8 text-center">
+              <p className="font-display text-lg font-bold">No products found</p>
+              <p className="text-sm text-muted-foreground">
+                The Supabase products table is currently empty.
+              </p>
+            </div>
+          ) : (
+            <div className="grid-products">
+              {best.map((p) => (
+                <ProductCard key={p.id} product={p} />
+              ))}
+            </div>
+          )}
         </div>
-        <button
-          onClick={() => setPrintOpen(true)}
-          className="mt-6 inline-flex h-12 items-center gap-2 rounded-full bg-primary px-7 font-semibold text-primary-foreground shadow-glow transition-transform hover:-translate-y-0.5"
-        >
-          Upload &amp; Print <ArrowRight className="size-4" />
-        </button>
+      </section>
+
+      {/* Printing & Services */}
+      <section className="section-shell py-12">
+        <div className="rounded-[2.5rem] bg-[#F4F8FF] p-8 sm:p-12 shadow-[0_4px_24px_-8px_rgba(11,92,255,0.08)] border border-[#EAF2FF] relative overflow-hidden">
+          <div className="absolute top-0 right-0 -mr-20 -mt-20 w-96 h-96 rounded-full bg-[#075BFF]/5 blur-3xl pointer-events-none" />
+          
+          <div className="relative z-10 mb-10">
+            <h2 className="font-display text-3xl font-black text-[#0B2455] sm:text-4xl">Printing & Services</h2>
+            <p className="mt-3 max-w-2xl text-[#0B2455]/70 text-lg font-medium">High quality printing, binding & finishing — fast, reliable & professional.</p>
+          </div>
+          
+          <div className="relative z-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-5">
+            {[
+              { name: "Printouts", icon: <Printer className="size-6" />, desc: "B&W and Color" },
+              { name: "Spiral Binding", icon: <BookOpen className="size-6" />, desc: "Durable binding" },
+              { name: "Lamination", icon: <Layers className="size-6" />, desc: "Glossy & Matte" },
+              { name: "Visiting Cards", icon: <Box className="size-6" />, desc: "Premium quality" },
+              { name: "Project Work", icon: <FileText className="size-6" />, desc: "Reports & files" }
+            ].map((service) => (
+              <button
+                key={service.name}
+                onClick={() => setPrintOpen(true)}
+                className="group flex flex-col items-center justify-center gap-4 rounded-[1.25rem] bg-white p-6 shadow-[0_4px_16px_-4px_rgba(11,92,255,0.08)] border border-[#EAF2FF] transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_12px_28px_-6px_rgba(11,92,255,0.15)] hover:border-[#DCEBFF] text-center cursor-pointer"
+              >
+                <div className="grid size-14 place-items-center rounded-2xl bg-[#075BFF]/10 text-[#075BFF] transition-all duration-300 group-hover:scale-110 group-hover:bg-[#075BFF] group-hover:text-white group-hover:shadow-[0_8px_16px_-4px_rgba(7,91,255,0.4)]">
+                  {service.icon}
+                </div>
+                <div>
+                  <h3 className="font-display text-lg font-bold text-[#0B2455]">{service.name}</h3>
+                  <p className="mt-1 text-xs font-medium text-[#0B2455]/60">{service.desc}</p>
+                </div>
+              </button>
+            ))}
+          </div>
+        </div>
       </section>
 
       <StoreSection />
 
-      <section className="section-shell pb-6">
-        <div className="surface-card grid gap-4 p-6 text-center sm:grid-cols-3">
-          <Stat value={`${PRODUCTS.length}+`} label="Products in catalog" />
-          <Stat value="763" label="Google reviews" />
-          <Stat value="15 min" label="Average print turnaround" />
+      {/* Benefits Strip */}
+      <section className="section-shell py-10 pb-16">
+        <div className="grid grid-cols-2 gap-4 md:grid-cols-4 bg-white rounded-[2rem] shadow-sm border border-slate-100 p-6 md:p-8">
+          {[
+            { title: "Wide Range", desc: "1000+ products", icon: <Box className="size-6" /> },
+            { title: "Fast Delivery", desc: "Within ITPL area", icon: <Zap className="size-6" /> },
+            { title: "Best Prices", desc: "Unbeatable deals", icon: <ShieldCheck className="size-6" /> },
+            { title: "Print & Bind", desc: "Ready in minutes", icon: <Printer className="size-6" /> }
+          ].map((benefit) => (
+            <div key={benefit.title} className="flex flex-col sm:flex-row items-center sm:items-start gap-4 text-center sm:text-left p-4">
+              <div className="grid size-12 shrink-0 place-items-center rounded-full bg-blue-50 text-blue-600">
+                {benefit.icon}
+              </div>
+              <div>
+                <h4 className="font-bold text-slate-900">{benefit.title}</h4>
+                <p className="mt-1 text-sm text-slate-500">{benefit.desc}</p>
+              </div>
+            </div>
+          ))}
         </div>
       </section>
 
       {printOpen && <UploadPrintModal onClose={() => setPrintOpen(false)} />}
     </>
-  );
-}
-
-function Stat({ value, label }: { value: string; label: string }) {
-  return (
-    <div>
-      <p className="font-display text-3xl font-black text-primary">{value}</p>
-      <p className="text-sm text-muted-foreground">{label}</p>
-    </div>
   );
 }

@@ -9,17 +9,17 @@ export function ProductCard({ product, compact }: { product: Product; compact?: 
   const saved = inWishlist(product.id);
 
   return (
-    <article className="group surface-card card-lift relative flex h-full flex-col overflow-hidden">
+    <article className="group relative flex h-full flex-col overflow-hidden rounded-[1.25rem] bg-white shadow-[0_4px_16px_-4px_rgba(11,92,255,0.08)] ring-1 ring-[#EAF2FF] transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_12px_28px_-6px_rgba(11,92,255,0.2)] hover:ring-[#DCEBFF]">
       <Link
         to="/product/$id"
         params={{ id: product.id }}
-        className="relative block aspect-4/3 overflow-hidden bg-secondary"
+        className="relative flex items-center justify-center aspect-4/3 overflow-hidden bg-[#F4F8FF]"
       >
         <img
           src={product.image}
           alt={product.name}
           loading="lazy"
-          className="size-full object-contain object-center p-2 transition-transform duration-500 group-hover:scale-108"
+          className="max-w-full max-h-full object-contain object-center p-4 transition-transform duration-500 group-hover:scale-105"
         />
 
       </Link>
@@ -51,9 +51,11 @@ export function ProductCard({ product, compact }: { product: Product; compact?: 
         </Link>
         <div className="flex items-center justify-between gap-1 text-xs text-muted-foreground">
           <div className="flex items-center gap-1.5">
-            <span className="flex items-center gap-1 rounded-md bg-success/12 px-1.5 py-0.5 font-semibold text-success">
-              {product.rating.toFixed(1)} <Star className="size-3 fill-current" />
-            </span>
+            {product.reviews > 0 && (
+              <span className="flex items-center gap-1 rounded-md bg-success/12 px-1.5 py-0.5 font-semibold text-success">
+                {product.rating.toFixed(1)} <Star className="size-3 fill-current" />
+              </span>
+            )}
             <span>({product.reviews.toLocaleString("en-IN")})</span>
           </div>
           <span
@@ -80,10 +82,10 @@ export function ProductCard({ product, compact }: { product: Product; compact?: 
           onClick={() => addToCart(product.id)}
           disabled={product.stock <= 0}
           className={cn(
-            "mt-1 inline-flex h-10 items-center justify-center gap-2 rounded-full px-4 text-sm font-semibold transition-all active:scale-97",
+            "mt-1 inline-flex h-10 items-center justify-center gap-2 rounded-full px-4 text-sm font-semibold transition-all duration-300 active:scale-95",
             product.stock <= 0
               ? "cursor-not-allowed bg-muted text-muted-foreground opacity-60"
-              : "bg-ink text-ink-foreground hover:bg-primary",
+              : "bg-[#075BFF] text-white shadow-sm hover:bg-[#0B5CFF] hover:shadow-[0_4px_12px_-4px_rgba(11,92,255,0.4)]",
           )}
         >
           <ShoppingBag className="size-4" /> {product.stock <= 0 ? "Out of Stock" : "Add to Cart"}

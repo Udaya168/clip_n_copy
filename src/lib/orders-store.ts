@@ -23,6 +23,7 @@ export interface OrderItemInput {
   quantity: number;
   price: number;
   image_url?: string;
+  variant?: string;
 }
 
 const ORDERS_KEY = "cnc-orders-v1";

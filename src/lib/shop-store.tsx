@@ -16,7 +16,7 @@ import {
   type SupabaseProduct,
 } from "./supabase-products";
 
-type CartLine = { id: string; qty: number };
+type CartLine = { id: string; qty: number; variant?: string };
 
 type ShopState = {
   cart: CartLine[];
@@ -25,15 +25,15 @@ type ShopState = {
   setCartOpen: (v: boolean) => void;
   mobileMenuOpen: boolean;
   setMobileMenuOpen: (v: boolean) => void;
-  addToCart: (id: string, qty?: number) => void;
-  setQty: (id: string, qty: number) => void;
-  removeFromCart: (id: string) => void;
+  addToCart: (id: string, qty?: number, variant?: string) => void;
+  setQty: (id: string, qty: number, variant?: string) => void;
+  removeFromCart: (id: string, variant?: string) => void;
   clearCart: () => void;
   toggleWishlist: (id: string) => void;
   inWishlist: (id: string) => boolean;
   validateAndProcessCheckout: () => Promise<boolean>;
   cartCount: number;
-  lines: { product: Product; qty: number }[];
+  lines: { product: Product; qty: number; variant?: string }[];
   subtotal: number;
   savings: number;
   total: number;
@@ -75,7 +75,7 @@ export function ShopProvider({ children }: { children: ReactNode }) {
     if (hydrated) window.localStorage.setItem(WISH_KEY, JSON.stringify(wishlist));
   }, [wishlist, hydrated]);
 
-  const addToCart = useCallback((id: string, qty = 1) => {
+  const addToCart = useCallback((id: string, qty = 1, variant?: string) => {
     const product = byId(id);
     const availableStock = product ? product.stock : 0;
 
@@ -87,7 +87,7 @@ export function ShopProvider({ children }: { children: ReactNode }) {
     }
 
     setCart((prev) => {
-      const existing = prev.find((l) => l.id === id);
+      const existing = prev.find((l) => l.id === id && l.variant === variant);
       const existingQty = existing ? existing.qty : 0;
       const targetQty = existingQty + qty;
 
@@ -95,47 +95,55 @@ export function ShopProvider({ children }: { children: ReactNode }) {
         if (existingQty === 0) {
           toast.error(`Only ${availableStock} items available.`, { description: product?.name });
           setCartOpen(true);
-          return [...prev, { id, qty: availableStock }];
+          return [...prev, { id, qty: availableStock, ...(variant ? { variant } : {}) }];
         } else {
           toast.error(`Maximum available quantity is ${availableStock}.`, {
             description: product?.name,
           });
-          setCartOpen(true);
-          return prev.map((l) => (l.id === id ? { ...l, qty: availableStock } : l));
+          return prev.map((l) =>
+            l.id === id && l.variant === variant ? { ...l, qty: availableStock } : l,
+          );
         }
       }
 
+      toast.success("Added to cart", {
+        id: "add-to-cart-toast",
+        duration: 2000,
+        description: `${qty} × ${product?.name}${variant ? ` (${variant})` : ''}`,
+      });
       setCartOpen(true);
-      toast.success("Added to cart", { description: product?.name });
       if (existing) {
-        return prev.map((l) => (l.id === id ? { ...l, qty: targetQty } : l));
+        return prev.map((l) =>
+          l.id === id && l.variant === variant ? { ...l, qty: l.qty + qty } : l,
+        );
       }
-      return [...prev, { id, qty: targetQty }];
+      return [...prev, { id, qty, ...(variant ? { variant } : {}) }];
     });
   }, []);
 
-  const setQty = useCallback((id: string, qty: number) => {
+  const setQty = useCallback((id: string, qty: number, variant?: string) => {
     const product = byId(id);
     const availableStock = product ? product.stock : 0;
 
-    if (qty <= 0) {
-      setCart((prev) => prev.filter((l) => l.id !== id));
-      return;
-    }
-
     if (qty > availableStock) {
-      toast.error(`Maximum available quantity is ${availableStock}.`, {
+      toast.error(`Cannot add more. Only ${availableStock} in stock.`, {
         description: product?.name,
       });
-      setCart((prev) => prev.map((l) => (l.id === id ? { ...l, qty: availableStock } : l)));
+      setCart((prev) =>
+        prev.map((l) => (l.id === id && l.variant === variant ? { ...l, qty: availableStock } : l)),
+      );
       return;
     }
 
-    setCart((prev) => prev.map((l) => (l.id === id ? { ...l, qty } : l)));
+    setCart((prev) =>
+      qty <= 0
+        ? prev.filter((l) => !(l.id === id && l.variant === variant))
+        : prev.map((l) => (l.id === id && l.variant === variant ? { ...l, qty } : l)),
+    );
   }, []);
 
-  const removeFromCart = useCallback((id: string) => {
-    setCart((prev) => prev.filter((l) => l.id !== id));
+  const removeFromCart = useCallback((id: string, variant?: string) => {
+    setCart((prev) => prev.filter((l) => !(l.id === id && l.variant === variant)));
     toast("Removed from cart");
   }, []);
 
@@ -221,13 +229,17 @@ export function ShopProvider({ children }: { children: ReactNode }) {
     return true;
   }, [cart]);
 
+  const lines = useMemo(() => {
+    return cart
+      .map((l) => ({
+        product: byId(l.id)!,
+        qty: l.qty,
+        ...(l.variant ? { variant: l.variant } : {}),
+      }))
+      .filter((l) => l.product);
+  }, [cart]);
+
   const value = useMemo<ShopState>(() => {
-    const lines = cart
-      .map((l) => {
-        const product = PRODUCTS.find((p) => p.id === l.id);
-        return product ? { product, qty: l.qty } : null;
-      })
-      .filter(Boolean) as { product: Product; qty: number }[];
     const subtotal = lines.reduce((s, l) => s + l.product.price * l.qty, 0);
     const total = lines.reduce((s, l) => s + l.product.price * l.qty, 0);
     return {

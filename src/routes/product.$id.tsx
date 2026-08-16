@@ -61,6 +61,13 @@ export const Route = createFileRoute("/product/$id")({
   component: ProductDetail,
 });
 
+const getGradient = (name: string) => {
+  if (name.toLowerCase() === 'blue') return 'linear-gradient(135deg, #2563EB, #0F3FBF)';
+  if (name.toLowerCase() === 'black') return 'linear-gradient(135deg, #374151, #000000)';
+  if (name.toLowerCase() === 'red') return 'linear-gradient(135deg, #EF4444, #991B1B)';
+  return 'linear-gradient(135deg, #6B7280, #374151)';
+};
+
 function ProductDetail() {
   const { product } = Route.useLoaderData();
   const { addToCart, toggleWishlist, inWishlist, setCartOpen } = useShop();
@@ -70,7 +77,68 @@ function ProductDetail() {
   const [tab, setTab] = useState<"desc" | "specs" | "reviews">("desc");
 
   const { data: products = [] } = useSupabaseProducts();
-  const gallery = [product.image, product.image, product.image, product.image];
+  const [selectedVariant, setSelectedVariant] = useState(product.variants?.[0]?.name || "");
+
+  const currentVariantObj = product.variants?.find((v: import("@/lib/data").ProductVariant) => v.name === selectedVariant);
+  const isSingleImageVariantProduct = 
+    (product.name?.toLowerCase().includes('hauser') && product.name?.toLowerCase().includes('xo')) ||
+    (product.name?.toLowerCase().includes('reynolds') && product.name?.toLowerCase().includes('trimax')) ||
+    (product.name?.toLowerCase().includes('luxor') && product.name?.toLowerCase().includes('fine writer')) ||
+    (product.name?.toLowerCase().includes('pentonic')) ||
+    (product.name?.toLowerCase().includes('pilot') && product.name?.toLowerCase().includes('v7'));
+  
+  const allImages = product.variants && product.variants.length > 0
+    ? Array.from(new Set(product.variants.flatMap((v: import("@/lib/data").ProductVariant) => v.images)))
+    : (product.name?.toLowerCase().includes('apsara') && product.name?.toLowerCase().includes('drawing pencil')) ||
+      (product.name?.toLowerCase().includes('apsara') && product.name?.toLowerCase().includes('absolute')) ||
+      (product.name?.toLowerCase().includes('apsara') && product.name?.toLowerCase().includes('platinum')) ||
+      (product.name?.toLowerCase().includes('cello') && product.name?.toLowerCase().includes('butterflow')) ||
+      (product.name?.toLowerCase().includes('parker') && product.name?.toLowerCase().includes('vector')) ||
+      (product.name?.toLowerCase().includes('classmate') && product.name?.toLowerCase().includes('octane')) ||
+      (product.name?.toLowerCase().includes('nataraj') && product.name?.toLowerCase().includes('hb pencil')) ||
+      (product.name?.toLowerCase().includes('fevicol') && product.name?.toLowerCase().includes('mr')) ||
+      (product.name?.toLowerCase().includes('geometry') || product.id?.includes('geometry')) ||
+      (product.name?.toLowerCase().includes('crayons') && product.name?.toLowerCase().includes('24')) ||
+      (product.name?.toLowerCase().includes('apsara') && product.name?.toLowerCase().includes('non dust')) ||
+      (product.name?.toLowerCase().includes('highlighter') || product.id?.includes('highlighter')) ||
+      (product.name?.toLowerCase().includes('camlin') && product.name?.toLowerCase().includes('exam pad')) ||
+      (product.name?.toLowerCase().includes('pencil box')) ||
+      (product.name?.toLowerCase().includes('nataraj') && product.name?.toLowerCase().includes('eraser')) ||
+      (product.name?.toLowerCase().includes('scissors') || product.id?.includes('scissors')) ||
+      (product.name?.toLowerCase().includes('sharpener') || product.id?.includes('sharpener')) ||
+      (product.name?.toLowerCase().includes('ruler') || product.id?.includes('ruler')) ||
+      (product.name?.toLowerCase().includes('permanent marker') || product.id?.includes('permanent-marker')) ||
+      (product.name?.toLowerCase().includes('printer paper') || product.id?.includes('printer-paper') || product.name?.toLowerCase().includes('jk copier')) ||
+      (product.name?.toLowerCase().includes('whiteboard marker') || product.id?.includes('whiteboard-marker')) ||
+      (product.name?.toLowerCase().includes('document folder') || product.id?.includes('document-folder')) ||
+      (product.name?.toLowerCase().includes('stapler') || product.id?.includes('stapler')) ||
+      (product.name?.toLowerCase().includes('file folder') || product.id?.includes('file-folder')) ||
+      (product.name?.toLowerCase().includes('punch machine') || product.id?.includes('punch-machine')) ||
+      (product.name?.toLowerCase().includes('sticky notes') || product.id?.includes('sticky-notes')) ||
+      (product.name?.toLowerCase().includes('office register') || product.id?.includes('office-register')) ||
+      (product.name?.toLowerCase().includes('paper clips') || product.id?.includes('paper-clips')) ||
+      (product.name?.toLowerCase().includes('envelope') || product.id?.includes('envelope')) ||
+      (product.name?.toLowerCase().includes('color pencil') || product.name?.toLowerCase().includes('colour pencil') || product.id?.includes('color-pencil') || product.id?.includes('colour-pencil')) ||
+      (product.name?.toLowerCase().includes('oil pastel') || product.id?.includes('oil-pastel')) ||
+      (product.name?.toLowerCase().includes('sketch pen') || product.id?.includes('sketch-pen')) ||
+      (product.name?.toLowerCase().includes('poster colour') || product.name?.toLowerCase().includes('poster color') || product.id?.includes('poster-colour') || product.id?.includes('poster-color')) ||
+      (product.name?.toLowerCase().includes('water colour') || product.name?.toLowerCase().includes('water color') || product.id?.includes('water-colour') || product.id?.includes('water-color')) ||
+      (product.name?.toLowerCase().includes('drawing book') || product.id?.includes('drawing-book')) ||
+      (product.name?.toLowerCase().includes('craft paper') || product.id?.includes('craft-paper')) ||
+      (product.name?.toLowerCase().includes('paint brush') || product.id?.includes('paint-brush')) ||
+      (product.name?.toLowerCase().includes('plastic file') || product.id?.includes('plastic-file')) ||
+      (product.name?.toLowerCase().includes('button file') || product.id?.includes('button-file')) ||
+      (product.name?.toLowerCase().includes('ring binder') || product.id?.includes('ring-binder')) ||
+      (product.name?.toLowerCase().includes('expanding file') || product.id?.includes('expanding-file')) ||
+      (product.name?.toLowerCase().includes('calculator') || product.id?.includes('calculator')) ||
+      (product.name?.toLowerCase().includes('82ms') || product.id?.includes('82ms')) ||
+      (product.name?.toLowerCase().includes('12d') || product.id?.includes('12d')) ||
+      (product.name?.toLowerCase().includes('notebook') || product.id?.includes('notebook'))
+      ? [product.image]
+      : [product.image, product.image, product.image, product.image];
+
+  const mainImgSrc = isSingleImageVariantProduct ? (currentVariantObj?.images[0] || product.image) : allImages[active];
+  const thumbnailImages = isSingleImageVariantProduct ? [mainImgSrc] : allImages;
   const similar = products
     .filter((p) => p.category === product.category && p.id !== product.id)
     .slice(0, 4);
@@ -93,7 +161,7 @@ function ProductDetail() {
       <div className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_26rem]">
         <div className="space-y-4">
           <div
-            className="surface-card relative aspect-square overflow-hidden"
+            className="surface-card relative flex items-center justify-center aspect-[4/3] max-h-[450px] w-full overflow-hidden"
             onMouseMove={(e) => {
               const r = e.currentTarget.getBoundingClientRect();
               setZoom({
@@ -104,9 +172,9 @@ function ProductDetail() {
             onMouseLeave={() => setZoom(null)}
           >
             <img
-              src={gallery[active]}
+              src={mainImgSrc}
               alt={product.name}
-              className="size-full object-contain object-center transition-transform duration-300"
+              className="max-w-full max-h-full object-contain object-center transition-transform duration-300"
               style={
                 zoom
                   ? { transform: "scale(1.9)", transformOrigin: `${zoom.x}% ${zoom.y}%` }
@@ -119,12 +187,18 @@ function ProductDetail() {
             </span>
           </div>
           <div className="flex gap-3">
-            {gallery.map((g, i) => (
+            {thumbnailImages.map((g: string, i: number) => (
               <button
                 key={i}
-                onClick={() => setActive(i)}
+                onClick={() => {
+                  setActive(i);
+                  if (product.variants && product.variants.length > 0) {
+                    const variant = product.variants.find((v: import("@/lib/data").ProductVariant) => v.images.includes(g));
+                    if (variant) setSelectedVariant(variant.name);
+                  }
+                }}
                 className={cn(
-                  "size-20 overflow-hidden rounded-xl border-2 transition-colors",
+                  "flex items-center justify-center size-20 overflow-hidden rounded-xl border-2 transition-colors",
                   active === i ? "border-primary" : "border-border hover:border-primary/50",
                 )}
               >
@@ -132,7 +206,7 @@ function ProductDetail() {
                   src={g}
                   alt={`${product.name} view ${i + 1}`}
                   loading="lazy"
-                  className="size-full object-contain object-center"
+                  className="max-w-full max-h-full object-contain object-center"
                 />
               </button>
             ))}
@@ -145,12 +219,20 @@ function ProductDetail() {
               {product.brand}
             </p>
             <h1 className="mt-1 font-display text-2xl font-extrabold sm:text-3xl">
-              {product.name}
+              {product.id === "reynolds-trimax" && selectedVariant 
+                ? `Reynolds Trimax — ${selectedVariant}` 
+                : product.id === "luxor-fine-writer" && selectedVariant
+                ? `Luxor Fine Writer — ${selectedVariant}`
+                : product.name?.toLowerCase().includes("hauser") && product.name?.toLowerCase().includes("xo") && selectedVariant
+                ? `Hauser XO Ball Pen — ${selectedVariant}`
+                : `${product.name}${selectedVariant ? ` — ${selectedVariant}` : ""}`}
             </h1>
             <div className="mt-2 flex flex-wrap items-center gap-3 text-sm">
-              <span className="flex items-center gap-1 rounded-md bg-success/12 px-2 py-0.5 font-bold text-success">
-                {product.rating.toFixed(1)} <Star className="size-3.5 fill-current" />
-              </span>
+              {product.reviews > 0 && (
+                <span className="flex items-center gap-1 rounded-md bg-success/12 px-2 py-0.5 font-bold text-success">
+                  {product.rating.toFixed(1)} <Star className="size-3.5 fill-current" />
+                </span>
+              )}
               <span className="text-muted-foreground">
                 {product.reviews.toLocaleString("en-IN")} reviews
               </span>
@@ -179,6 +261,37 @@ function ProductDetail() {
               <span className="font-display text-3xl font-black">{inr(product.price)}</span>
             </div>
             <p className="mt-1 text-xs text-muted-foreground">Inclusive of all taxes</p>
+
+            {product.variants && (
+              <div className="mt-5">
+                <p className="text-sm font-bold mb-3">
+                  Selected Colour: <span className="text-muted-foreground ml-1">{selectedVariant}</span>
+                </p>
+                <div className="flex flex-wrap gap-3">
+                  {product.variants.map((v: import("@/lib/data").ProductVariant) => (
+                    <button
+                      key={v.name}
+                      onClick={() => {
+                        setSelectedVariant(v.name);
+                        const firstImg = v.images[0];
+                        const idx = allImages.indexOf(firstImg);
+                        setActive(idx !== -1 ? idx : 0);
+                      }}
+                      style={{ background: getGradient(v.name) }}
+                      className={cn(
+                        "flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-bold text-white transition-all shadow-md",
+                        selectedVariant === v.name
+                          ? "ring-2 ring-primary ring-offset-2 scale-[1.02]"
+                          : "opacity-85 hover:opacity-100 hover:scale-[1.02]"
+                      )}
+                    >
+                      <span className="uppercase tracking-wider">{v.name}</span>
+                      {selectedVariant === v.name && <Check className="size-4" />}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
 
             <div className="mt-5 flex items-center gap-4">
               <span className="text-sm font-semibold">Quantity</span>
@@ -209,9 +322,9 @@ function ProductDetail() {
               </div>
             </div>
 
-            <div className="mt-5 grid gap-2 sm:grid-cols-2">
+            <div className="mt-6 grid gap-2 sm:grid-cols-2">
               <button
-                onClick={() => addToCart(product.id, qty)}
+                onClick={() => addToCart(product.id, qty, selectedVariant || undefined)}
                 disabled={product.stock <= 0}
                 className={cn(
                   "inline-flex h-12 items-center justify-center gap-2 rounded-full font-semibold transition-colors",
@@ -227,7 +340,7 @@ function ProductDetail() {
                 <Link
                   to="/checkout"
                   onClick={() => {
-                    addToCart(product.id, qty);
+                    addToCart(product.id, qty, selectedVariant || undefined);
                     setCartOpen(false);
                   }}
                   className="inline-flex h-12 items-center justify-center rounded-full accent-gradient font-bold text-accent-foreground shadow-glow"
@@ -293,9 +406,21 @@ function ProductDetail() {
 
         <div className="py-6">
           {tab === "desc" && (
-            <p className="max-w-3xl text-sm leading-relaxed text-muted-foreground">
-              {product.description}
-            </p>
+            <div className="max-w-3xl space-y-6">
+              <p className="text-sm leading-relaxed text-muted-foreground">
+                {product.description}
+              </p>
+              {product.features && product.features.length > 0 && (
+                <div className="space-y-3">
+                  <h3 className="font-bold">Key Features</h3>
+                  <ul className="list-inside list-disc space-y-1 text-sm text-muted-foreground">
+                    {product.features.map((feature: string, i: number) => (
+                      <li key={i}>{feature}</li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+            </div>
           )}
           {tab === "specs" && (
             <dl className="grid max-w-2xl gap-x-8 gap-y-3 sm:grid-cols-2">
@@ -305,33 +430,42 @@ function ProductDetail() {
                   className="flex justify-between gap-4 border-b border-border pb-2 text-sm"
                 >
                   <dt className="text-muted-foreground">{k}</dt>
-                  <dd className="font-semibold">{v}</dd>
+                  <dd className="font-semibold text-right">{(k === 'Ink Colour' || k === 'Colour' || k === 'Product Colour') && v === 'Selected Variant' ? (selectedVariant || 'Blue') : v as React.ReactNode}</dd>
                 </div>
               ))}
             </dl>
           )}
           {tab === "reviews" && (
-            <ul className="grid gap-4 sm:grid-cols-2">
-              {REVIEWS.map((r) => (
-                <li key={r.name} className="surface-card p-5">
-                  <div className="flex items-center justify-between gap-3">
-                    <span className="font-semibold">{r.name}</span>
-                    <span className="flex items-center gap-0.5 text-accent">
-                      {Array.from({ length: r.rating }).map((_, i) => (
-                        <Star key={i} className="size-3.5 fill-current" />
+            <div className="grid gap-8 lg:grid-cols-[16rem_1fr]">
+              <div className="space-y-4">
+                <h3 className="font-display text-lg font-bold">Customer Rating Summary</h3>
+                {product.reviews > 0 ? (
+                  <>
+                    <div className="flex items-baseline gap-2">
+                      <span className="font-display text-4xl font-black">{product.rating.toFixed(1)}</span>
+                      <Star className="size-6 fill-current text-primary" />
+                    </div>
+                    <p className="text-sm font-medium text-muted-foreground">
+                      Based on {product.reviews.toLocaleString("en-IN")} ratings
+                    </p>
+                    <div className="space-y-2 mt-4">
+                      {[5, 4, 3, 2, 1].map((star) => (
+                        <div key={star} className="flex items-center gap-2 text-sm">
+                          <span className="flex w-8 items-center justify-end gap-1 font-semibold">
+                            {star} <Star className="size-3 fill-current text-muted-foreground" />
+                          </span>
+                          <div className="h-2 flex-1 overflow-hidden rounded-full bg-secondary">
+                            <div className="h-full bg-primary" style={{ width: "0%" }} />
+                          </div>
+                        </div>
                       ))}
-                    </span>
-                  </div>
-                  <p className="mt-2 text-sm text-muted-foreground">“{r.text}”</p>
-                  <p className="mt-3 flex items-center gap-2 text-xs text-muted-foreground">
-                    {r.date}
-                    <span className="inline-flex items-center gap-1 rounded-full bg-success/12 px-2 py-0.5 font-semibold text-success">
-                      <Check className="size-3" /> Verified Purchase
-                    </span>
-                  </p>
-                </li>
-              ))}
-            </ul>
+                    </div>
+                  </>
+                ) : (
+                  <p className="text-sm text-muted-foreground">No customer reviews yet.</p>
+                )}
+              </div>
+            </div>
           )}
         </div>
       </div>

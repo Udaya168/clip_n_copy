@@ -22,6 +22,11 @@ export const STORE = {
   services: ["In-store Shopping", "Delivery", "Printing", "Photocopy", "Binding"],
 };
 
+export type ProductVariant = {
+  name: string; // e.g. Blue, Black, Red
+  images: string[];
+};
+
 export type Product = {
   id: string;
   name: string;
@@ -37,12 +42,14 @@ export type Product = {
   bookCategory?: string | undefined;
   tags?: string[] | undefined;
   description?: string | undefined;
+  features?: string[] | undefined;
   specs?: Record<string, string> | undefined;
+  variants?: ProductVariant[] | undefined;
 };
 
 export const RAW_CATEGORIES = [
   { slug: "pens-pencils", name: "Stationery", image: imgPens },
-  { slug: "notebooks", name: "Notebooks", image: imgNotebooks },
+  { slug: "notebooks", name: "Notebook", image: imgNotebooks },
   { slug: "school-supplies", name: "School Supplies", image: imgSchool },
   { slug: "office-supplies", name: "Office Supplies", image: imgTools },
   { slug: "art-craft", name: "Art & Craft", image: imgArt },
@@ -515,26 +522,87 @@ const RAW: Raw[] = [
 ];
 
 export const INITIAL_PRODUCTS: Product[] = RAW.map(
-  ([id, name, brand, category, price, mrp, rating, reviews, imgKey, tagsStr]) => ({
-    id,
-    name,
-    brand,
-    category,
-    price,
-    mrp,
-    rating,
-    reviews,
-    image: IMG[imgKey] || imgNotebooks,
-    stock: 50,
-    tags: tagsStr ? tagsStr.split(",") : [],
-    description: `${name} by ${brand}`,
-    specs: {
+  ([id, name, brand, category, price, mrp, rating, reviews, imgKey, tagsStr]) => {
+    let variants: ProductVariant[] | undefined;
+    let description = `${name} by ${brand}`;
+    let specs: Record<string, string> = {
       Brand: brand,
       Category: category,
       SKU: `CNC-${id.toUpperCase()}`,
       Stock: "In Stock",
-    },
-  }),
+    };
+
+    let features: string[] | undefined;
+
+    if (id === "reynolds-trimax") {
+      variants = [
+        {
+          name: "Blue",
+          images: [
+            "/products/trimax-blue-1.webp",
+            "/products/trimax-blue-2.webp",
+            "/products/trimax-blue-3.webp",
+            "/products/trimax-blue-4.webp",
+          ],
+        },
+        {
+          name: "Black",
+          images: [
+            "/products/trimax-black-1.webp",
+          ],
+        },
+        {
+          name: "Red",
+          images: [
+            "/products/trimax-red-1.webp",
+          ],
+        },
+      ];
+      description = "Reynolds Trimax is designed with advanced fluid ink technology to provide a smooth and precise writing experience. Its ink flows smoothly across the page and is designed for consistent writing performance during long writing sessions. Trimax is suitable for everyday writing, school, college and office use.";
+      features = [
+        "Advanced fluid ink technology",
+        "Smooth writing experience",
+        "Precise writing performance",
+        "Designed for long writing sessions",
+        "Waterproof ink",
+        "Fine 0.5 mm tip",
+        "Suitable for school, college and office use",
+        "Available in multiple colours",
+      ];
+      specs = {
+        Brand: "Reynolds",
+        Product: "Trimax",
+        "Product Type": "Roller Ball Pen",
+        "Tip Size": "0.5 mm",
+        "Tip Type": "Fine",
+        "Ink Technology": "Advanced Fluid Ink Technology",
+        Ink: "Waterproof",
+        "Ink Colour": "Selected Colour",
+        "Body Material": "Plastic",
+        Refillable: "Yes",
+        "Suitable For": "School, College, Office and Everyday Writing",
+        "Available Colours": "Blue, Black, Red"
+      };
+    }
+
+    return {
+      id,
+      name,
+      brand,
+      category,
+      price,
+      mrp,
+      rating,
+      reviews,
+      image: IMG[imgKey] || imgNotebooks,
+      stock: 50,
+      tags: tagsStr ? tagsStr.split(",") : [],
+      description,
+      features,
+      specs,
+      variants,
+    };
+  },
 );
 
 export let PRODUCTS: Product[] = INITIAL_PRODUCTS;
