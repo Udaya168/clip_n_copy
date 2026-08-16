@@ -24,10 +24,10 @@ export const Route = createFileRoute("/login")({
       { name: "description", content: "Sign in to your Clip N Copy account to track orders and save wishlist items." },
     ],
   }),
-  component: SignInPageWrapper,
+  component: LoginPage,
 });
 
-function SignInPageWrapper() {
+export default function LoginPage() {
   const { user, profile } = useAuth();
   const navigate = useNavigate();
   const { redirect, confirmed } = Route.useSearch();
@@ -44,7 +44,7 @@ function SignInPageWrapper() {
   if (user) {
     const userDisplayName = profile?.full_name || (user.user_metadata?.["full_name"] as string) || user.email;
     return (
-      <div className="flex min-h-screen items-center justify-center p-6 bg-slate-50 font-sans">
+      <div className="flex min-h-screen items-center justify-center p-6 bg-blue-50 font-sans">
         <div className="w-full max-w-md rounded-3xl border border-slate-200 bg-white p-8 text-center shadow-lg">
           <div className="mx-auto flex size-14 items-center justify-center rounded-full bg-[#0647E8]/10 text-[#0647E8]">
             <CheckCircle2 className="size-8" />
@@ -70,54 +70,50 @@ function SignInPageWrapper() {
 }
 
 // ----------------------------------------------------------------------
-// NEW COMPONENT STRUCTURE
+// NEW COMPONENT STRUCTURE AS REQUESTED
 // ----------------------------------------------------------------------
 
 function SignInPage({ initialSuccessMessage }: { initialSuccessMessage: string | null }) {
   return (
-    <BlueBackground>
+    <FullScreenBlueBackground>
       <BackToHome />
       <div className="flex flex-col lg:flex-row w-full h-full relative z-10">
-        <HeroSection>
+        <HeroContent>
           <Logo />
-          <HeroHeading />
-          <HeroDescription />
+          <Heading />
+          <Description />
           <FeatureList />
-        </HeroSection>
+        </HeroContent>
         
-        <LoginSection>
+        <div className="w-full lg:w-[50%] flex flex-col items-center justify-center p-6 lg:p-8 xl:p-12 relative">
           <LoginCard>
             <LoginForm initialSuccessMessage={initialSuccessMessage} />
           </LoginCard>
-        </LoginSection>
+        </div>
       </div>
-    </BlueBackground>
+    </FullScreenBlueBackground>
   );
 }
 
-function BlueBackground({ children }: { children: ReactNode }) {
+function FullScreenBlueBackground({ children }: { children: ReactNode }) {
   return (
     <div 
-      className="w-[100vw] min-h-[100vh] overflow-hidden relative font-sans"
-      style={{ background: "linear-gradient(135deg, #062BCB 0%, #064FEA 50%, #1236C9 100%)" }}
+      className="min-h-screen w-full overflow-hidden relative font-sans"
+      style={{ background: "linear-gradient(135deg, #062BCB 0%, #064FEA 55%, #1236C9 100%)" }}
     >
       {/* Decorative Elements */}
       <div className="absolute inset-0 pointer-events-none z-0">
-        {/* Dotted pattern top right */}
         <div 
           className="absolute top-0 right-0 w-[400px] h-[400px] opacity-[0.08]" 
           style={{ backgroundImage: "radial-gradient(circle at 2px 2px, rgba(255,255,255,0.9) 2px, transparent 0)", backgroundSize: "32px 32px" }} 
         />
-        {/* Dotted pattern bottom left */}
         <div 
           className="absolute bottom-0 left-0 w-[300px] h-[300px] opacity-[0.08]" 
           style={{ backgroundImage: "radial-gradient(circle at 2px 2px, rgba(255,255,255,0.9) 2px, transparent 0)", backgroundSize: "32px 32px" }} 
         />
-        {/* Large soft circular gradients */}
         <div className="absolute -top-[10%] -left-[10%] w-[50%] h-[50%] rounded-full bg-white opacity-5 blur-[120px]" />
         <div className="absolute bottom-[20%] right-[10%] w-[40%] h-[40%] rounded-full bg-[#1236C9] opacity-40 blur-[100px]" />
         
-        {/* Flowing thin wave lines along the bottom */}
         <svg className="absolute bottom-0 left-0 w-full h-auto opacity-[0.15]" viewBox="0 0 1440 320" preserveAspectRatio="none">
           <path fill="none" stroke="white" strokeWidth="2" d="M0,160L48,170.7C96,181,192,203,288,197.3C384,192,480,160,576,149.3C672,139,768,149,864,170.7C960,192,1056,224,1152,213.3C1248,203,1344,149,1392,122.7L1440,96" />
           <path fill="none" stroke="white" strokeWidth="1" d="M0,224L48,213.3C96,203,192,181,288,186.7C384,192,480,224,576,218.7C672,213,768,171,864,149.3C960,128,1056,128,1152,144C1248,160,1344,192,1392,208L1440,224" />
@@ -140,9 +136,9 @@ function BackToHome() {
   );
 }
 
-function HeroSection({ children }: { children: ReactNode }) {
+function HeroContent({ children }: { children: ReactNode }) {
   return (
-    <div className="w-full lg:w-[50%] flex flex-col justify-center px-8 lg:px-[80px] py-24 lg:py-16 xl:py-24">
+    <div className="w-full lg:w-[45%] lg:max-w-[50%] flex flex-col justify-center px-8 lg:px-[80px] py-24 lg:py-16 xl:py-24">
       <div className="max-w-[560px]">
         {children}
       </div>
@@ -158,15 +154,17 @@ function Logo() {
   );
 }
 
-function HeroHeading() {
+function Heading() {
   return (
     <h1 className="text-[42px] lg:text-[52px] font-black text-white leading-[1.1] mb-6 tracking-tight">
-      Create. <span className="text-[#60A5FA]">Edit.</span> Copy.
+      <span className="text-white">Create. </span>
+      <span className="text-[#60A5FA]">Edit. </span>
+      <span className="text-white">Copy.</span>
     </h1>
   );
 }
 
-function HeroDescription() {
+function Description() {
   return (
     <p className="text-white/95 text-[16px] lg:text-[18px] mb-12 max-w-[500px] leading-relaxed font-medium">
       Your creative workspace starts here. Clip N Copy helps you create, edit, organize, and manage your content with ease.
@@ -205,20 +203,16 @@ function FeatureItem({ icon: Icon, title, desc }: { icon: any; title: string; de
   );
 }
 
-function LoginSection({ children }: { children: ReactNode }) {
-  return (
-    <div className="w-full lg:w-[50%] flex flex-col items-center justify-center p-6 lg:p-8 xl:p-12 relative">
-      {children}
-    </div>
-  );
-}
-
 function LoginCard({ children }: { children: ReactNode }) {
   return (
     <div 
-      className="w-full max-w-[480px] bg-white p-[40px] shadow-[0_24px_80px_-20px_rgba(0,0,0,0.3)] relative z-10"
+      className="w-full bg-[#FFFFFF] relative z-10"
       style={{ 
+        maxWidth: 'calc(100vw - 40px)',
+        width: '480px',
         borderRadius: '24px',
+        padding: '40px',
+        boxShadow: '0 25px 60px rgba(0,0,0,0.20)',
         maxHeight: 'calc(100vh - 80px)',
         overflowY: 'auto'
       }}
