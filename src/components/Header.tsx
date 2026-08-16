@@ -91,7 +91,7 @@ export function Header() {
           transition={{ duration: 0.5, ease: "easeOut" }}
           className="hidden bg-ink py-1.5 text-center text-xs text-ink-foreground md:block"
         >
-          Free delivery around ITPL Main Road on orders above ₹499 · Printing &amp; binding ready in
+          Free delivery around ITPL Main Road on orders above ₹79 · Printing &amp; binding ready in
           minutes
         </motion.div>
 
@@ -106,7 +106,7 @@ export function Header() {
           </button>
 
           <Link to="/" className="flex min-w-0 shrink-0 items-center gap-2.5">
-            <img src="/logo.webp" alt="Clip N Copy" className="h-13 w-auto object-contain sm:h-15 md:h-16 lg:h-[68px]" />
+            <img src="/logo.webp" alt="Clip N Copy" className="h-11 w-auto object-contain sm:h-13 md:h-14" />
           </Link>
 
           <div className="hidden flex-1 lg:block">
@@ -336,7 +336,7 @@ export function Header() {
               </div>
               <div className="flex items-center justify-between">
                 <Link to="/" onClick={() => setMobileMenuOpen(false)} className="flex items-center animate-in fade-in slide-in-from-top-4 duration-500" style={{ animationFillMode: 'both', animationDelay: '100ms' }}>
-                  <img src="/logo.webp" alt="Clip N Copy" className="h-14 w-auto object-contain drop-shadow-sm" />
+                  <img src="/logo.webp" alt="Clip N Copy" className="h-12 w-auto object-contain" />
                 </Link>
                 <button
                   onClick={() => setMobileMenuOpen(false)}

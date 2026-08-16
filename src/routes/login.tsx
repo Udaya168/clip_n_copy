@@ -149,7 +149,7 @@ function HeroContent({ children }: { children: ReactNode }) {
 function Logo() {
   return (
     <div className="mb-[35px]">
-      <img src="/logo.webp" alt="Clip N Copy" className="h-[52px] md:h-[64px] w-auto object-contain" />
+      <img src="/logo.webp" alt="Clip N Copy" className="h-[44px] md:h-[54px] w-auto object-contain" />
     </div>
   );
 }

@@ -164,7 +164,7 @@ function SignupPage() {
         <div className="card-lift rounded-3xl border border-border bg-background p-6 shadow-soft sm:p-8">
           <div className="text-center">
             <Link to="/" className="inline-block">
-              <img src="/logo.webp" alt="Clip N Copy" className="mx-auto h-14 md:h-16 w-auto object-contain" />
+              <img src="/logo.webp" alt="Clip N Copy" className="mx-auto h-12 md:h-14 w-auto object-contain" />
             </Link>
             <h1 className="mt-4 font-display text-2xl font-black tracking-tight sm:text-3xl">
               Create Account

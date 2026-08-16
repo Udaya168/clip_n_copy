@@ -27,8 +27,8 @@ export const Route = createFileRoute("/checkout")({
 });
 
 const DELIVERY = [
-  { id: "standard", label: "Standard Delivery", note: "2–3 days · Free above ₹499", icon: Truck },
-  { id: "express", label: "Express Delivery", note: "Same day before 7 PM · ₹49", icon: Zap },
+  { id: "standard", label: "Standard Delivery", note: "2–3 days · Free above ₹79", icon: Truck },
+  { id: "express", label: "Express Delivery", note: "Same day before 7 PM · ₹150", icon: Zap },
   { id: "pickup", label: "Store Pickup", note: "Ready in 30 min at Kundalahalli", icon: Store },
 ];
 
@@ -81,7 +81,8 @@ function Checkout() {
     return null;
   }
 
-  const shipping = delivery === "express" ? 49 : 0;
+  const shipping =
+    delivery === "express" ? 150 : delivery === "standard" ? (subtotal >= 79 ? 0 : 79) : 0;
 
   if (placed && createdOrder) {
     return (
