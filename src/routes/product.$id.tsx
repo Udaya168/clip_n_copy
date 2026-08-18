@@ -3,6 +3,9 @@ import { Check, Heart, ShoppingBag, Star, Truck, Minus, Plus, Store } from "luci
 import { useState } from "react";
 import { toast } from "sonner";
 import { ProductCard } from "@/components/ProductCard";
+import { ProductCarousel, ProductCarouselItem } from "@/components/ProductCarousel";
+import { ShopLayout } from "@/components/ShopLayout";
+import { useScrollRestoration } from "@/lib/useScrollRestoration";
 import { CATEGORY_NAME, REVIEWS } from "@/lib/data";
 import { supabase } from "@/lib/supabase";
 import {
@@ -76,7 +79,10 @@ function ProductDetail() {
   const [zoom, setZoom] = useState<{ x: number; y: number } | null>(null);
   const [tab, setTab] = useState<"desc" | "specs" | "reviews">("desc");
 
-  const { data: products = [] } = useSupabaseProducts();
+  const { data: products = [], isLoading } = useSupabaseProducts();
+  
+  useScrollRestoration(!isLoading);
+
   const [selectedVariant, setSelectedVariant] = useState(product.variants?.[0]?.name || "");
 
   const currentVariantObj = product.variants?.find((v: import("@/lib/data").ProductVariant) => v.name === selectedVariant);
@@ -145,19 +151,8 @@ function ProductDetail() {
   const saved = inWishlist(product.id);
 
   return (
+    <ShopLayout>
     <div className="section-shell py-8">
-      <nav className="mb-5 flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
-        <Link to="/" className="hover:text-primary">
-          Home
-        </Link>
-        <span>/</span>
-        <Link to="/shop" search={{ category: product.category }} className="hover:text-primary">
-          {CATEGORY_NAME[product.category] ?? product.category.replace(/-/g, " ")}
-        </Link>
-        <span>/</span>
-        <span className="text-foreground">{product.name}</span>
-      </nav>
-
       <div className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_26rem]">
         <div className="space-y-4">
           <div
@@ -470,14 +465,27 @@ function ProductDetail() {
         </div>
       </div>
 
-      <section className="mt-6">
-        <h2 className="mb-5 font-display text-2xl font-extrabold">Similar Products</h2>
-        <div className="grid-products">
-          {similar.map((p) => (
-            <ProductCard key={p.id} product={p} />
-          ))}
-        </div>
-      </section>
+      {similar.length > 0 && (
+        <section className="mt-6">
+          <h2 className="mb-5 font-display text-2xl font-extrabold">Similar Products</h2>
+          {similar.length >= 4 ? (
+            <ProductCarousel>
+              {similar.map((p) => (
+                <ProductCarouselItem key={p.id}>
+                  <ProductCard product={p} />
+                </ProductCarouselItem>
+              ))}
+            </ProductCarousel>
+          ) : (
+            <div className="grid-products">
+              {similar.map((p) => (
+                <ProductCard key={p.id} product={p} />
+              ))}
+            </div>
+          )}
+        </section>
+      )}
     </div>
+    </ShopLayout>
   );
 }

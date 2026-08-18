@@ -1,10 +1,11 @@
 import { useState } from "react";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useAuth } from "@/lib/auth-store";
-import { AlertCircle, CheckCircle2, Loader2, Lock, Mail, User, ArrowLeft, MailCheck } from "lucide-react";
+import { AlertCircle, CheckCircle2, Loader2, Lock, Mail, User, MailCheck } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
+import { AuthLayout } from "@/components/AuthLayout";
 
 export const Route = createFileRoute("/signup")({
   validateSearch: (search: Record<string, unknown>): { redirect?: string } => {
@@ -41,19 +42,19 @@ function SignupPage() {
   if (user) {
     const userDisplayName = profile?.full_name || (user.user_metadata?.["full_name"] as string) || user.email;
     return (
-      <div className="section-shell flex min-h-[60vh] flex-col items-center justify-center py-12">
-        <div className="card-lift w-full max-w-md rounded-3xl border border-border bg-background p-8 text-center shadow-soft">
-          <div className="mx-auto flex size-14 items-center justify-center rounded-full bg-primary/10 text-primary">
+      <div className="flex min-h-[100dvh] items-center justify-center p-6 bg-blue-50 font-sans">
+        <div className="w-full max-w-md rounded-3xl border border-slate-200 bg-white p-8 text-center shadow-lg">
+          <div className="mx-auto flex size-14 items-center justify-center rounded-full bg-[#0647E8]/10 text-[#0647E8]">
             <CheckCircle2 className="size-8" />
           </div>
-          <h1 className="mt-4 font-display text-2xl font-black">Account Active</h1>
-          <p className="mt-2 text-sm text-muted-foreground">
-            You are logged in as <span className="font-semibold text-foreground">{userDisplayName}</span>.
+          <h1 className="mt-4 text-[24px] font-black text-slate-900">Already Logged In</h1>
+          <p className="mt-2 text-[15px] text-slate-500">
+            You are signed in as <span className="font-semibold text-slate-900">{userDisplayName}</span>.
           </p>
-          <div className="mt-6">
+          <div className="mt-8">
             <Button
               onClick={() => navigate({ to: redirectTarget })}
-              className="w-full rounded-full bg-primary font-bold text-primary-foreground hover:bg-primary/90 cursor-pointer"
+              className="w-full h-[52px] rounded-xl bg-[#0647E8] font-bold text-[16px] text-white hover:bg-[#062BCB] cursor-pointer"
             >
               Continue {redirectTarget === "/checkout" ? "to Checkout" : "Shopping"}
             </Button>
@@ -66,30 +67,28 @@ function SignupPage() {
   // Requirement 1: Confirmation message screen after signup
   if (signupSuccess) {
     return (
-      <div className="section-shell flex min-h-[70vh] items-center justify-center py-12">
-        <div className="w-full max-w-md">
-          <div className="card-lift rounded-3xl border border-border bg-background p-6 shadow-soft sm:p-8 text-center">
-            <div className="mx-auto flex size-16 items-center justify-center rounded-full bg-primary/15 text-primary">
-              <MailCheck className="size-8" />
-            </div>
-            <h1 className="mt-5 font-display text-2xl font-black tracking-tight sm:text-3xl text-foreground">
-              Account created successfully.
-            </h1>
-            <p className="mt-3 text-sm font-medium text-foreground">
-              Please check your email and confirm your email address before signing in.
-            </p>
-            <p className="mt-2 text-xs text-muted-foreground">
-              After confirming your email, return to Clip N Copy and sign in.
-            </p>
-            <div className="mt-8">
-              <Link
-                to="/login"
-                search={redirect ? { redirect } : {}}
-                className="inline-flex h-11 w-full items-center justify-center rounded-full bg-primary font-bold text-primary-foreground transition-transform active:scale-[0.98] hover:bg-primary/90 cursor-pointer"
-              >
-                Go to Login
-              </Link>
-            </div>
+      <div className="flex min-h-[100dvh] items-center justify-center p-6 bg-blue-50 font-sans">
+        <div className="w-full max-w-md rounded-3xl border border-slate-200 bg-white p-8 text-center shadow-lg">
+          <div className="mx-auto flex size-16 items-center justify-center rounded-full bg-[#0647E8]/10 text-[#0647E8]">
+            <MailCheck className="size-8" />
+          </div>
+          <h1 className="mt-5 text-[24px] font-black text-slate-900">
+            Account created successfully.
+          </h1>
+          <p className="mt-3 text-[15px] font-medium text-slate-800">
+            Please check your email and confirm your email address before signing in.
+          </p>
+          <p className="mt-2 text-[13px] text-slate-500">
+            After confirming your email, return to Clip N Copy and sign in.
+          </p>
+          <div className="mt-8">
+            <Link
+              to="/login"
+              search={redirect ? { redirect } : {}}
+              className="inline-flex h-[52px] w-full items-center justify-center rounded-xl bg-[#0647E8] font-bold text-[16px] text-white hover:bg-[#062BCB] cursor-pointer"
+            >
+              Go to Login
+            </Link>
           </div>
         </div>
       </div>
@@ -152,149 +151,138 @@ function SignupPage() {
   };
 
   return (
-    <div className="section-shell flex min-h-[70vh] items-center justify-center py-12">
-      <div className="w-full max-w-md">
-        <Link
-          to="/"
-          className="mb-6 inline-flex items-center gap-2 text-xs font-semibold text-muted-foreground transition-colors hover:text-foreground"
-        >
-          <ArrowLeft className="size-4" /> Back to Home
-        </Link>
+    <AuthLayout>
+      <div className="flex flex-col items-center text-center">
+        <h2 className="text-[28px] md:text-[32px] font-black text-slate-900 mb-[6px] tracking-tight">
+          Create Account
+        </h2>
+        <p className="text-slate-500 text-[14px] mb-[24px]">
+          Create your Clip N Copy account
+        </p>
+      </div>
 
-        <div className="card-lift rounded-3xl border border-border bg-background p-6 shadow-soft sm:p-8">
-          <div className="text-center">
-            <Link to="/" className="inline-block">
-              <img src="/logo.webp" alt="Clip N Copy" className="mx-auto h-12 md:h-14 w-auto object-contain" />
-            </Link>
-            <h1 className="mt-4 font-display text-2xl font-black tracking-tight sm:text-3xl">
-              Create Account
-            </h1>
-            <p className="mt-1 text-sm text-muted-foreground">
-              Sign up for Clip N Copy to get started
-            </p>
-          </div>
-
-          {errorMessage && (
-            <div className="mt-4 flex items-start gap-2.5 rounded-2xl border border-destructive/20 bg-destructive/10 p-3.5 text-xs font-medium text-destructive">
-              <AlertCircle className="size-4 shrink-0 mt-0.5" />
-              <span>{errorMessage}</span>
-            </div>
-          )}
-
-          {successMessage && (
-            <div className="mt-4 flex items-start gap-2.5 rounded-2xl border border-primary/20 bg-primary/10 p-3.5 text-xs font-medium text-primary">
-              <CheckCircle2 className="size-4 shrink-0 mt-0.5" />
-              <span>{successMessage}</span>
-            </div>
-          )}
-
-          <form onSubmit={handleSignup} className="mt-6 space-y-4">
-            <div className="space-y-1.5">
-              <Label htmlFor="full-name" className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
-                Full Name
-              </Label>
-              <div className="relative">
-                <User className="absolute left-3.5 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
-                <Input
-                  id="full-name"
-                  type="text"
-                  autoComplete="name"
-                  placeholder="John Doe"
-                  value={fullName}
-                  onChange={(e) => setFullName(e.target.value)}
-                  required
-                  className="h-11 rounded-xl pl-10 text-sm border-border bg-background focus-visible:ring-primary"
-                />
-              </div>
-            </div>
-
-            <div className="space-y-1.5">
-              <Label htmlFor="email" className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
-                Email Address
-              </Label>
-              <div className="relative">
-                <Mail className="absolute left-3.5 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
-                <Input
-                  id="email"
-                  type="email"
-                  autoComplete="email"
-                  placeholder="you@example.com"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  required
-                  className="h-11 rounded-xl pl-10 text-sm border-border bg-background focus-visible:ring-primary"
-                />
-              </div>
-            </div>
-
-            <div className="space-y-1.5">
-              <Label htmlFor="password" className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
-                Password
-              </Label>
-              <div className="relative">
-                <Lock className="absolute left-3.5 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
-                <Input
-                  id="password"
-                  type="password"
-                  autoComplete="new-password"
-                  placeholder="At least 6 characters"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  required
-                  minLength={6}
-                  className="h-11 rounded-xl pl-10 text-sm border-border bg-background focus-visible:ring-primary"
-                />
-              </div>
-            </div>
-
-            <div className="space-y-1.5">
-              <Label htmlFor="confirm-password" className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
-                Confirm Password
-              </Label>
-              <div className="relative">
-                <Lock className="absolute left-3.5 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
-                <Input
-                  id="confirm-password"
-                  type="password"
-                  autoComplete="new-password"
-                  placeholder="Re-enter password"
-                  value={confirmPassword}
-                  onChange={(e) => setConfirmPassword(e.target.value)}
-                  required
-                  className="h-11 rounded-xl pl-10 text-sm border-border bg-background focus-visible:ring-primary"
-                />
-              </div>
-            </div>
-
-            <Button
-              type="submit"
-              disabled={loading}
-              className="mt-2 h-11 w-full rounded-full bg-primary font-bold text-primary-foreground transition-transform active:scale-[0.98] hover:bg-primary/90 cursor-pointer"
-            >
-              {loading ? (
-                <span className="flex items-center justify-center gap-2">
-                  <Loader2 className="size-4 animate-spin" /> Creating account...
-                </span>
-              ) : (
-                "Create Account"
-              )}
-            </Button>
-          </form>
-
-          <div className="mt-6 border-t border-border pt-6 text-center">
-            <p className="text-xs text-muted-foreground">
-              Already have an account?{" "}
-              <Link
-                to="/login"
-                search={redirect ? { redirect } : {}}
-                className="font-bold text-primary hover:underline"
-              >
-                Login
-              </Link>
-            </p>
+      {errorMessage && (
+        <div className="mb-[16px] rounded-[12px] border border-red-200 bg-red-50 p-3 text-[13px] font-medium text-red-700 space-y-2">
+          <div className="flex items-start gap-2">
+            <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
+            <span>{errorMessage}</span>
           </div>
         </div>
-      </div>
-    </div>
+      )}
+
+      {successMessage && (
+        <div className="mb-[16px] flex items-start gap-2 rounded-[12px] border border-blue-200 bg-blue-50 p-3 text-[13px] font-medium text-blue-700">
+          <CheckCircle2 className="w-4 h-4 shrink-0 mt-0.5" />
+          <span>{successMessage}</span>
+        </div>
+      )}
+
+      <form onSubmit={handleSignup} className="space-y-[12px]">
+        <div className="space-y-[6px]">
+          <Label htmlFor="full-name" className="text-[11px] font-bold uppercase tracking-wider text-slate-500 ml-1">
+            Name
+          </Label>
+          <div className="relative group">
+            <User className="absolute left-4 top-1/2 w-[18px] h-[18px] -translate-y-1/2 text-slate-400 transition-colors group-focus-within:text-[#0647E8]" />
+            <Input
+              id="full-name"
+              type="text"
+              autoComplete="name"
+              placeholder="John Doe"
+              value={fullName}
+              onChange={(e) => setFullName(e.target.value)}
+              required
+              className="h-[48px] rounded-[14px] pl-[44px] text-[15px] border-slate-200 bg-slate-50/50 focus-visible:ring-[#0647E8] focus-visible:border-[#0647E8] transition-all duration-300 hover:border-slate-300 focus:bg-white focus:shadow-sm"
+            />
+          </div>
+        </div>
+
+        <div className="space-y-[6px]">
+          <Label htmlFor="email" className="text-[11px] font-bold uppercase tracking-wider text-slate-500 ml-1">
+            Email
+          </Label>
+          <div className="relative group">
+            <Mail className="absolute left-4 top-1/2 w-[18px] h-[18px] -translate-y-1/2 text-slate-400 transition-colors group-focus-within:text-[#0647E8]" />
+            <Input
+              id="email"
+              type="email"
+              autoComplete="email"
+              placeholder="you@example.com"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              required
+              className="h-[48px] rounded-[14px] pl-[44px] text-[15px] border-slate-200 bg-slate-50/50 focus-visible:ring-[#0647E8] focus-visible:border-[#0647E8] transition-all duration-300 hover:border-slate-300 focus:bg-white focus:shadow-sm"
+            />
+          </div>
+        </div>
+
+        <div className="space-y-[6px]">
+          <Label htmlFor="password" className="text-[11px] font-bold uppercase tracking-wider text-slate-500 ml-1">
+            Password
+          </Label>
+          <div className="relative group">
+            <Lock className="absolute left-4 top-1/2 w-[18px] h-[18px] -translate-y-1/2 text-slate-400 transition-colors group-focus-within:text-[#0647E8]" />
+            <Input
+              id="password"
+              type="password"
+              autoComplete="new-password"
+              placeholder="At least 6 characters"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              required
+              minLength={6}
+              className="h-[48px] rounded-[14px] pl-[44px] text-[15px] border-slate-200 bg-slate-50/50 focus-visible:ring-[#0647E8] focus-visible:border-[#0647E8] transition-all duration-300 hover:border-slate-300 focus:bg-white focus:shadow-sm"
+            />
+          </div>
+        </div>
+
+        <div className="space-y-[6px]">
+          <Label htmlFor="confirm-password" className="text-[11px] font-bold uppercase tracking-wider text-slate-500 ml-1">
+            Confirm Password
+          </Label>
+          <div className="relative group">
+            <Lock className="absolute left-4 top-1/2 w-[18px] h-[18px] -translate-y-1/2 text-slate-400 transition-colors group-focus-within:text-[#0647E8]" />
+            <Input
+              id="confirm-password"
+              type="password"
+              autoComplete="new-password"
+              placeholder="Re-enter password"
+              value={confirmPassword}
+              onChange={(e) => setConfirmPassword(e.target.value)}
+              required
+              className="h-[48px] rounded-[14px] pl-[44px] text-[15px] border-slate-200 bg-slate-50/50 focus-visible:ring-[#0647E8] focus-visible:border-[#0647E8] transition-all duration-300 hover:border-slate-300 focus:bg-white focus:shadow-sm"
+            />
+          </div>
+        </div>
+
+        <Button
+          type="submit"
+          disabled={loading}
+          className="mt-[24px] h-[48px] w-full rounded-[14px] border-0 text-white font-bold text-[16px] shadow-[0_8px_20px_-8px_rgba(6,71,232,0.5)] transition-all duration-300 hover:-translate-y-[2px] hover:shadow-[0_12px_24px_-8px_rgba(6,71,232,0.6)] hover:brightness-105 active:translate-y-[0px] cursor-pointer bg-[#0647E8]"
+        >
+          {loading ? (
+            <span className="flex items-center gap-2">
+              <Loader2 className="w-5 h-5 animate-spin" /> Creating account...
+            </span>
+          ) : (
+            "Create Account"
+          )}
+        </Button>
+        
+        <div className="mt-[16px] text-center">
+          <p className="text-[14px] text-slate-600">
+            Already have an account?{" "}
+            <Link
+              to="/login"
+              search={redirect ? { redirect } : {}}
+              className="font-bold text-[#0647E8] hover:text-[#062BCB] hover:underline transition-all duration-300"
+            >
+              Sign In
+            </Link>
+          </p>
+        </div>
+      </form>
+    </AuthLayout>
   );
 }
+

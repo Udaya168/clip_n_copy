@@ -3,8 +3,10 @@ import { SlidersHorizontal, X } from "lucide-react";
 import { useMemo, useState, useEffect } from "react";
 import { ProductCard, ProductSkeleton } from "@/components/ProductCard";
 import { isProductMatch } from "@/components/SearchBar";
+import { ShopLayout } from "@/components/ShopLayout";
 import { BRANDS, CATEGORIES, CATEGORY_NAME, RAW_CATEGORIES } from "@/lib/data";
 import { useSupabaseProducts } from "@/lib/supabase-products";
+import { useScrollRestoration } from "@/lib/useScrollRestoration";
 import { inr } from "@/lib/shop-store";
 import { cn } from "@/lib/utils";
 
@@ -50,6 +52,9 @@ const SORTS = [
 function Shop() {
   const { category, q, tag } = Route.useSearch();
   const { data: products = [], isLoading, isError, error, refetch } = useSupabaseProducts();
+  
+  useScrollRestoration(!isLoading);
+
   const catalogMaxPrice = useMemo(() => {
     if (!products || !Array.isArray(products) || products.length === 0) return 5000;
     
@@ -241,15 +246,8 @@ function Shop() {
   );
 
   return (
-    <div className="section-shell py-8">
-      <nav className="mb-4 flex items-center gap-2 text-xs text-muted-foreground">
-        <Link to="/" className="hover:text-primary">
-          Home
-        </Link>
-        <span>/</span>
-        <span className="text-foreground">{title}</span>
-      </nav>
-
+    <ShopLayout>
+      <div className="section-shell py-8">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
         <div className="min-w-0">
           <h1 className="font-display text-2xl font-extrabold text-balance sm:text-3xl">{title}</h1>
@@ -286,72 +284,83 @@ function Shop() {
         </aside>
 
         <div>
+
           {isLoading ? (
             <div className="grid-products">
-              {Array.from({ length: 6 }).map((_, i) => (
+              {Array.from({ length: 8 }).map((_, i) => (
                 <ProductSkeleton key={i} />
               ))}
             </div>
           ) : isError ? (
-            <div className="surface-card space-y-4 p-10 text-center border border-destructive/20">
-              <p className="font-display text-lg font-bold text-destructive">
-                Failed to load products from Supabase
-              </p>
-              <p className="text-sm text-muted-foreground">
-                {error?.message || "An error occurred while fetching products."}
-              </p>
+            <div className="surface-card p-8 text-center border border-destructive/20 space-y-4">
+              <p className="font-display text-xl font-bold text-destructive">Failed to load products</p>
+              <p className="text-muted-foreground">{error?.message}</p>
               <button
                 onClick={() => refetch()}
-                className="inline-flex h-10 items-center justify-center rounded-full bg-primary px-5 text-sm font-semibold text-primary-foreground"
+                className="inline-flex h-10 items-center justify-center rounded-full bg-[#0B2455] px-5 text-sm font-semibold text-white transition-transform hover:scale-105 active:scale-95"
               >
                 Try Again
               </button>
             </div>
-          ) : products.length === 0 ? (
-            <div className="surface-card space-y-2 p-10 text-center">
-              <p className="font-display text-lg font-bold">No products found</p>
-              <p className="text-sm text-muted-foreground">
-                The Supabase products table is currently empty.
-              </p>
+          ) : results.length === 0 ? (
+            <div className="surface-card flex flex-col items-center justify-center py-16 text-center shadow-[0_4px_24px_-8px_rgba(11,92,255,0.08)] border border-[#EAF2FF]">
+              <div className="grid size-16 place-items-center rounded-full bg-[#F4F8FF] text-[#075BFF] mb-4">
+                <SlidersHorizontal className="size-8" />
+              </div>
+              <p className="font-display text-xl font-bold text-[#0B2455]">No matching products</p>
+              <p className="mt-2 text-[#0B2455]/60 max-w-sm">Try adjusting your filters, searching for a different term, or browsing another category.</p>
+              {(brands.length > 0 || inStockOnly || minRating > 0 || currentMaxPrice !== catalogMaxPrice) && (
+                <button
+                  onClick={() => {
+                    setBrands([]);
+                    setInStockOnly(false);
+                    setMinRating(0);
+                    setMaxPrice(null);
+                  }}
+                  className="mt-6 font-semibold text-[#075BFF] hover:underline"
+                >
+                  Clear all filters
+                </button>
+              )}
             </div>
-          ) : results.length ? (
+          ) : (
             <div className="grid-products">
               {results.map((p) => (
                 <ProductCard key={p.id} product={p} />
               ))}
             </div>
-          ) : (
-            <div className="surface-card p-10 text-center">
-              <p className="font-display text-lg font-bold">No products match those filters</p>
-              <p className="mt-1 text-sm text-muted-foreground">
-                Try widening the price range or clearing brand filters.
-              </p>
-            </div>
           )}
         </div>
       </div>
 
+      {/* Mobile Filters Modal */}
       {filtersOpen && (
-        <div className="fixed inset-0 z-70 lg:hidden">
-          <div className="absolute inset-0 bg-ink/50" onClick={() => setFiltersOpen(false)} />
-          <div className="absolute inset-y-0 left-0 flex w-[86%] max-w-84 flex-col bg-background">
-            <div className="flex items-center justify-between border-b border-border p-4">
-              <span className="font-display font-extrabold">Filters</span>
-              <button onClick={() => setFiltersOpen(false)} aria-label="Close filters">
+        <div className="fixed inset-0 z-[100] md:hidden">
+          <div className="absolute inset-0 bg-[#0B2455]/40 backdrop-blur-sm animate-in fade-in" onClick={() => setFiltersOpen(false)} />
+          <div className="absolute inset-y-0 right-0 flex w-[320px] max-w-full flex-col bg-white shadow-2xl animate-in slide-in-from-right rounded-l-3xl overflow-hidden">
+            <div className="flex h-16 items-center justify-between border-b border-[#EAF2FF] px-6">
+              <span className="font-display text-lg font-bold text-[#0B2455]">Filters</span>
+              <button
+                onClick={() => setFiltersOpen(false)}
+                className="grid size-8 place-items-center rounded-full text-[#0B2455]/50 hover:bg-[#F4F8FF] hover:text-[#0B2455]"
+              >
                 <X className="size-5" />
               </button>
             </div>
-            <div className="flex-1 overflow-y-auto p-4">{filters}</div>
-            <button
-              onClick={() => setFiltersOpen(false)}
-              className="m-4 h-12 rounded-full bg-primary font-semibold text-primary-foreground"
-            >
-              Show {results.length} products
-            </button>
+            <div className="flex-1 overflow-y-auto px-6 py-4">{filters}</div>
+            <div className="border-t border-[#EAF2FF] p-4 bg-[#F4F8FF]/50">
+              <button
+                onClick={() => setFiltersOpen(false)}
+                className="flex h-12 w-full items-center justify-center rounded-xl bg-[#075BFF] text-sm font-bold text-white shadow-[0_8px_16px_-4px_rgba(7,91,255,0.4)] transition-transform hover:scale-[1.02] active:scale-[0.98]"
+              >
+                Show {results.length} products
+              </button>
+            </div>
           </div>
         </div>
       )}
     </div>
+    </ShopLayout>
   );
 }
 

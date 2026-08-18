@@ -69,176 +69,17 @@ export default function LoginPage() {
   return <SignInPage initialSuccessMessage={successMessage} />;
 }
 
+import { AuthLayout } from "@/components/AuthLayout";
+
 // ----------------------------------------------------------------------
 // COMPONENT STRUCTURE
 // ----------------------------------------------------------------------
 
 function SignInPage({ initialSuccessMessage }: { initialSuccessMessage: string | null }) {
   return (
-    <div className="min-h-[100dvh] lg:h-[100dvh] w-full relative font-sans flex flex-col bg-[#0647E8] overflow-x-hidden overflow-y-auto lg:overflow-hidden box-border">
-      
-      {/* Background Cutout */}
-      <div 
-        className="absolute top-0 right-0 h-full w-[60%] bg-[#F8FAFC] hidden lg:block"
-        style={{
-          clipPath: 'polygon(20% 0, 100% 0, 100% 100%, 0% 100%)'
-        }}
-      />
-      
-      {/* Soft overlay patterns (optional) */}
-      <div className="absolute inset-0 pointer-events-none z-0 overflow-hidden">
-        <div 
-          className="absolute inset-0 opacity-[0.1]" 
-          style={{ backgroundImage: "radial-gradient(circle at 2px 2px, #ffffff 2px, transparent 0)", backgroundSize: "32px 32px" }} 
-        />
-        <div className="absolute -top-[10%] -left-[5%] w-[40%] h-[40%] rounded-full bg-white/10 blur-[100px]" />
-      </div>
-
-      <div className="flex flex-col lg:flex-row w-full flex-1 relative z-10 h-full">
-        
-        {/* Left Side: Promotional Panel */}
-        <div className="w-full lg:w-[45%] flex flex-col px-6 lg:px-[60px] xl:px-[80px] py-[32px] relative z-10 shrink-0 lg:h-full box-border">
-          <div className="flex-none mb-[20px]">
-            <BackToHome />
-          </div>
-          <div className="flex-1 flex flex-col justify-center max-w-[500px] w-full mx-auto lg:mx-0 animate-slide-right">
-            <Logo />
-            <Heading />
-            <Description />
-            <FeatureList />
-          </div>
-        </div>
-        
-        {/* Right Side: Login Card */}
-        <div className="w-full lg:w-[55%] flex flex-col items-center justify-center p-6 lg:p-12 relative z-20 shrink-0 lg:h-full animate-slide-left box-border">
-          <LoginCard>
-            <LoginForm initialSuccessMessage={initialSuccessMessage} />
-          </LoginCard>
-        </div>
-      </div>
-      
-      <style>
-        {`
-          .animate-slide-right { animation: fadeSlideRight 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
-          .animate-slide-left { animation: fadeSlideLeft 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
-          .animate-fade-scale { animation: fadeScale 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
-          
-          @keyframes fadeSlideRight {
-            from { opacity: 0; transform: translateX(-30px); }
-            to { opacity: 1; transform: translateX(0); }
-          }
-          @keyframes fadeSlideLeft {
-            from { opacity: 0; transform: translateX(30px); }
-            to { opacity: 1; transform: translateX(0); }
-          }
-          @keyframes fadeScale {
-            from { opacity: 0; transform: scale(0.95); }
-            to { opacity: 1; transform: scale(1); }
-          }
-          @keyframes staggerUp {
-            from { opacity: 0; transform: translateY(20px); }
-            to { opacity: 1; transform: translateY(0); }
-          }
-          .stagger-1 { animation: staggerUp 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards; animation-delay: 0.1s; opacity: 0; }
-          .stagger-2 { animation: staggerUp 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards; animation-delay: 0.2s; opacity: 0; }
-          .stagger-3 { animation: staggerUp 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards; animation-delay: 0.3s; opacity: 0; }
-          .stagger-4 { animation: staggerUp 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards; animation-delay: 0.4s; opacity: 0; }
-          
-          .custom-scrollbar-white::-webkit-scrollbar { width: 6px; }
-          .custom-scrollbar-white::-webkit-scrollbar-track { background: transparent; }
-          .custom-scrollbar-white::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.2); border-radius: 4px; }
-        `}
-      </style>
-    </div>
-  );
-}
-
-function BackToHome() {
-  return (
-    <Link 
-      to="/" 
-      className="inline-flex items-center gap-2 text-blue-100 hover:text-white transition-colors text-[14px] font-medium z-30 animate-fade-scale w-fit"
-    >
-      <ArrowLeft className="w-[18px] h-[18px]" /> Back to Home
-    </Link>
-  );
-}
-
-function Logo() {
-  return (
-    <div className="mb-[16px] animate-fade-scale">
-      <img src="/logo.webp" alt="Clip N Copy" className="h-[44px] md:h-[50px] w-auto object-contain" />
-      <div className="mt-1 text-[10px] font-bold text-blue-200 tracking-[0.2em]">
-        BOOK, STATIONERY & PRINTING
-      </div>
-    </div>
-  );
-}
-
-function Heading() {
-  return (
-    <h1 className="text-[52px] font-black text-white leading-[0.95] mb-[12px] tracking-tight">
-      <div className="animate-slide-right" style={{ animationDelay: '0.1s', opacity: 0, animationFillMode: 'forwards' }}>Create.</div>
-      <div className="text-blue-200 animate-slide-right" style={{ animationDelay: '0.2s', opacity: 0, animationFillMode: 'forwards' }}>Edit.</div>
-      <div className="animate-slide-right" style={{ animationDelay: '0.3s', opacity: 0, animationFillMode: 'forwards' }}>Copy.</div>
-    </h1>
-  );
-}
-
-function Description() {
-  return (
-    <p className="text-blue-100 text-[18px] max-w-[500px] leading-[1.4] mb-[16px] font-medium stagger-1">
-      Your creative workspace starts here. Clip N Copy helps you create, edit, organize, and manage your content with ease.
-    </p>
-  );
-}
-
-function FeatureList() {
-  const features = [
-    { icon: Zap, title: "FAST CONTENT CREATION", desc: "Streamline your workflow." },
-    { icon: Edit3, title: "SMART EDITING TOOLS", desc: "Everything you need to polish your work." },
-    { icon: Layers, title: "EASY PROJECT MANAGEMENT", desc: "Organize your projects efficiently." },
-    { icon: Cloud, title: "SECURE CLOUD STORAGE", desc: "Keep your data safe and accessible." },
-  ];
-
-  return (
-    <div className="flex flex-col gap-[10px]">
-      {features.map((f, i) => (
-        <div key={i} className={`stagger-${i+1}`}>
-          <FeatureItem icon={f.icon} title={f.title} desc={f.desc} />
-        </div>
-      ))}
-    </div>
-  );
-}
-
-function FeatureItem({ icon: Icon, title, desc }: { icon: any; title: string; desc: string }) {
-  return (
-    <div className="flex items-center gap-[16px] px-[16px] py-[8px] rounded-2xl bg-white/5 border border-white/10 hover:bg-white/10 hover:border-white/20 transition-all duration-300 hover:-translate-y-1 hover:shadow-sm group cursor-default h-[62px] box-border">
-      <div className="w-[48px] h-[48px] bg-white rounded-full flex items-center justify-center shadow-sm shrink-0 group-hover:scale-105 transition-transform">
-        <Icon className="w-[20px] h-[20px] text-[#0647E8] transition-transform duration-300" />
-      </div>
-      <div className="flex flex-col justify-center">
-        <h3 className="text-white font-bold text-[16px] tracking-wide leading-tight">{title}</h3>
-        <p className="text-blue-200 text-[14px] mt-0.5 leading-tight">{desc}</p>
-      </div>
-    </div>
-  );
-}
-
-function LoginCard({ children }: { children: ReactNode }) {
-  return (
-    <div 
-      className="w-full bg-[#FFFFFF] relative z-20 mx-auto"
-      style={{ 
-        maxWidth: '540px',
-        borderRadius: '30px',
-        padding: '44px 40px',
-        boxShadow: '0 40px 80px rgba(0,0,0,0.15), 0 0 1px rgba(0,0,0,0.1)'
-      }}
-    >
-      {children}
-    </div>
+    <AuthLayout>
+      <LoginForm initialSuccessMessage={initialSuccessMessage} />
+    </AuthLayout>
   );
 }
 
@@ -369,16 +210,16 @@ function LoginForm({ initialSuccessMessage }: { initialSuccessMessage: string | 
       <div className="flex flex-col items-center text-center">
         {!resetMode && (
           <span 
-            className="bg-[#EFF6FF] text-[#0647E8] text-[11px] font-bold px-3 py-1 rounded-full tracking-widest uppercase mb-[16px]"
+            className="bg-[#EFF6FF] text-[#0647E8] text-[11px] font-bold px-3 py-1 rounded-full tracking-widest uppercase mb-[12px]"
           >
             WELCOME BACK
           </span>
         )}
         
-        <h2 className="text-[28px] md:text-[32px] font-black text-slate-900 mb-[8px] tracking-tight">
+        <h2 className="text-[28px] md:text-[32px] font-black text-slate-900 mb-[6px] tracking-tight">
           {resetMode ? "Reset Password" : "Sign In"}
         </h2>
-        <p className="text-slate-500 text-[14px] mb-[32px]">
+        <p className="text-slate-500 text-[14px] mb-[24px]">
           {resetMode 
             ? "Enter your email to receive password reset instructions." 
             : "Sign in to continue creating with Clip N Copy."}
@@ -386,7 +227,7 @@ function LoginForm({ initialSuccessMessage }: { initialSuccessMessage: string | 
       </div>
 
       {errorMessage && (
-        <div className="mb-[20px] rounded-[12px] border border-red-200 bg-red-50 p-3 text-[13px] font-medium text-red-700 space-y-2">
+        <div className="mb-[16px] rounded-[12px] border border-red-200 bg-red-50 p-3 text-[13px] font-medium text-red-700 space-y-2">
           <div className="flex items-start gap-2">
             <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
             <span>{errorMessage}</span>
@@ -413,15 +254,15 @@ function LoginForm({ initialSuccessMessage }: { initialSuccessMessage: string | 
       )}
 
       {successMessage && (
-        <div className="mb-[20px] flex items-start gap-2 rounded-[12px] border border-blue-200 bg-blue-50 p-3 text-[13px] font-medium text-blue-700">
+        <div className="mb-[16px] flex items-start gap-2 rounded-[12px] border border-blue-200 bg-blue-50 p-3 text-[13px] font-medium text-blue-700">
           <CheckCircle2 className="w-4 h-4 shrink-0 mt-0.5" />
           <span>{successMessage}</span>
         </div>
       )}
 
       {!resetMode ? (
-        <form onSubmit={handleLogin} className="space-y-[20px]">
-          <div className="space-y-[8px]">
+        <form onSubmit={handleLogin} className="space-y-[12px]">
+          <div className="space-y-[6px]">
             <Label htmlFor="email" className="text-[11px] font-bold uppercase tracking-wider text-slate-500 ml-1">
               EMAIL ADDRESS
             </Label>
@@ -435,12 +276,12 @@ function LoginForm({ initialSuccessMessage }: { initialSuccessMessage: string | 
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
-                className="h-[52px] rounded-[14px] pl-[44px] text-[15px] border-slate-200 bg-slate-50/50 focus-visible:ring-[#0647E8] focus-visible:border-[#0647E8] transition-all duration-300 hover:border-slate-300 focus:bg-white focus:shadow-sm"
+                className="h-[48px] rounded-[14px] pl-[44px] text-[15px] border-slate-200 bg-slate-50/50 focus-visible:ring-[#0647E8] focus-visible:border-[#0647E8] transition-all duration-300 hover:border-slate-300 focus:bg-white focus:shadow-sm"
               />
             </div>
           </div>
 
-          <div className="space-y-[8px]">
+          <div className="space-y-[6px]">
             <div className="flex items-center justify-between ml-1">
               <Label htmlFor="password" className="text-[11px] font-bold uppercase tracking-wider text-slate-500">
                 PASSWORD
@@ -467,7 +308,7 @@ function LoginForm({ initialSuccessMessage }: { initialSuccessMessage: string | 
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
-                className="h-[52px] rounded-[14px] pl-[44px] text-[15px] border-slate-200 bg-slate-50/50 focus-visible:ring-[#0647E8] focus-visible:border-[#0647E8] transition-all duration-300 hover:border-slate-300 focus:bg-white focus:shadow-sm"
+                className="h-[48px] rounded-[14px] pl-[44px] text-[15px] border-slate-200 bg-slate-50/50 focus-visible:ring-[#0647E8] focus-visible:border-[#0647E8] transition-all duration-300 hover:border-slate-300 focus:bg-white focus:shadow-sm"
               />
             </div>
           </div>
@@ -488,7 +329,7 @@ function LoginForm({ initialSuccessMessage }: { initialSuccessMessage: string | 
           <Button
             type="submit"
             disabled={loading}
-            className="mt-[32px] h-[56px] w-full rounded-[14px] border-0 text-white font-bold text-[16px] shadow-[0_8px_20px_-8px_rgba(6,71,232,0.5)] transition-all duration-300 hover:-translate-y-[2px] hover:shadow-[0_12px_24px_-8px_rgba(6,71,232,0.6)] hover:brightness-105 active:translate-y-[0px] cursor-pointer bg-[#0647E8]"
+            className="mt-[24px] h-[48px] w-full rounded-[14px] border-0 text-white font-bold text-[16px] shadow-[0_8px_20px_-8px_rgba(6,71,232,0.5)] transition-all duration-300 hover:-translate-y-[2px] hover:shadow-[0_12px_24px_-8px_rgba(6,71,232,0.6)] hover:brightness-105 active:translate-y-[0px] cursor-pointer bg-[#0647E8]"
           >
             {loading ? (
               <span className="flex items-center gap-2">
@@ -499,7 +340,7 @@ function LoginForm({ initialSuccessMessage }: { initialSuccessMessage: string | 
             )}
           </Button>
           
-          <div className="relative mt-[24px] flex items-center justify-center py-[8px]">
+          <div className="relative mt-[20px] flex items-center justify-center py-[8px]">
             <div className="absolute inset-0 flex items-center">
               <div className="w-full border-t border-slate-200" />
             </div>
@@ -508,7 +349,7 @@ function LoginForm({ initialSuccessMessage }: { initialSuccessMessage: string | 
             </div>
           </div>
 
-          <div className="mt-[20px] text-center">
+          <div className="mt-[16px] text-center">
             <p className="text-[14px] text-slate-600">
               Don't have an account?{" "}
               <Link
@@ -522,8 +363,8 @@ function LoginForm({ initialSuccessMessage }: { initialSuccessMessage: string | 
           </div>
         </form>
       ) : (
-        <form onSubmit={handleForgotPassword} className="space-y-[20px]">
-          <div className="space-y-[8px]">
+        <form onSubmit={handleForgotPassword} className="space-y-[12px]">
+          <div className="space-y-[6px]">
             <Label htmlFor="reset-email" className="text-[11px] font-bold uppercase tracking-wider text-slate-500 ml-1">
               EMAIL ADDRESS
             </Label>
@@ -536,7 +377,7 @@ function LoginForm({ initialSuccessMessage }: { initialSuccessMessage: string | 
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
-                className="h-[52px] rounded-[14px] pl-[44px] text-[15px] border-slate-200 bg-slate-50/50 focus-visible:ring-[#0647E8] focus-visible:border-[#0647E8] transition-all duration-300 hover:border-slate-300 focus:bg-white focus:shadow-sm"
+                className="h-[48px] rounded-[14px] pl-[44px] text-[15px] border-slate-200 bg-slate-50/50 focus-visible:ring-[#0647E8] focus-visible:border-[#0647E8] transition-all duration-300 hover:border-slate-300 focus:bg-white focus:shadow-sm"
               />
             </div>
           </div>
@@ -544,7 +385,7 @@ function LoginForm({ initialSuccessMessage }: { initialSuccessMessage: string | 
           <Button
             type="submit"
             disabled={loading}
-            className="mt-[32px] h-[56px] w-full rounded-[14px] border-0 text-white font-bold text-[16px] shadow-[0_8px_20px_-8px_rgba(6,71,232,0.5)] transition-all duration-300 hover:-translate-y-[2px] hover:shadow-[0_12px_24px_-8px_rgba(6,71,232,0.6)] hover:brightness-105 active:translate-y-[0px] cursor-pointer bg-[#0647E8]"
+            className="mt-[24px] h-[48px] w-full rounded-[14px] border-0 text-white font-bold text-[16px] shadow-[0_8px_20px_-8px_rgba(6,71,232,0.5)] transition-all duration-300 hover:-translate-y-[2px] hover:shadow-[0_12px_24px_-8px_rgba(6,71,232,0.6)] hover:brightness-105 active:translate-y-[0px] cursor-pointer bg-[#0647E8]"
           >
             {loading ? (
               <span className="flex items-center gap-2">
@@ -562,7 +403,7 @@ function LoginForm({ initialSuccessMessage }: { initialSuccessMessage: string | 
               setErrorMessage(null);
               setSuccessMessage(null);
             }}
-            className="w-full mt-[20px] text-[14px] font-semibold text-slate-500 hover:text-slate-900 transition-colors cursor-pointer"
+            className="w-full mt-[16px] text-[14px] font-semibold text-slate-500 hover:text-slate-900 transition-colors cursor-pointer"
           >
             Back to Login
           </button>

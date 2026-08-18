@@ -28,17 +28,21 @@ function FAQItem({ question, answer }: { question: string; answer: string }) {
   );
 }
 
+import { useAppBack } from "@/lib/useAppBack";
+
 function HelpPage() {
+  const goBack = useAppBack();
+
   return (
     <div className="section-shell py-10">
       <div className="mb-6">
-        <Link
-          to="/"
-          className="inline-flex items-center gap-2 text-sm font-semibold text-primary hover:underline"
+        <button
+          onClick={() => goBack("/")}
+          className="inline-flex items-center gap-2 text-sm font-semibold text-primary hover:underline cursor-pointer"
         >
           <ArrowLeft className="size-4" />
           Back to Home
-        </Link>
+        </button>
       </div>
 
       <div className="mb-10 max-w-2xl">

@@ -12,8 +12,6 @@ import { useEffect, type ReactNode } from "react";
 
 import appCss from "../styles.css?url";
 import { reportLovableError } from "../lib/lovable-error-reporting";
-import { Header } from "@/components/Header";
-import { Footer } from "@/components/Footer";
 import { CartDrawer } from "@/components/CartDrawer";
 import { ShopProvider } from "@/lib/shop-store";
 import { AuthProvider } from "@/lib/auth-store";
@@ -134,12 +132,10 @@ function RootComponent() {
       <AuthProvider>
         <ShopProvider>
           <div className="flex flex-col min-h-[100dvh]">
-            {!hideStorefrontNavigation && <Header />}
-            <main className="flex-1 flex flex-col">
+            <main className="flex-1 flex flex-col min-h-0">
               {/* Required: nested routes render here. Removing <Outlet /> breaks all child routes. */}
               <Outlet />
             </main>
-            {isHome && <Footer />}
           </div>
           {!hideStorefrontNavigation && <CartDrawer />}
           <Toaster position="bottom-right" />

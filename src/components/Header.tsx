@@ -287,98 +287,53 @@ export function Header() {
       </header>
       {/* Mobile Slide-Out Navigation Drawer (rendered as sibling outside header) */}
       {mobileMenuOpen && (
-        <>
-          <style>{`
-            @keyframes shimmer {
-              0% { transform: translateX(-100%); opacity: 0; }
-              50% { opacity: 1; }
-              100% { transform: translateX(100%); opacity: 0; }
-            }
-            @keyframes breathingGlow {
-              0%, 100% { box-shadow: 0 12px 24px -8px rgba(6,71,232,0.6), 0 0 0px rgba(6,71,232,0); }
-              50% { box-shadow: 0 16px 32px -8px rgba(6,71,232,0.7), 0 0 15px rgba(6,71,232,0.4); }
-            }
-            .animate-shimmer {
-              animation: shimmer 2s infinite cubic-bezier(0.4, 0, 0.2, 1);
-            }
-            .animate-breathing-glow {
-              animation: breathingGlow 3s infinite ease-in-out;
-            }
-          `}</style>
-          <div className="fixed inset-0 z-[100] lg:hidden">
+        <div className="fixed inset-0 z-[100] lg:hidden">
           {/* Backdrop (Tapping outside closes drawer) */}
           <div
-            className="absolute inset-0 bg-ink/60 backdrop-blur-md cursor-pointer animate-in fade-in duration-300"
+            className="absolute inset-0 bg-ink/60 backdrop-blur-sm cursor-pointer animate-in fade-in duration-300"
             onClick={() => setMobileMenuOpen(false)}
           />
 
           {/* Slide-out Drawer Panel */}
-          {/* Slide-out Drawer Panel */}
-          {/* Slide-out Drawer Panel */}
-          {/* Slide-out Drawer Panel */}
-          <div className="fixed inset-y-0 left-0 flex w-[92vw] max-w-[420px] flex-col bg-white shadow-[20px_0_50px_rgba(11,36,85,0.15)] z-[101] rounded-tr-[36px] rounded-br-[36px] overflow-hidden border-r border-[#EAF2FF] animate-in slide-in-from-left fade-in zoom-in-[0.98] duration-300 ease-out">
+          <div className="fixed inset-y-0 left-0 flex w-[85vw] max-w-[360px] flex-col bg-white shadow-xl z-[101] rounded-r-[18px] overflow-hidden animate-in slide-in-from-left fade-in duration-300 ease-out">
             
-            {/* 1. Top Section (Premium Blue Decorative Wave Header) */}
-            <div className="relative shrink-0 bg-white px-7 pt-12 pb-8 border-b border-[#EAF2FF] overflow-hidden">
-              {/* Decorative Blue Wave Shape */}
-              <div className="absolute top-0 left-0 w-full h-[140px] -z-10 overflow-hidden bg-gradient-to-br from-[#F4F8FF] to-white/30">
-                <svg viewBox="0 0 400 150" preserveAspectRatio="none" className="absolute top-0 left-0 w-full h-full text-[#EAF2FF]/60">
-                  <path d="M0,0 L400,0 L400,30 C300,100 150,150 0,60 Z" fill="currentColor" />
-                </svg>
-                {/* Dotted Pattern Overlay Inside Wave */}
-                <svg width="80" height="80" viewBox="0 0 60 60" fill="none" xmlns="http://www.w3.org/2000/svg" className="absolute top-0 left-0 text-[#075BFF]/5 rotate-12 translate-x-4 -translate-y-4">
-                  <path d="M5 5h2v2H5V5zm10 0h2v2h-2V5zm10 0h2v2h-2V5zm10 0h2v2h-2V5zm10 0h2v2h-2V5zm10 0h2v2h-2V5zM5 15h2v2H5v-2zm10 0h2v2h-2v-2zm10 0h2v2h-2v-2zm10 0h2v2h-2v-2zm10 0h2v2h-2v-2zm10 0h2v2h-2v-2z" fill="currentColor"/>
-                  <path d="M5 25h2v2H5v-2zm10 0h2v2h-2v-2zm10 0h2v2h-2v-2zm10 0h2v2h-2v-2zm10 0h2v2h-2v-2zm10 0h2v2h-2v-2z" fill="currentColor"/>
-                </svg>
-                {/* Small blue dot pattern along left edge */}
-                <svg width="20" height="60" viewBox="0 0 20 60" fill="none" xmlns="http://www.w3.org/2000/svg" className="absolute top-1/2 left-2 text-[#075BFF]/10">
-                  <path d="M5 5h2v2H5V5zm0 10h2v2H5v-2zm0 10h2v2H5v-2zm0 10h2v2H5v-2zm0 10h2v2H5v-2z" fill="currentColor"/>
-                </svg>
-              </div>
-              <div className="flex items-center justify-between">
-                <Link to="/" onClick={() => setMobileMenuOpen(false)} className="flex items-center animate-in fade-in slide-in-from-top-4 duration-500" style={{ animationFillMode: 'both', animationDelay: '100ms' }}>
-                  <img src="/logo.webp" alt="Clip N Copy" className="h-12 w-auto object-contain" />
-                </Link>
-                <button
-                  onClick={() => setMobileMenuOpen(false)}
-                  aria-label="Close menu"
-                  className="grid size-11 place-items-center rounded-full border border-[#DCEBFF] bg-white hover:bg-[#F4F8FF] hover:scale-[1.08] active:scale-[0.95] hover:rotate-[15deg] transition-all duration-300 cursor-pointer text-[#075BFF] shadow-[0_4px_12px_rgba(7,91,255,0.08)] hover:shadow-[0_4px_16px_rgba(7,91,255,0.15)] animate-in fade-in spin-in-[-20deg] duration-500"
-                  style={{ animationFillMode: 'both', animationDelay: '150ms' }}
-                >
-                  <X className="size-5" />
-                </button>
-              </div>
+            {/* 1. Header */}
+            <div className="shrink-0 flex items-center justify-between px-4 h-[68px] border-b border-[#E5EAF2] bg-white">
+              <Link to="/" onClick={() => setMobileMenuOpen(false)} className="flex items-center">
+                <img src="/logo.webp" alt="Clip N Copy" className="w-[42px] h-auto object-contain" />
+              </Link>
+              <button
+                onClick={() => setMobileMenuOpen(false)}
+                aria-label="Close menu"
+                className="grid size-9 place-items-center rounded-full hover:bg-secondary transition-colors text-muted-foreground"
+              >
+                <X className="size-5" />
+              </button>
             </div>
 
             {/* Main Content (Scrollable) */}
-            <div className="flex-1 overflow-y-auto px-7 py-8 space-y-10 no-scrollbar">
+            <div className="flex-1 overflow-y-auto px-4 py-4 space-y-5 no-scrollbar">
               
-              {/* 2. Quick Actions (Vertical List) */}
-              <nav className="flex flex-col gap-3.5">
+              {/* 2. Main Navigation */}
+              <nav className="flex flex-col gap-1.5">
                 <Link
                   to="/"
                   onClick={() => setMobileMenuOpen(false)}
-                  className={`group relative flex items-center gap-4 min-h-[72px] w-full px-5 rounded-[20px] transition-all duration-300 hover:-translate-y-[2px] hover:scale-[1.01] active:scale-[0.98] active:translate-y-0 animate-in fade-in slide-in-from-left-4 overflow-hidden ${isHomeActive ? 'bg-gradient-to-br from-[#075BFF] to-[#0B5CFF] text-white shadow-[0_8px_20px_-6px_rgba(7,91,255,0.4)]' : 'bg-[#F4F8FF] border border-[#EAF2FF] text-[#0B2455] hover:shadow-md hover:border-[#DCEBFF]'}`}
-                  style={{ animationFillMode: 'both', animationDelay: '150ms' }}
+                  className={`group flex items-center gap-3 h-[48px] px-3.5 rounded-xl transition-colors ${isHomeActive ? 'bg-primary/10 text-primary font-semibold' : 'text-foreground hover:bg-secondary font-medium'}`}
                 >
-                  <div className={`grid size-11 shrink-0 place-items-center rounded-full transition-all duration-300 group-hover:scale-[1.08] ${isHomeActive ? 'bg-white/20 shadow-sm' : 'bg-white shadow-[0_4px_12px_rgba(7,91,255,0.05)] group-hover:shadow-[0_4px_12px_rgba(7,91,255,0.1)]'}`}>
-                    <Home className={`size-5 ${isHomeActive ? 'text-white' : 'text-[#075BFF]'}`} />
-                  </div>
-                  <span className="text-[15px] font-bold tracking-wide flex-1 text-left">Home</span>
-                  <ChevronRight className={`size-5 transition-transform group-hover:translate-x-1 ${isHomeActive ? 'text-white/60' : 'text-[#0B2455]/20 group-hover:text-[#075BFF]'}`} />
+                  <Home className="size-[18px]" />
+                  <span className="text-[14px] flex-1">Home</span>
+                  <ChevronRight className="size-[18px] text-muted-foreground/50 group-hover:text-foreground/50" />
                 </Link>
 
                 <Link
                   to="/shop"
                   onClick={() => setMobileMenuOpen(false)}
-                  className={`group relative flex items-center gap-4 min-h-[72px] w-full px-5 rounded-[20px] transition-all duration-300 hover:-translate-y-[2px] hover:scale-[1.01] active:scale-[0.98] active:translate-y-0 animate-in fade-in slide-in-from-left-4 overflow-hidden ${isShopActive ? 'bg-gradient-to-br from-[#075BFF] to-[#0B5CFF] text-white shadow-[0_8px_20px_-6px_rgba(7,91,255,0.4)]' : 'bg-[#F4F8FF] border border-[#EAF2FF] text-[#0B2455] hover:shadow-md hover:border-[#DCEBFF]'}`}
-                  style={{ animationFillMode: 'both', animationDelay: '200ms' }}
+                  className={`group flex items-center gap-3 h-[48px] px-3.5 rounded-xl transition-colors ${isShopActive ? 'bg-primary/10 text-primary font-semibold' : 'text-foreground hover:bg-secondary font-medium'}`}
                 >
-                  <div className={`grid size-11 shrink-0 place-items-center rounded-full transition-all duration-300 group-hover:scale-[1.08] ${isShopActive ? 'bg-white/20 shadow-sm' : 'bg-white shadow-[0_4px_12px_rgba(7,91,255,0.05)] group-hover:shadow-[0_4px_12px_rgba(7,91,255,0.1)]'}`}>
-                    <Store className={`size-5 ${isShopActive ? 'text-white' : 'text-[#075BFF]'}`} />
-                  </div>
-                  <span className="text-[15px] font-bold tracking-wide flex-1 text-left">Shop</span>
-                  <ChevronRight className={`size-5 transition-transform group-hover:translate-x-1 ${isShopActive ? 'text-white/60' : 'text-[#0B2455]/20 group-hover:text-[#075BFF]'}`} />
+                  <Store className="size-[18px]" />
+                  <span className="text-[14px] flex-1">Shop</span>
+                  <ChevronRight className="size-[18px] text-muted-foreground/50 group-hover:text-foreground/50" />
                 </Link>
 
                 <button
@@ -386,101 +341,130 @@ export function Header() {
                     setMobileMenuOpen(false);
                     setCartOpen(true);
                   }}
-                  className={`group relative flex items-center gap-4 min-h-[72px] w-full px-5 rounded-[20px] transition-all duration-300 hover:-translate-y-[2px] hover:scale-[1.01] active:scale-[0.98] active:translate-y-0 cursor-pointer animate-in fade-in slide-in-from-left-4 overflow-hidden ${isCartActive ? 'bg-gradient-to-br from-[#075BFF] to-[#0B5CFF] text-white shadow-[0_8px_20px_-6px_rgba(7,91,255,0.4)]' : 'bg-[#F4F8FF] border border-[#EAF2FF] text-[#0B2455] hover:shadow-md hover:border-[#DCEBFF]'}`}
-                  style={{ animationFillMode: 'both', animationDelay: '250ms' }}
+                  className={`group flex items-center gap-3 h-[48px] px-3.5 rounded-xl transition-colors cursor-pointer w-full text-left ${isCartActive ? 'bg-primary/10 text-primary font-semibold' : 'text-foreground hover:bg-secondary font-medium'}`}
                 >
-                  <div className={`grid size-11 shrink-0 place-items-center rounded-full transition-all duration-300 group-hover:scale-[1.08] ${isCartActive ? 'bg-white/20 shadow-sm' : 'bg-white shadow-[0_4px_12px_rgba(7,91,255,0.05)] group-hover:shadow-[0_4px_12px_rgba(7,91,255,0.1)]'}`}>
-                    <ShoppingBag className={`size-5 ${isCartActive ? 'text-white' : 'text-[#075BFF]'}`} />
-                  </div>
-                  <span className="text-[15px] font-bold tracking-wide flex-1 text-left">Cart</span>
+                  <ShoppingBag className="size-[18px]" />
+                  <span className="text-[14px] flex-1">Cart</span>
                   {cartCount > 0 && (
-                    <span className="mr-2 flex size-6 items-center justify-center rounded-full bg-destructive text-[11px] font-bold text-white shadow-sm ring-2 ring-[#F4F8FF] group-hover:ring-white transition-all">
+                    <span className="flex size-5 items-center justify-center rounded-full bg-primary text-[10px] font-bold text-primary-foreground">
                       {cartCount}
                     </span>
                   )}
-                  <ChevronRight className={`size-5 transition-transform group-hover:translate-x-1 ${isCartActive ? 'text-white/60' : 'text-[#0B2455]/20 group-hover:text-[#075BFF]'}`} />
+                  <ChevronRight className="size-[18px] text-muted-foreground/50 group-hover:text-foreground/50" />
                 </button>
 
                 <Link
                   to="/wishlist"
                   onClick={() => setMobileMenuOpen(false)}
-                  className={`group relative flex items-center gap-4 min-h-[72px] w-full px-5 rounded-[20px] transition-all duration-300 hover:-translate-y-[2px] hover:scale-[1.01] active:scale-[0.98] active:translate-y-0 animate-in fade-in slide-in-from-left-4 overflow-hidden ${location.pathname === '/wishlist' ? 'bg-gradient-to-br from-[#075BFF] to-[#0B5CFF] text-white shadow-[0_8px_20px_-6px_rgba(7,91,255,0.4)]' : 'bg-[#F4F8FF] border border-[#EAF2FF] text-[#0B2455] hover:shadow-md hover:border-[#DCEBFF]'}`}
-                  style={{ animationFillMode: 'both', animationDelay: '300ms' }}
+                  className={`group flex items-center gap-3 h-[48px] px-3.5 rounded-xl transition-colors ${location.pathname === '/wishlist' ? 'bg-primary/10 text-primary font-semibold' : 'text-foreground hover:bg-secondary font-medium'}`}
                 >
-                  <div className={`grid size-11 shrink-0 place-items-center rounded-full transition-all duration-300 group-hover:scale-[1.08] ${location.pathname === '/wishlist' ? 'bg-white/20 shadow-sm' : 'bg-white shadow-[0_4px_12px_rgba(7,91,255,0.05)] group-hover:shadow-[0_4px_12px_rgba(7,91,255,0.1)]'}`}>
-                    <Heart className={`size-5 ${location.pathname === '/wishlist' ? 'text-white' : 'text-[#075BFF]'}`} />
-                  </div>
-                  <span className="text-[15px] font-bold tracking-wide flex-1 text-left">Wishlist</span>
+                  <Heart className="size-[18px]" />
+                  <span className="text-[14px] flex-1">Wishlist</span>
                   {wishlist.length > 0 && (
-                    <span className="mr-2 flex size-6 items-center justify-center rounded-full bg-[#075BFF] text-[11px] font-bold text-white shadow-sm ring-2 ring-[#F4F8FF] group-hover:ring-white transition-all">
+                    <span className="flex size-5 items-center justify-center rounded-full bg-primary text-[10px] font-bold text-primary-foreground">
                       {wishlist.length}
                     </span>
                   )}
-                  <ChevronRight className={`size-5 transition-transform group-hover:translate-x-1 ${location.pathname === '/wishlist' ? 'text-white/60' : 'text-[#0B2455]/20 group-hover:text-[#075BFF]'}`} />
+                  <ChevronRight className="size-[18px] text-muted-foreground/50 group-hover:text-foreground/50" />
                 </Link>
               </nav>
 
-
-              {/* 4. Browse Categories */}
-              <div className="space-y-5">
-                {/* Premium Branding Detail Header */}
-                <div className="flex items-center gap-3 px-1 animate-in fade-in slide-in-from-bottom-4" style={{ animationFillMode: 'both', animationDelay: '400ms' }}>
-                  <div className="grid place-items-center size-7 rounded-[8px] bg-[#075BFF]/10 text-[#075BFF]">
-                    <Store className="size-4" />
-                  </div>
-                  <div className="h-5 w-1.5 rounded-full bg-[#075BFF] shadow-[0_0_8px_rgba(7,91,255,0.6)]" />
-                  <h3 className="text-[14px] font-black uppercase tracking-widest text-[#0B2455]">
-                    Browse Categories
-                  </h3>
-                  <div className="h-[1px] flex-1 bg-gradient-to-r from-[#DCEBFF] to-transparent ml-2" />
-                </div>
+              {/* 3. Browse Categories */}
+              <div className="pt-1">
+                <h3 className="text-[12px] font-bold uppercase tracking-[0.08em] text-muted-foreground px-2 mb-3">
+                  Browse Categories
+                </h3>
                 
-                <div className="flex flex-col gap-3.5">
-                  {NAV_CATEGORIES.filter(item => item.label !== 'Home').map((item, i) => {
-                    return (
-                      <Link
-                        key={item.label}
-                        to={item.to}
-                        search={item.search as never}
-                        onClick={() => setMobileMenuOpen(false)}
-                        className="group w-full flex items-center gap-4 min-h-[72px] rounded-[20px] bg-white border border-[#EAF2FF] px-5 transition-all duration-300 hover:scale-[1.01] hover:-translate-y-[2px] active:scale-[0.98] active:translate-y-0 hover:border-[#DCEBFF] hover:shadow-[0_8px_20px_-6px_rgba(7,91,255,0.12)] shadow-sm animate-in fade-in slide-in-from-left-4 zoom-in-[0.98]"
-                        style={{ animationFillMode: 'both', animationDelay: `${400 + (i * 40)}ms` }}
-                      >
-                        <span className="grid size-11 shrink-0 place-items-center rounded-full bg-[#F4F8FF] text-[#075BFF] shadow-[0_4px_12px_rgba(7,91,255,0.05)] transition-all duration-300 group-hover:scale-[1.08] group-hover:bg-[#EAF2FF] group-hover:shadow-[0_6px_16px_rgba(7,91,255,0.15)]">
-                          {item.icon}
-                        </span>
-                        <span className="text-[15px] font-bold text-[#0B2455] leading-tight flex-1">
-                          {item.label}
-                        </span>
-                        <ChevronRight className="size-5 text-[#0B2455]/20 transition-all duration-300 group-hover:translate-x-1 group-hover:text-[#075BFF]" />
-                      </Link>
-                    );
-                  })}
+                <div className="flex flex-col gap-1.5">
+                  {NAV_CATEGORIES.filter(item => item.label !== 'Home').map((item) => (
+                    <Link
+                      key={item.label}
+                      to={item.to}
+                      search={item.search as never}
+                      onClick={() => setMobileMenuOpen(false)}
+                      className="group flex items-center gap-3 h-[48px] px-3.5 rounded-xl bg-white border border-[#E5EAF2] text-foreground hover:border-primary/30 hover:bg-secondary/50 transition-colors shadow-sm"
+                    >
+                      <span className="text-primary flex items-center justify-center size-[18px] [&>svg]:size-full">
+                        {item.icon}
+                      </span>
+                      <span className="text-[13px] font-medium flex-1">
+                        {item.label}
+                      </span>
+                      <ChevronRight className="size-[14px] text-muted-foreground/50 group-hover:text-foreground/50" />
+                    </Link>
+                  ))}
                 </div>
               </div>
 
-              
-              {/* Extra spacing at the bottom to ensure the fixed call button doesn't cover content */}
-              <div className="h-10" />
+              {/* 4. Account / Login */}
+              <div className="pt-2">
+                <div className="h-[1px] w-full bg-[#E5EAF2] mb-4" />
+                <div className="flex flex-col gap-1.5">
+                  {!user ? (
+                    <Link
+                      to="/login"
+                      onClick={() => setMobileMenuOpen(false)}
+                      className="group flex items-center gap-3 h-[48px] px-3.5 rounded-xl text-foreground hover:bg-secondary transition-colors font-medium"
+                    >
+                      <User className="size-[18px] text-primary" />
+                      <span className="text-[14px] flex-1">Login</span>
+                      <ChevronRight className="size-[18px] text-muted-foreground/50" />
+                    </Link>
+                  ) : (
+                    <>
+                      <Link
+                        to="/store"
+                        onClick={() => setMobileMenuOpen(false)}
+                        className="group flex items-center gap-3 h-[48px] px-3.5 rounded-xl text-foreground hover:bg-secondary transition-colors font-medium"
+                      >
+                        <UserCheck className="size-[18px] text-primary" />
+                        <span className="text-[14px] flex-1">My Account</span>
+                        <ChevronRight className="size-[18px] text-muted-foreground/50" />
+                      </Link>
+                      
+                      {role === "admin" && (
+                        <Link
+                          to="/admin"
+                          onClick={() => setMobileMenuOpen(false)}
+                          className="group flex items-center gap-3 h-[48px] px-3.5 rounded-xl text-foreground hover:bg-secondary transition-colors font-medium"
+                        >
+                          <Shield className="size-[18px] text-primary" />
+                          <span className="text-[14px] flex-1">Admin Dashboard</span>
+                          <ChevronRight className="size-[18px] text-muted-foreground/50" />
+                        </Link>
+                      )}
+
+                      <button
+                        onClick={() => {
+                          setMobileMenuOpen(false);
+                          signOut();
+                        }}
+                        className="group w-full text-left flex items-center gap-3 h-[48px] px-3.5 rounded-xl text-destructive hover:bg-destructive/10 transition-colors font-medium cursor-pointer"
+                      >
+                        <LogOut className="size-[18px]" />
+                        <span className="text-[14px] flex-1">Logout</span>
+                      </button>
+                    </>
+                  )}
+                </div>
+              </div>
+
+              {/* Spacing for call button */}
+              <div className="h-16" />
             </div>
 
-            {/* 7. Call Store Footer (Sticky, Premium Floating Pill) */}
-            <div className="shrink-0 bg-transparent p-6 pb-10 pt-0 animate-in fade-in slide-in-from-bottom-8 duration-500 ease-out z-10 pointer-events-none" style={{ animationFillMode: 'both', animationDelay: '300ms' }}>
-              <div className="pointer-events-auto">
-                <a
-                  href={`tel:${STORE.phoneRaw}`}
-                  className="animate-breathing-glow group relative overflow-hidden flex h-[58px] w-full items-center justify-center gap-3 rounded-[30px] bg-[#075BFF] font-bold text-[16px] text-white transition-all duration-300 hover:-translate-y-[2px] hover:brightness-110 active:translate-y-0 active:scale-[0.97] shadow-[0_12px_24px_-8px_rgba(7,91,255,0.6)] border border-white/10"
-                >
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/10 to-transparent pointer-events-none" />
-                  <div className="absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/20 to-transparent opacity-0 group-hover:animate-shimmer" />
-                  <Phone className="size-[22px] transition-transform duration-300 group-hover:-translate-y-0.5 group-hover:rotate-3 drop-shadow-md z-10" /> 
-                  <span className="relative z-10 drop-shadow-md tracking-wide">Call {STORE.phone}</span>
-                </a>
-              </div>
+            {/* 5. Call Store Footer */}
+            <div className="shrink-0 p-4 pt-0 bg-white border-t border-[#E5EAF2]">
+              <a
+                href={`tel:${STORE.phoneRaw}`}
+                className="flex items-center justify-center gap-2 w-full h-[48px] rounded-[12px] bg-primary text-primary-foreground font-semibold text-[14px] transition-colors hover:bg-primary/90 mt-4"
+              >
+                <Phone className="size-[18px]" /> 
+                Call {STORE.phone}
+              </a>
             </div>
           </div>
         </div>
-        </>
       )}
     </>
   );

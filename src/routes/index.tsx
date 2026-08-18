@@ -10,21 +10,24 @@ import { UploadPrintModal } from "@/components/UploadPrintModal";
 import { RAW_CATEGORIES } from "@/lib/data";
 import { useShop } from "@/lib/shop-store";
 import { useSupabaseProducts } from "@/lib/supabase-products";
+import { useScrollRestoration } from "@/lib/useScrollRestoration";
+import { LandingLayout } from "@/components/LandingLayout";
+import { ProductCarousel, ProductCarouselItem } from "@/components/ProductCarousel";
 
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
-      { title: "Clip N Copy — Stationery & Printing Store in Kundalahalli" },
+      { title: "Clip N Copy — Stationery, Office Supplies & Printing Services" },
       {
         name: "description",
         content:
-          "Buy notebooks, pens, school and office supplies online from Clip N Copy, ITPL Main Road Bengaluru. Printing, photocopy and binding with fast delivery.",
+          "Shop notebooks, pens, markers, and office supplies online. High-quality print and photocopy services available in-store at ITPL Main Road, Bengaluru.",
       },
-      { property: "og:title", content: "Clip N Copy — Everything You Need. One Place." },
+      { property: "og:title", content: "Stationery & Printing Services — Clip N Copy" },
       {
         property: "og:description",
         content:
-          "Stationery, office supplies, printing and binding from Clip N Copy, Kundalahalli Colony, Bengaluru.",
+          "From school supplies to corporate printing. Best prices on top brands in Kundalahalli.",
       },
     ],
   }),
@@ -36,6 +39,8 @@ function Home() {
   const [printOpen, setPrintOpen] = useState(false);
   const { data: products = [], isLoading, isError, error, refetch } = useSupabaseProducts();
 
+  useScrollRestoration(!isLoading);
+
   const categoriesWithCounts = useMemo(() => {
     return RAW_CATEGORIES.map((c) => ({
       ...c,
@@ -46,7 +51,7 @@ function Home() {
   const best = products.slice(0, 12);
 
   return (
-    <>
+    <LandingLayout>
       <HeroSection />
 
       {/* Categories - Compact Premium Cards */}
@@ -126,11 +131,13 @@ function Home() {
               </p>
             </div>
           ) : (
-            <div className="grid-products">
+            <ProductCarousel>
               {best.map((p) => (
-                <ProductCard key={p.id} product={p} />
+                <ProductCarouselItem key={p.id}>
+                  <ProductCard product={p} />
+                </ProductCarouselItem>
               ))}
-            </div>
+            </ProductCarousel>
           )}
         </div>
       </section>
@@ -196,6 +203,6 @@ function Home() {
       </section>
 
       {printOpen && <UploadPrintModal onClose={() => setPrintOpen(false)} />}
-    </>
+    </LandingLayout>
   );
 }
