@@ -5,8 +5,10 @@ import { inr, useShop } from "@/lib/shop-store";
 import { cn } from "@/lib/utils";
 
 export function ProductCard({ product, compact }: { product: Product; compact?: boolean }) {
-  const { addToCart, toggleWishlist, inWishlist } = useShop();
+  const { addToCart, toggleWishlist, inWishlist, cart, setQty } = useShop();
   const saved = inWishlist(product.id);
+  const cartItem = cart.find(item => item.id === product.id);
+  const currentQty = cartItem ? cartItem.qty : 0;
 
   return (
     <article className="group relative flex h-full flex-col overflow-hidden rounded-[1.25rem] bg-white shadow-[0_4px_16px_-4px_rgba(11,92,255,0.08)] ring-1 ring-[#EAF2FF] transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_12px_28px_-6px_rgba(11,92,255,0.2)] hover:ring-[#DCEBFF]">
@@ -78,18 +80,37 @@ export function ProductCard({ product, compact }: { product: Product; compact?: 
         <div className="mt-auto flex flex-wrap items-baseline gap-2">
           <span className="font-display text-lg font-bold">{inr(product.price)}</span>
         </div>
-        <button
-          onClick={() => addToCart(product.id)}
-          disabled={product.stock <= 0}
-          className={cn(
-            "mt-1 inline-flex h-10 items-center justify-center gap-2 rounded-full px-4 text-sm font-semibold transition-all duration-300 active:scale-95",
-            product.stock <= 0
-              ? "cursor-not-allowed bg-muted text-muted-foreground opacity-60"
-              : "bg-[#075BFF] text-white shadow-sm hover:bg-[#0B5CFF] hover:shadow-[0_4px_12px_-4px_rgba(11,92,255,0.4)]",
-          )}
-        >
-          <ShoppingBag className="size-4" /> {product.stock <= 0 ? "Out of Stock" : "Add to Cart"}
-        </button>
+        {currentQty > 0 ? (
+          <div className="mt-1 flex h-10 items-center justify-between rounded-full bg-[#F4F8FF] px-1 ring-1 ring-[#EAF2FF] transition-all duration-300">
+            <button
+              onClick={(e) => { e.preventDefault(); setQty(product.id, currentQty - 1); }}
+              className="grid h-8 w-12 place-items-center rounded-full text-[#075BFF] hover:bg-white hover:shadow-sm active:scale-95 transition-all"
+            >
+              <span className="text-lg font-bold leading-none">−</span>
+            </button>
+            <span className="w-10 text-center text-[15px] font-bold text-[#0B2455]">{currentQty}</span>
+            <button
+              onClick={(e) => { e.preventDefault(); setQty(product.id, currentQty + 1); }}
+              disabled={currentQty >= product.stock}
+              className="grid h-8 w-12 place-items-center rounded-full text-[#075BFF] hover:bg-white hover:shadow-sm active:scale-95 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              <span className="text-lg font-bold leading-none">+</span>
+            </button>
+          </div>
+        ) : (
+          <button
+            onClick={(e) => { e.preventDefault(); addToCart(product.id, 1, undefined, false); }}
+            disabled={product.stock <= 0}
+            className={cn(
+              "mt-1 inline-flex h-10 items-center justify-center gap-2 rounded-full px-4 text-sm font-semibold transition-all duration-300 active:scale-95",
+              product.stock <= 0
+                ? "cursor-not-allowed bg-muted text-muted-foreground opacity-60"
+                : "bg-[#075BFF] text-white shadow-sm hover:bg-[#0B5CFF] hover:shadow-[0_4px_12px_-4px_rgba(11,92,255,0.4)]",
+            )}
+          >
+            <ShoppingBag className="size-4" /> {product.stock <= 0 ? "Out of Stock" : "Add to Cart"}
+          </button>
+        )}
       </div>
     </article>
   );

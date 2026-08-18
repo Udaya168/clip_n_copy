@@ -25,7 +25,7 @@ type ShopState = {
   setCartOpen: (v: boolean) => void;
   mobileMenuOpen: boolean;
   setMobileMenuOpen: (v: boolean) => void;
-  addToCart: (id: string, qty?: number, variant?: string) => void;
+  addToCart: (id: string, qty?: number, variant?: string, openCart?: boolean) => void;
   setQty: (id: string, qty: number, variant?: string) => void;
   removeFromCart: (id: string, variant?: string) => void;
   clearCart: () => void;
@@ -79,7 +79,7 @@ export function ShopProvider({ children }: { children: ReactNode }) {
     }
   }, [wishlist]);
 
-  const addToCart = useCallback((id: string, qty = 1, variant?: string) => {
+  const addToCart = useCallback((id: string, qty = 1, variant?: string, openCart = true) => {
     const product = byId(id);
     const availableStock = product ? product.stock : 0;
 
@@ -98,7 +98,7 @@ export function ShopProvider({ children }: { children: ReactNode }) {
       if (targetQty > availableStock) {
         if (existingQty === 0) {
           toast.error(`Only ${availableStock} items available.`, { description: product?.name });
-          setCartOpen(true);
+          if (openCart) setCartOpen(true);
           return [...prev, { id, qty: availableStock, ...(variant ? { variant } : {}) }];
         } else {
           toast.error(`Maximum available quantity is ${availableStock}.`, {
@@ -115,7 +115,7 @@ export function ShopProvider({ children }: { children: ReactNode }) {
         duration: 2000,
         description: `${qty} × ${product?.name}${variant ? ` (${variant})` : ''}`,
       });
-      setCartOpen(true);
+      if (openCart) setCartOpen(true);
       if (existing) {
         return prev.map((l) =>
           l.id === id && l.variant === variant ? { ...l, qty: l.qty + qty } : l,
