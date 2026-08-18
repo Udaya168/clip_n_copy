@@ -4,6 +4,7 @@ import { useState } from "react";
 import { toast } from "sonner";
 import { ProductCard } from "@/components/ProductCard";
 import { ProductCarousel, ProductCarouselItem } from "@/components/ProductCarousel";
+import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious, type CarouselApi } from "@/components/ui/carousel";
 import { ShopLayout } from "@/components/ShopLayout";
 import { useScrollRestoration } from "@/lib/useScrollRestoration";
 import { CATEGORY_NAME, REVIEWS } from "@/lib/data";
@@ -76,8 +77,20 @@ function ProductDetail() {
   const { addToCart, toggleWishlist, inWishlist, setCartOpen } = useShop();
   const [qty, setQty] = useState(1);
   const [active, setActive] = useState(0);
+  const [api, setApi] = useState<CarouselApi>();
   const [zoom, setZoom] = useState<{ x: number; y: number } | null>(null);
   const [tab, setTab] = useState<"desc" | "specs" | "reviews">("desc");
+
+  useEffect(() => {
+    if (!api) return;
+    
+    // Set initial scroll if variant is selected initially
+    api.scrollTo(active, true);
+
+    api.on("select", () => {
+      setActive(api.selectedScrollSnap());
+    });
+  }, [api]);
 
   const { data: products = [], isLoading } = useSupabaseProducts();
   
@@ -155,31 +168,46 @@ function ProductDetail() {
     <div className="section-shell py-8">
       <div className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_26rem]">
         <div className="space-y-4">
-          <div
-            className="surface-card relative flex items-center justify-center aspect-[4/3] max-h-[450px] w-full overflow-hidden"
-            onMouseMove={(e) => {
-              const r = e.currentTarget.getBoundingClientRect();
-              setZoom({
-                x: ((e.clientX - r.left) / r.width) * 100,
-                y: ((e.clientY - r.top) / r.height) * 100,
-              });
-            }}
-            onMouseLeave={() => setZoom(null)}
-          >
-            <img
-              src={mainImgSrc}
-              alt={product.name}
-              className="max-w-full max-h-full object-contain object-center transition-transform duration-300"
-              style={
-                zoom
-                  ? { transform: "scale(1.9)", transformOrigin: `${zoom.x}% ${zoom.y}%` }
-                  : undefined
-              }
-            />
-
-            <span className="absolute right-4 bottom-4 rounded-full bg-card/90 px-3 py-1 text-xs font-medium text-muted-foreground backdrop-blur">
-              Hover to zoom
-            </span>
+          <div className="group/carousel relative">
+            <Carousel setApi={setApi} className="w-full">
+              <CarouselContent>
+                {thumbnailImages.map((imgSrc: string, i: number) => (
+                  <CarouselItem key={i}>
+                    <div
+                      className="surface-card relative flex items-center justify-center aspect-[4/3] max-h-[450px] w-full overflow-hidden"
+                      onMouseMove={(e) => {
+                        const r = e.currentTarget.getBoundingClientRect();
+                        setZoom({
+                          x: ((e.clientX - r.left) / r.width) * 100,
+                          y: ((e.clientY - r.top) / r.height) * 100,
+                        });
+                      }}
+                      onMouseLeave={() => setZoom(null)}
+                    >
+                      <img
+                        src={imgSrc}
+                        alt={`${product.name} - view ${i + 1}`}
+                        className="max-w-full max-h-full object-contain object-center transition-transform duration-300"
+                        style={
+                          zoom && active === i
+                            ? { transform: "scale(1.9)", transformOrigin: `${zoom.x}% ${zoom.y}%` }
+                            : undefined
+                        }
+                      />
+                      <span className="absolute right-4 bottom-4 rounded-full bg-card/90 px-3 py-1 text-xs font-medium text-muted-foreground backdrop-blur pointer-events-none">
+                        Hover to zoom
+                      </span>
+                    </div>
+                  </CarouselItem>
+                ))}
+              </CarouselContent>
+              {thumbnailImages.length > 1 && (
+                <>
+                  <CarouselPrevious className="-left-4 hidden md:flex opacity-0 group-hover/carousel:opacity-100" />
+                  <CarouselNext className="-right-4 hidden md:flex opacity-0 group-hover/carousel:opacity-100" />
+                </>
+              )}
+            </Carousel>
           </div>
           <div className="flex gap-3">
             {thumbnailImages.map((g: string, i: number) => (
@@ -187,6 +215,7 @@ function ProductDetail() {
                 key={i}
                 onClick={() => {
                   setActive(i);
+                  api?.scrollTo(i);
                   if (product.variants && product.variants.length > 0) {
                     const variant = product.variants.find((v: import("@/lib/data").ProductVariant) => v.images.includes(g));
                     if (variant) setSelectedVariant(variant.name);
@@ -270,7 +299,13 @@ function ProductDetail() {
                         setSelectedVariant(v.name);
                         const firstImg = v.images[0];
                         const idx = allImages.indexOf(firstImg);
-                        setActive(idx !== -1 ? idx : 0);
+                        if (idx !== -1) {
+                          setActive(idx);
+                          api?.scrollTo(idx);
+                        } else {
+                          setActive(0);
+                          api?.scrollTo(0);
+                        }
                       }}
                       style={{ background: getGradient(v.name) }}
                       className={cn(

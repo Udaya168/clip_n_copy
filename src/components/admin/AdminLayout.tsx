@@ -66,6 +66,15 @@ export function AdminLayout() {
     loadAdminProducts();
   }, [loadAdminProducts]);
 
+  // Scroll to top when tab changes (to meet global navigation requirement)
+  useEffect(() => {
+    window.scrollTo({
+      top: 0,
+      left: 0,
+      behavior: "instant",
+    });
+  }, [activeTab]);
+
   const titles: Record<AdminTab, string> = {
     dashboard: "Dashboard Overview",
     inventory: "Inventory Management",
@@ -75,7 +84,7 @@ export function AdminLayout() {
   };
 
   return (
-    <div className="flex min-h-screen bg-secondary/30">
+    <div className="flex flex-col lg:flex-row min-h-screen bg-secondary/30 overflow-x-hidden">
       {/* Admin Sidebar */}
       <AdminSidebar activeTab={activeTab} setActiveTab={setActiveTab} />
 

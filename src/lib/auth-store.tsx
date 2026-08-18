@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useEffect, useState } from "react";
 import { User, Session } from "@supabase/supabase-js";
+import { useRouter } from "@tanstack/react-router";
 import { supabase } from "./supabase";
 
 export interface UserProfile {
@@ -33,6 +34,7 @@ interface AuthContextType {
   session: Session | null;
   profile: UserProfile | null;
   loading: boolean;
+  isLoggingOut: boolean;
   role: string | null;
   signIn: (email: string, password: string) => Promise<SignInResult>;
   signUp: (fullName: string, email: string, password: string) => Promise<SignUpResult>;
@@ -48,6 +50,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [session, setSession] = useState<Session | null>(null);
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
+  const [isLoggingOut, setIsLoggingOut] = useState<boolean>(false);
+  const router = useRouter();
 
   // Fetch or initialize user profile from `profiles` table
   const fetchAndSyncProfile = async (currentUser: User | null) => {
@@ -253,6 +257,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   // 7. Logout using supabase.auth.signOut()
   const signOut = async () => {
     try {
+      setIsLoggingOut(true);
       await supabase.auth.signOut();
     } catch (err) {
       console.error("Sign out error:", err);
@@ -260,6 +265,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setUser(null);
       setSession(null);
       setProfile(null);
+      
+      // Requirement: Redirect to normal user website dashboard on logout
+      // Use replace: true to prevent browser back button from re-entering admin context
+      router.navigate({ to: "/", replace: true });
+      
+      // Reset isLoggingOut after a short delay so normal auth guard works again if they stay on page
+      setTimeout(() => setIsLoggingOut(false), 1000);
     }
   };
 
@@ -301,6 +313,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         session,
         profile,
         loading,
+        isLoggingOut,
         role,
         signIn,
         signUp,

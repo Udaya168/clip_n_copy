@@ -37,6 +37,7 @@ import { STORE } from "@/lib/data";
 import { useShop } from "@/lib/shop-store";
 import { useAuth } from "@/lib/auth-store";
 import { cn } from "@/lib/utils";
+import { useMobileDrawerScrollLock } from "@/hooks/useMobileDrawerScrollLock";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -66,6 +67,9 @@ export function Header() {
   const [mobileSearch, setMobileSearch] = useState(false);
   const location = useLocation();
   const pathname = location.pathname;
+
+  // Use reusable scroll lock
+  useMobileDrawerScrollLock(mobileMenuOpen);
 
   const fullName = profile?.full_name || (user?.user_metadata?.["full_name"] as string) || "User";
 
@@ -295,7 +299,7 @@ export function Header() {
           />
 
           {/* Slide-out Drawer Panel */}
-          <div className="fixed inset-y-0 left-0 flex w-[85vw] max-w-[360px] flex-col bg-white shadow-xl z-[101] rounded-r-[18px] overflow-hidden animate-in slide-in-from-left fade-in duration-300 ease-out">
+          <div className="fixed inset-y-0 left-0 flex w-[85vw] max-w-[360px] flex-col bg-white shadow-xl z-[101] rounded-r-[18px] overflow-hidden animate-in slide-in-from-left fade-in duration-300 ease-out overscroll-contain">
             
             {/* 1. Header */}
             <div className="shrink-0 flex items-center justify-between px-4 h-[68px] border-b border-[#E5EAF2] bg-white">
@@ -312,7 +316,7 @@ export function Header() {
             </div>
 
             {/* Main Content (Scrollable) */}
-            <div className="flex-1 overflow-y-auto px-4 py-4 space-y-5 no-scrollbar">
+            <div className="flex-1 overflow-y-auto px-4 py-4 space-y-5 no-scrollbar overscroll-contain touch-pan-y">
               
               {/* 2. Main Navigation */}
               <nav className="flex flex-col gap-1.5">

@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "@tanstack/react-router";
 import { supabase } from "@/lib/supabase";
+import { useAuth } from "@/lib/auth-store";
 import { toast } from "sonner";
 import { Loader2 } from "lucide-react";
 
@@ -9,6 +10,7 @@ interface AdminRouteProps {
 }
 
 export function AdminRoute({ children }: AdminRouteProps) {
+  const { isLoggingOut } = useAuth();
   const [authStatus, setAuthStatus] = useState<"loading" | "authorized" | "unauthenticated" | "denied">("loading");
   const navigate = useNavigate();
 
@@ -74,6 +76,9 @@ export function AdminRoute({ children }: AdminRouteProps) {
   }, []);
 
   useEffect(() => {
+    // If the user intentionally triggered a logout, do not intercept the redirect
+    if (isLoggingOut) return;
+
     if (authStatus === "unauthenticated") {
       // 8. If the user is not authenticated: redirect to /login
       toast.error("Please sign in as administrator to access Admin Portal.");
@@ -83,7 +88,7 @@ export function AdminRoute({ children }: AdminRouteProps) {
       toast.error("You do not have permission to access the Admin Portal.");
       navigate({ to: "/" });
     }
-  }, [authStatus, navigate]);
+  }, [authStatus, navigate, isLoggingOut]);
 
   if (authStatus === "loading") {
     return (

@@ -1,6 +1,6 @@
 import * as React from "react";
 import useEmblaCarousel, { type UseEmblaCarouselType } from "embla-carousel-react";
-import { ArrowLeft, ArrowRight } from "lucide-react";
+import { ChevronLeft, ChevronRight } from "lucide-react";
 
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -184,17 +184,18 @@ const CarouselPrevious = React.forwardRef<HTMLButtonElement, React.ComponentProp
         variant={variant}
         size={size}
         className={cn(
-          "absolute  h-8 w-8 rounded-full",
+          "absolute size-10 rounded-full bg-white shadow-lg border border-slate-100 flex items-center justify-center text-[#0B2455] transition-all duration-300 z-10 focus:outline-none focus:ring-2 focus:ring-[#075BFF]",
           orientation === "horizontal"
-            ? "-left-12 top-1/2 -translate-y-1/2"
-            : "-top-12 left-1/2 -translate-x-1/2 rotate-90",
+            ? "-left-5 top-1/2 -translate-y-1/2"
+            : "-top-5 left-1/2 -translate-x-1/2 rotate-90",
+          !canScrollPrev ? "opacity-0 pointer-events-none" : "opacity-0 group-hover/carousel:opacity-100 hover:scale-110 hover:bg-[#F4F8FF]",
           className,
         )}
         disabled={!canScrollPrev}
         onClick={scrollPrev}
         {...props}
       >
-        <ArrowLeft className="h-4 w-4" />
+        <ChevronLeft className="size-6" />
         <span className="sr-only">Previous slide</span>
       </Button>
     );
@@ -212,17 +213,18 @@ const CarouselNext = React.forwardRef<HTMLButtonElement, React.ComponentProps<ty
         variant={variant}
         size={size}
         className={cn(
-          "absolute h-8 w-8 rounded-full",
+          "absolute size-10 rounded-full bg-white shadow-lg border border-slate-100 flex items-center justify-center text-[#0B2455] transition-all duration-300 z-10 focus:outline-none focus:ring-2 focus:ring-[#075BFF]",
           orientation === "horizontal"
-            ? "-right-12 top-1/2 -translate-y-1/2"
-            : "-bottom-12 left-1/2 -translate-x-1/2 rotate-90",
+            ? "-right-5 top-1/2 -translate-y-1/2"
+            : "-bottom-5 left-1/2 -translate-x-1/2 rotate-90",
+          !canScrollNext ? "opacity-0 pointer-events-none" : "opacity-0 group-hover/carousel:opacity-100 hover:scale-110 hover:bg-[#F4F8FF]",
           className,
         )}
         disabled={!canScrollNext}
         onClick={scrollNext}
         {...props}
       >
-        <ArrowRight className="h-4 w-4" />
+        <ChevronRight className="size-6" />
         <span className="sr-only">Next slide</span>
       </Button>
     );

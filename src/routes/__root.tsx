@@ -16,6 +16,7 @@ import { CartDrawer } from "@/components/CartDrawer";
 import { ShopProvider } from "@/lib/shop-store";
 import { AuthProvider } from "@/lib/auth-store";
 import { Toaster } from "@/components/ui/sonner";
+import { ScrollToTop } from "@/components/ScrollToTop";
 
 function NotFoundComponent() {
   return (
@@ -131,6 +132,7 @@ function RootComponent() {
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
         <ShopProvider>
+          <ScrollToTop />
           <div className="flex flex-col min-h-[100dvh]">
             <main className="flex-1 flex flex-col min-h-0">
               {/* Required: nested routes render here. Removing <Outlet /> breaks all child routes. */}

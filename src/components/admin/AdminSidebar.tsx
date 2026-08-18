@@ -14,6 +14,7 @@ import {
 import { useState } from "react";
 import { useAuth } from "@/lib/auth-store";
 import { cn } from "@/lib/utils";
+import { useMobileDrawerScrollLock } from "@/hooks/useMobileDrawerScrollLock";
 
 export type AdminTab = "dashboard" | "inventory" | "products" | "orders" | "settings";
 
@@ -25,6 +26,9 @@ interface AdminSidebarProps {
 export function AdminSidebar({ activeTab, setActiveTab }: AdminSidebarProps) {
   const { signOut } = useAuth();
   const [mobileOpen, setMobileOpen] = useState(false);
+
+  // Use reusable scroll lock
+  useMobileDrawerScrollLock(mobileOpen);
 
   const navItems: { id: AdminTab; label: string; icon: React.ReactNode }[] = [
     { id: "dashboard", label: "Dashboard", icon: <LayoutDashboard className="size-4" /> },
@@ -60,37 +64,57 @@ export function AdminSidebar({ activeTab, setActiveTab }: AdminSidebarProps) {
           </p>
         </div>
 
-        <nav className="flex-1 space-y-1.5">
+        <nav className="flex-1 space-y-1.5 mt-2">
           {navItems.map((item) => (
             <button
               key={item.id}
               onClick={() => setActiveTab(item.id)}
               className={cn(
-                "flex w-full items-center gap-3 rounded-2xl px-3.5 py-3 text-xs font-bold transition-all cursor-pointer",
+                "flex w-full items-center gap-3 rounded-[14px] px-4 py-3 text-sm font-semibold transition-all cursor-pointer",
                 activeTab === item.id
-                  ? "bg-primary text-primary-foreground shadow-glow"
-                  : "text-muted-foreground hover:bg-secondary hover:text-foreground"
+                  ? "bg-primary/10 text-primary border border-primary/20 shadow-sm"
+                  : "text-muted-foreground hover:bg-secondary/80 hover:text-foreground"
               )}
             >
-              {item.icon}
+              <div className={cn(
+                "grid size-8 place-items-center rounded-lg transition-colors",
+                activeTab === item.id ? "bg-primary text-primary-foreground" : "bg-transparent"
+              )}>
+                {item.icon}
+              </div>
               {item.label}
             </button>
           ))}
         </nav>
 
-        <div className="mt-auto space-y-2 border-t border-border pt-4">
-          <Link
-            to="/"
-            className="flex w-full items-center gap-2.5 rounded-xl px-3.5 py-2.5 text-xs font-semibold text-muted-foreground hover:bg-secondary hover:text-foreground"
-          >
-            <ArrowLeft className="size-4" /> Storefront
-          </Link>
-          <button
-            onClick={() => signOut()}
-            className="flex w-full items-center gap-2.5 rounded-xl px-3.5 py-2.5 text-xs font-semibold text-destructive hover:bg-destructive/10 cursor-pointer"
-          >
-            <LogOut className="size-4" /> Logout
-          </button>
+        <div className="mt-auto space-y-3 pt-4">
+          <div className="flex items-center justify-between rounded-xl border border-border bg-secondary/30 p-3">
+            <div className="flex flex-col">
+              <span className="text-xs font-semibold text-foreground">Store Status</span>
+              <span className="flex items-center gap-1.5 text-[11px] font-medium text-emerald-600 dark:text-emerald-400">
+                <span className="relative flex size-2">
+                  <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-75"></span>
+                  <span className="relative inline-flex size-2 rounded-full bg-emerald-500"></span>
+                </span>
+                Online
+              </span>
+            </div>
+          </div>
+          
+          <div className="space-y-1">
+            <Link
+              to="/"
+              className="flex w-full items-center gap-3 rounded-xl px-4 py-2.5 text-sm font-medium text-muted-foreground hover:bg-secondary hover:text-foreground transition-colors"
+            >
+              <ArrowLeft className="size-4" /> Storefront
+            </Link>
+            <button
+              onClick={() => signOut()}
+              className="flex w-full items-center gap-3 rounded-xl px-4 py-2.5 text-sm font-medium text-destructive hover:bg-destructive/10 transition-colors cursor-pointer"
+            >
+              <LogOut className="size-4" /> Logout
+            </button>
+          </div>
         </div>
       </aside>
 
@@ -98,7 +122,7 @@ export function AdminSidebar({ activeTab, setActiveTab }: AdminSidebarProps) {
       {mobileOpen && (
         <div className="fixed inset-0 z-50 lg:hidden">
           <div className="absolute inset-0 bg-ink/50" onClick={() => setMobileOpen(false)} />
-          <div className="absolute inset-y-0 left-0 flex w-72 flex-col bg-background shadow-lift p-4">
+          <div className="absolute inset-y-0 left-0 flex w-72 flex-col bg-background shadow-lift p-4 overscroll-contain overflow-y-auto touch-pan-y">
             <div className="flex items-center justify-between border-b border-border pb-3">
               <span className="font-display text-sm font-extrabold">Admin Menu</span>
               <button onClick={() => setMobileOpen(false)}>

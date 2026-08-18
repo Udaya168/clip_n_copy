@@ -13,6 +13,7 @@ import { useSupabaseProducts } from "@/lib/supabase-products";
 import { useScrollRestoration } from "@/lib/useScrollRestoration";
 import { LandingLayout } from "@/components/LandingLayout";
 import { ProductCarousel, ProductCarouselItem } from "@/components/ProductCarousel";
+import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from "@/components/ui/carousel";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -61,38 +62,50 @@ function Home() {
           ctaLabel="View All →"
           to="/shop"
         />
-        <div className="grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-4 lg:gap-6">
-          {categoriesWithCounts.map((c, i) => (
-            <motion.div
-              key={c.slug}
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true, margin: "-50px" }}
-              transition={{ duration: 0.4, delay: i * 0.1, ease: "easeOut" }}
-            >
-              <Link
-                to="/shop"
-                search={{ category: c.slug }}
-                className="group relative flex items-center gap-4 overflow-hidden rounded-[1.25rem] bg-white p-3 shadow-[0_4px_16px_-4px_rgba(11,92,255,0.08)] ring-1 ring-[#EAF2FF] transition-all duration-300 hover:scale-[1.03] hover:-translate-y-1 hover:shadow-[0_12px_28px_-6px_rgba(11,92,255,0.15)] hover:ring-[#DCEBFF]"
-              >
-                <div className="grid size-14 shrink-0 place-items-center rounded-xl bg-[#F4F8FF] transition-transform duration-500 group-hover:scale-105 group-hover:bg-[#EAF2FF]">
-                  <img
-                    src={c.image}
-                    alt={c.name}
-                    loading="lazy"
-                    className="size-8 object-contain mix-blend-multiply transition-all duration-500 group-hover:scale-110 group-hover:rotate-6 group-hover:-translate-y-1"
-                  />
-                </div>
-                <div className="flex flex-1 flex-col justify-center min-w-0 pr-2">
-                  <h3 className="truncate font-bold text-[#0B2455] transition-colors group-hover:text-[#075BFF] text-sm sm:text-[15px]">
-                    {c.name}
-                  </h3>
-                  <p className="mt-0.5 truncate text-[12px] font-medium text-[#075BFF]/70">{c.count} Products</p>
-                </div>
-                <ChevronRight className="absolute right-4 size-4 text-[#0B2455]/20 opacity-0 transition-all duration-300 group-hover:translate-x-1 group-hover:opacity-100 group-hover:text-[#075BFF]" />
-              </Link>
-            </motion.div>
-          ))}
+        <div className="group/carousel relative -mx-4 sm:mx-0">
+          <Carousel
+            opts={{
+              align: "start",
+            }}
+            className="w-full"
+          >
+            <CarouselContent className="px-4 sm:px-0 -ml-4">
+              {categoriesWithCounts.map((c, i) => (
+                <CarouselItem key={c.slug} className="pl-4 basis-[80%] sm:basis-[45%] md:basis-[33.33%] lg:basis-[25%]">
+                  <motion.div
+                    initial={{ opacity: 0, y: 20 }}
+                    whileInView={{ opacity: 1, y: 0 }}
+                    viewport={{ once: true, margin: "-50px" }}
+                    transition={{ duration: 0.4, delay: i * 0.1, ease: "easeOut" }}
+                  >
+                    <Link
+                      to="/shop"
+                      search={{ category: c.slug }}
+                      className="group relative flex items-center gap-4 overflow-hidden rounded-[1.25rem] bg-white p-3 shadow-[0_4px_16px_-4px_rgba(11,92,255,0.08)] ring-1 ring-[#EAF2FF] transition-all duration-300 hover:scale-[1.03] hover:-translate-y-1 hover:shadow-[0_12px_28px_-6px_rgba(11,92,255,0.15)] hover:ring-[#DCEBFF]"
+                    >
+                      <div className="grid size-14 shrink-0 place-items-center rounded-xl bg-[#F4F8FF] transition-transform duration-500 group-hover:scale-105 group-hover:bg-[#EAF2FF]">
+                        <img
+                          src={c.image}
+                          alt={c.name}
+                          loading="lazy"
+                          className="size-8 object-contain mix-blend-multiply transition-all duration-500 group-hover:scale-110 group-hover:rotate-6 group-hover:-translate-y-1"
+                        />
+                      </div>
+                      <div className="flex flex-1 flex-col justify-center min-w-0 pr-2">
+                        <h3 className="truncate font-bold text-[#0B2455] transition-colors group-hover:text-[#075BFF] text-sm sm:text-[15px]">
+                          {c.name}
+                        </h3>
+                        <p className="mt-0.5 truncate text-[12px] font-medium text-[#075BFF]/70">{c.count} Products</p>
+                      </div>
+                      <ChevronRight className="absolute right-4 size-4 text-[#0B2455]/20 opacity-0 transition-all duration-300 group-hover:translate-x-1 group-hover:opacity-100 group-hover:text-[#075BFF]" />
+                    </Link>
+                  </motion.div>
+                </CarouselItem>
+              ))}
+            </CarouselContent>
+            <CarouselPrevious className="-left-4 hidden md:flex opacity-0 group-hover/carousel:opacity-100" />
+            <CarouselNext className="-right-4 hidden md:flex opacity-0 group-hover/carousel:opacity-100" />
+          </Carousel>
         </div>
       </section>
 
