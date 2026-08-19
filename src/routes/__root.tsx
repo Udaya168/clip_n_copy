@@ -43,9 +43,47 @@ function NotFoundComponent() {
 function ErrorComponent({ error, reset }: { error: Error; reset: () => void }) {
   console.error(error);
   const router = useRouter();
+  
   useEffect(() => {
     reportLovableError(error, { boundary: "tanstack_root_error_component" });
+
+    const isChunkLoadError = 
+      error.name === 'ChunkLoadError' || 
+      (error.message && (
+        error.message.includes('Failed to fetch dynamically imported module') ||
+        error.message.includes('Importing a module script failed') ||
+        error.message.includes('loading chunk')
+      ));
+
+    if (isChunkLoadError) {
+      const reloadKey = `chunk_reload_${window.location.pathname}`;
+      const hasReloaded = sessionStorage.getItem(reloadKey);
+      
+      if (!hasReloaded) {
+        sessionStorage.setItem(reloadKey, 'true');
+        window.location.reload();
+      } else {
+        sessionStorage.removeItem(reloadKey);
+      }
+    }
   }, [error]);
+
+  const handleTryAgain = () => {
+    const isChunkLoadError = 
+      error.name === 'ChunkLoadError' || 
+      (error.message && (
+        error.message.includes('Failed to fetch dynamically imported module') ||
+        error.message.includes('Importing a module script failed') ||
+        error.message.includes('loading chunk')
+      ));
+
+    if (isChunkLoadError) {
+      window.location.reload();
+    } else {
+      router.invalidate();
+      reset();
+    }
+  };
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-background px-4">
@@ -58,10 +96,7 @@ function ErrorComponent({ error, reset }: { error: Error; reset: () => void }) {
         </p>
         <div className="mt-6 flex flex-wrap justify-center gap-2">
           <button
-            onClick={() => {
-              router.invalidate();
-              reset();
-            }}
+            onClick={handleTryAgain}
             className="inline-flex items-center justify-center rounded-full bg-primary px-5 py-2.5 text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary/90"
           >
             Try again

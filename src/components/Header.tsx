@@ -172,8 +172,8 @@ export function Header() {
                   </DropdownMenuLabel>
                   <DropdownMenuSeparator className="my-1.5" />
                   <DropdownMenuItem asChild>
-                    <Link to="/store" className="cursor-pointer font-medium">
-                      <UserCheck className="mr-2 size-4" /> My Account &amp; Orders
+                    <Link to="/account" className="cursor-pointer font-medium">
+                      <UserCheck className="mr-2 size-4" /> My Account
                     </Link>
                   </DropdownMenuItem>
                   {role === "admin" && (
@@ -417,7 +417,7 @@ export function Header() {
                   ) : (
                     <>
                       <Link
-                        to="/store"
+                        to="/account"
                         onClick={() => setMobileMenuOpen(false)}
                         className="group flex items-center gap-3 h-[48px] px-3.5 rounded-xl text-foreground hover:bg-secondary transition-colors font-medium"
                       >

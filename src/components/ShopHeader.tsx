@@ -61,7 +61,7 @@ export function ShopHeader() {
                 </DropdownMenuLabel>
                 <DropdownMenuSeparator className="my-1.5" />
                 <DropdownMenuItem asChild>
-                  <Link to="/store" className="cursor-pointer font-medium">
+                  <Link to="/account" className="cursor-pointer font-medium">
                     <UserCheck className="mr-2 size-4" /> My Account
                   </Link>
                 </DropdownMenuItem>
