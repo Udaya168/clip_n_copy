@@ -1,6 +1,6 @@
 import { createFileRoute, Link, notFound } from "@tanstack/react-router";
 import { Check, Heart, ShoppingBag, Star, Truck, Minus, Plus, Store } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { toast } from "sonner";
 import { ProductCard } from "@/components/ProductCard";
 import { ProductCarousel, ProductCarouselItem } from "@/components/ProductCarousel";
