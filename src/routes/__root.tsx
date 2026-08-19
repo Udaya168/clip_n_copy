@@ -11,7 +11,7 @@ import {
 import { useEffect, type ReactNode } from "react";
 
 import appCss from "../styles.css?url";
-import { reportLovableError } from "../lib/lovable-error-reporting";
+
 import { CartDrawer } from "@/components/CartDrawer";
 import { ShopProvider } from "@/lib/shop-store";
 import { AuthProvider } from "@/lib/auth-store";
@@ -45,7 +45,7 @@ function ErrorComponent({ error, reset }: { error: Error; reset: () => void }) {
   const router = useRouter();
   
   useEffect(() => {
-    reportLovableError(error, { boundary: "tanstack_root_error_component" });
+
 
     const isChunkLoadError = 
       error.name === 'ChunkLoadError' || 

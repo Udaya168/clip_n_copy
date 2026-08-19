@@ -83,7 +83,7 @@ export function HeroSection() {
   const autoplayTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const transitionTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  const slide = SLIDES[activeIndex];
+  const slide = SLIDES[activeIndex] || SLIDES[0];
 
   // Core transition: fade out → swap → fade in
   const goToSlide = useCallback((nextIndex: number) => {
@@ -163,6 +163,8 @@ export function HeroSection() {
       if (transitionTimer.current) clearTimeout(transitionTimer.current);
     };
   }, []);
+
+  if (!slide) return null;
 
   return (
     <section className="section-shell pt-6 md:pt-10 pb-6">

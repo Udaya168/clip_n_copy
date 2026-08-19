@@ -962,15 +962,6 @@ Browse → Search → Filter → View Product → Add to Cart → Wishlist → C
 entirely on the frontend.
 i have add two img add this in website make better UI best e commerce website
 
-This project was built with [Lovable](https://lovable.dev).
-
-## Build with Lovable
-
-Continue developing this project in the [Lovable editor](https://lovable.dev/projects/e0b0a67c-703f-4f09-844e-5e6f7e82f883).
-
-- **Ship faster**: describe what you want to build and Lovable handles the code.
-- **Stay in sync**: every change made in Lovable is committed straight to this repository.
-- **Full ownership**: this code is yours. Push to `main` on GitHub and your changes sync back into Lovable, ready for your next prompt.
 
 ## Development
 
