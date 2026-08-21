@@ -6,10 +6,14 @@ import { supabase } from "./supabase";
 export interface UserProfile {
   id: string;
   full_name: string | null;
+  first_name?: string | null;
+  last_name?: string | null;
   role: string | null;
   avatar_url?: string | null;
   phone?: string | null;
   address?: string | null;
+  date_of_birth?: string | null;
+  gender?: "male" | "female" | "other" | "prefer_not_to_say" | string | null;
   updated_at?: string | null;
 }
 
@@ -37,10 +41,11 @@ export interface SignUpResult {
 }
 
 export interface UpdateProfileParams {
-  fullName: string;
+  firstName: string;
+  lastName: string;
   phone?: string;
-  avatarUrl?: string;
-  email?: string;
+  dateOfBirth?: string;
+  gender?: string;
 }
 
 export interface UpdateProfileResult {
@@ -332,19 +337,24 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
 
     try {
-      const trimmedFullName = params.fullName.trim();
-      const trimmedPhone = params.phone !== undefined ? params.phone.trim() : (profile?.phone || null);
-      const trimmedAvatarUrl = params.avatarUrl !== undefined ? params.avatarUrl.trim() : (profile?.avatar_url || null);
-      const trimmedEmail = params.email ? params.email.trim() : user.email;
+      const trimmedFirstName = params.firstName.trim();
+      const trimmedLastName = params.lastName.trim();
+      const computedFullName = `${trimmedFirstName} ${trimmedLastName}`.trim();
+      const trimmedPhone = params.phone !== undefined ? params.phone.trim() || null : (profile?.phone || null);
+      const dob = params.dateOfBirth !== undefined ? params.dateOfBirth.trim() || null : (profile?.date_of_birth || null);
+      const genderVal = params.gender !== undefined ? params.gender.trim() || null : (profile?.gender || null);
 
       // Update public.profiles table in Supabase
       const { data: updatedProfile, error: profileError } = await supabase
         .from("profiles")
         .upsert({
           id: user.id,
-          full_name: trimmedFullName,
-          phone: trimmedPhone || null,
-          avatar_url: trimmedAvatarUrl || null,
+          first_name: trimmedFirstName,
+          last_name: trimmedLastName,
+          full_name: computedFullName,
+          phone: trimmedPhone,
+          date_of_birth: dob,
+          gender: genderVal,
           role: profile?.role || "user",
           updated_at: new Date().toISOString(),
         })
@@ -358,28 +368,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       // Update user metadata in Supabase Auth
       const { error: metaError } = await supabase.auth.updateUser({
         data: {
-          full_name: trimmedFullName,
-          phone: trimmedPhone || null,
-          avatar_url: trimmedAvatarUrl || null,
+          first_name: trimmedFirstName,
+          last_name: trimmedLastName,
+          full_name: computedFullName,
+          phone: trimmedPhone,
+          date_of_birth: dob,
+          gender: genderVal,
         },
       });
 
       if (metaError) {
         console.warn("Failed to update user metadata in Supabase auth:", metaError.message);
-      }
-
-      let emailUpdateSent = false;
-
-      // Handle email change if email was modified and differs from user.email
-      if (trimmedEmail && trimmedEmail.toLowerCase() !== user.email?.toLowerCase()) {
-        const { error: emailError } = await supabase.auth.updateUser({
-          email: trimmedEmail,
-        });
-
-        if (emailError) {
-          throw new Error(emailError.message || "Failed to update email address");
-        }
-        emailUpdateSent = true;
       }
 
       // Immediately update local state
@@ -393,7 +392,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setUser(userData.user);
       }
 
-      return { error: null, emailUpdateSent };
+      return { error: null };
     } catch (err: any) {
       return { error: err instanceof Error ? err : new Error(err?.message || "Failed to update profile") };
     }

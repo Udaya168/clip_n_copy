@@ -4,6 +4,12 @@ import { useAuth } from "@/lib/auth-store";
 import { useShop } from "@/lib/shop-store";
 import { MyOrdersList } from "@/components/orders/MyOrdersList";
 import { EditProfileModal } from "@/components/account/EditProfileModal";
+import { SavedAddressesModal } from "@/components/account/SavedAddressesModal";
+import {
+  UserAddress,
+  fetchUserAddresses,
+  formatAddressString,
+} from "@/lib/address-store";
 import {
   User,
   MapPin,
@@ -16,7 +22,7 @@ import {
   Clock,
   CheckCircle2,
 } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { supabase } from "@/lib/supabase";
 
 export const Route = createFileRoute("/account")({
@@ -30,11 +36,29 @@ function AccountPage() {
   const wishlist = shopContext?.wishlist || [];
 
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [isAddressModalOpen, setIsAddressModalOpen] = useState(false);
+  const [defaultAddress, setDefaultAddress] = useState<UserAddress | null>(null);
+
   const [orderStats, setOrderStats] = useState({
     total: 0,
     active: 0,
     completed: 0,
   });
+
+  const fetchAddressData = useCallback(async () => {
+    if (!user?.id) return;
+    try {
+      const { data } = await fetchUserAddresses(user.id);
+      if (data && data.length > 0) {
+        const def = data.find((a) => a.is_default) || data[0];
+        setDefaultAddress(def || null);
+      } else {
+        setDefaultAddress(null);
+      }
+    } catch (err) {
+      console.error("Failed to fetch address data:", err);
+    }
+  }, [user?.id]);
 
   useEffect(() => {
     if (!user?.id) return;
@@ -64,11 +88,12 @@ function AccountPage() {
     };
     
     fetchStats();
+    fetchAddressData();
     
     return () => {
       isMounted = false;
     };
-  }, [user?.id]);
+  }, [user?.id, fetchAddressData]);
 
   // Handle unauthenticated state with existing website design
   if (!user) {
@@ -93,12 +118,13 @@ function AccountPage() {
 
   // Graceful fallbacks for missing data to prevent runtime crashes
   const userMetadata = user.user_metadata || {};
-  const userFullName = profile?.full_name || userMetadata['full_name'] || userMetadata['name'] || "Clip N Copy User";
+  const userFullName =
+    (profile?.first_name || profile?.last_name)
+      ? `${profile?.first_name || ''} ${profile?.last_name || ''}`.trim()
+      : profile?.full_name || userMetadata['full_name'] || userMetadata['name'] || "Clip N Copy User";
   const userInitial = userFullName.charAt(0) || user.email?.charAt(0) || "U";
   
   const userPhone = profile?.phone || userMetadata['phone'] || "Add phone number";
-  const userAvatar = profile?.avatar_url || userMetadata['avatar_url'] || userMetadata['picture'] || null;
-  const defaultAddress = profile?.address || "Add your delivery address";
   const safeEmail = user.email || "No email available";
 
   return (
@@ -123,19 +149,8 @@ function AccountPage() {
             {/* Profile Summary Card */}
             <div className="rounded-3xl border border-border bg-background p-6 shadow-soft">
               <div className="flex items-center gap-4">
-                <div className="relative size-16 shrink-0 overflow-hidden rounded-full bg-primary font-display text-2xl font-bold text-primary-foreground flex items-center justify-center border border-border">
-                  {userAvatar ? (
-                    <img
-                      src={userAvatar}
-                      alt={userFullName}
-                      className="size-full object-cover"
-                      onError={(e) => {
-                        (e.target as HTMLElement).style.display = "none";
-                      }}
-                    />
-                  ) : (
-                    userInitial.toUpperCase()
-                  )}
+                <div className="relative size-16 shrink-0 overflow-hidden rounded-full bg-primary font-display text-2xl font-bold text-primary-foreground flex items-center justify-center border border-border shadow-sm">
+                  {userInitial.toUpperCase()}
                 </div>
                 <div className="min-w-0 flex-1">
                   <h2 className="truncate font-display text-lg font-black text-foreground">
@@ -230,25 +245,42 @@ function AccountPage() {
               <MyOrdersList />
             </div>
 
-            {/* Saved Addresses (Mock for now) */}
+            {/* Saved Address Section */}
             <div>
               <h3 className="mb-4 font-display text-lg font-black">Saved Address</h3>
-              <div className="rounded-3xl border border-border bg-background p-6 shadow-soft flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+              <div
+                onClick={() => setIsAddressModalOpen(true)}
+                className="rounded-3xl border border-border bg-background p-6 shadow-soft hover:shadow-md hover:border-primary/50 transition-all flex flex-col sm:flex-row sm:items-center justify-between gap-4 cursor-pointer group"
+              >
                 <div className="flex items-start gap-3">
-                  <MapPin className="size-5 shrink-0 text-primary mt-0.5" />
+                  <div className="size-10 rounded-2xl bg-primary/10 text-primary flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform">
+                    <MapPin className="size-5" />
+                  </div>
                   <div>
-                    <p className="font-semibold text-foreground">Default Delivery Address</p>
-                    <p className="mt-1 text-sm text-muted-foreground max-w-sm">
-                      {defaultAddress}
+                    <div className="flex items-center gap-2">
+                      <p className="font-semibold text-foreground">Default Delivery Address</p>
+                      {defaultAddress && (
+                        <span className="text-[10px] font-bold px-2.5 py-0.5 rounded-full bg-primary/15 text-primary">
+                          Default
+                        </span>
+                      )}
+                    </div>
+                    <p className="mt-1 text-sm text-muted-foreground max-w-md leading-relaxed">
+                      {defaultAddress
+                        ? `${defaultAddress.full_name} (${defaultAddress.phone}) — ${formatAddressString(defaultAddress)}`
+                        : "Add your delivery address"}
                     </p>
                   </div>
                 </div>
                 <button
                   type="button"
-                  onClick={() => setIsEditModalOpen(true)}
-                  className="shrink-0 rounded-full border border-border px-4 py-2 text-xs font-bold transition-colors hover:bg-muted/50 cursor-pointer"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setIsAddressModalOpen(true);
+                  }}
+                  className="shrink-0 rounded-full border border-border bg-background px-5 py-2.5 text-xs font-bold text-foreground hover:bg-primary hover:text-primary-foreground hover:border-primary transition-colors cursor-pointer"
                 >
-                  Edit Profile
+                  Manage Addresses
                 </button>
               </div>
             </div>
@@ -262,6 +294,16 @@ function AccountPage() {
         isOpen={isEditModalOpen}
         onClose={() => setIsEditModalOpen(false)}
       />
+
+      {/* Saved Addresses Management Modal */}
+      {user && (
+        <SavedAddressesModal
+          isOpen={isAddressModalOpen}
+          onClose={() => setIsAddressModalOpen(false)}
+          userId={user.id}
+          onAddressesChange={fetchAddressData}
+        />
+      )}
     </ShopLayout>
   );
 }

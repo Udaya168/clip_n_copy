@@ -17,11 +17,15 @@ CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 -- A. PROFILES TABLE
 CREATE TABLE IF NOT EXISTS public.profiles (
   id UUID PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
+  first_name TEXT,
+  last_name TEXT,
   full_name TEXT,
   role TEXT DEFAULT 'user' CHECK (role IN ('user', 'admin')),
   avatar_url TEXT,
   phone TEXT,
   address TEXT,
+  date_of_birth DATE,
+  gender TEXT CHECK (gender IN ('male', 'female', 'other', 'prefer_not_to_say')),
   created_at TIMESTAMPTZ DEFAULT NOW(),
   updated_at TIMESTAMPTZ DEFAULT NOW()
 );
@@ -345,3 +349,59 @@ DROP TRIGGER IF EXISTS on_auth_user_created ON auth.users;
 CREATE TRIGGER on_auth_user_created
   AFTER INSERT ON auth.users
   FOR EACH ROW EXECUTE FUNCTION public.handle_new_user();
+
+-- ----------------------------------------------------------------------------
+-- 9. ADDRESSES TABLE & SECURITY POLICIES
+-- ----------------------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS public.addresses (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+  full_name TEXT NOT NULL,
+  phone TEXT NOT NULL,
+  address_line1 TEXT NOT NULL,
+  address_line2 TEXT NOT NULL,
+  landmark TEXT,
+  city TEXT NOT NULL,
+  state TEXT NOT NULL,
+  pincode TEXT NOT NULL,
+  country TEXT NOT NULL DEFAULT 'India',
+  is_default BOOLEAN DEFAULT false,
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_addresses_user_id ON public.addresses(user_id);
+CREATE INDEX IF NOT EXISTS idx_addresses_user_default ON public.addresses(user_id, is_default);
+
+ALTER TABLE public.addresses ENABLE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS "addresses_select_policy" ON public.addresses;
+DROP POLICY IF EXISTS "addresses_insert_policy" ON public.addresses;
+DROP POLICY IF EXISTS "addresses_update_policy" ON public.addresses;
+DROP POLICY IF EXISTS "addresses_delete_policy" ON public.addresses;
+
+CREATE POLICY "addresses_select_policy"
+ON public.addresses
+FOR SELECT
+TO authenticated
+USING (auth.uid() = user_id OR public.is_admin());
+
+CREATE POLICY "addresses_insert_policy"
+ON public.addresses
+FOR INSERT
+TO authenticated
+WITH CHECK (auth.uid() = user_id);
+
+CREATE POLICY "addresses_update_policy"
+ON public.addresses
+FOR UPDATE
+TO authenticated
+USING (auth.uid() = user_id)
+WITH CHECK (auth.uid() = user_id);
+
+CREATE POLICY "addresses_delete_policy"
+ON public.addresses
+FOR DELETE
+TO authenticated
+USING (auth.uid() = user_id);
+
