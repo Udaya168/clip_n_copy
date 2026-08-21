@@ -5,6 +5,7 @@ import { ShoppingBag, Search, Filter, Clock, CheckCircle2, Truck, Package, Refre
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
+import { AdminOrderDetailsModal } from "./AdminOrderDetailsModal";
 
 type OrderStatusType = "Processing" | "Confirmed" | "Shipped" | "Delivered" | "Cancelled";
 
@@ -13,6 +14,9 @@ export function OrderManagement() {
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
   const [filterStatus, setFilterStatus] = useState<string>("all");
+
+  const [selectedOrder, setSelectedOrder] = useState<OrderRecord | null>(null);
+  const [isDetailsOpen, setIsDetailsOpen] = useState(false);
 
   const loadOrders = async () => {
     setLoading(true);
@@ -40,6 +44,14 @@ export function OrderManagement() {
     await updateOrderStatus(orderId, status);
     toast.success(`Order ${orderId} updated to ${status}`);
     setOrders((prev) => prev.map((o) => (o.id === orderId ? { ...o, status } : o)));
+    if (selectedOrder && selectedOrder.id === orderId) {
+      setSelectedOrder((prev) => (prev ? { ...prev, status } : null));
+    }
+  };
+
+  const handleRowClick = (order: OrderRecord) => {
+    setSelectedOrder(order);
+    setIsDetailsOpen(true);
   };
 
   const filteredOrders = orders.filter((o) => {
@@ -59,7 +71,7 @@ export function OrderManagement() {
         <div>
           <h2 className="font-display text-2xl font-black tracking-tight">Order Management</h2>
           <p className="mt-1 text-xs text-muted-foreground">
-            Live view of consumer orders placed across website &amp; store pickup.
+            Live view of consumer orders placed across website &amp; store pickup. Click any row to view full order details.
           </p>
         </div>
 
@@ -132,7 +144,11 @@ export function OrderManagement() {
                 </tr>
               ) : (
                 filteredOrders.map((o) => (
-                  <tr key={o.id} className="hover:bg-secondary/30 transition-colors">
+                  <tr
+                    key={o.id}
+                    onClick={() => handleRowClick(o)}
+                    className="hover:bg-secondary/40 transition-colors cursor-pointer"
+                  >
                     <td className="px-5 py-4 font-bold text-foreground font-mono">
                       {o.orderNumber}
                     </td>
@@ -160,10 +176,14 @@ export function OrderManagement() {
                     <td className="px-5 py-4">
                       <StatusBadge status={o.status} />
                     </td>
-                    <td className="px-5 py-4 text-right">
+                    <td className="px-5 py-4 text-right" onClick={(e) => e.stopPropagation()}>
                       <select
                         value={o.status}
-                        onChange={(e) => handleStatusChange(o.id, e.target.value as OrderStatusType)}
+                        onClick={(e) => e.stopPropagation()}
+                        onChange={(e) => {
+                          e.stopPropagation();
+                          handleStatusChange(o.id, e.target.value as OrderStatusType);
+                        }}
                         className="rounded-xl border border-border bg-background px-2.5 py-1.5 text-xs font-semibold text-foreground focus:ring-2 focus:ring-primary focus:outline-none cursor-pointer"
                       >
                         <option value="Processing">Processing</option>
@@ -180,6 +200,19 @@ export function OrderManagement() {
           </table>
         </div>
       </div>
+
+      {/* Order Details Modal */}
+      <AdminOrderDetailsModal
+        order={selectedOrder}
+        isOpen={isDetailsOpen}
+        onClose={() => setIsDetailsOpen(false)}
+        onStatusUpdated={(orderId, newStatus) => {
+          setOrders((prev) => prev.map((o) => (o.id === orderId ? { ...o, status: newStatus } : o)));
+          if (selectedOrder && selectedOrder.id === orderId) {
+            setSelectedOrder((prev) => (prev ? { ...prev, status: newStatus } : null));
+          }
+        }}
+      />
     </div>
   );
 }

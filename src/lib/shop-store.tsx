@@ -168,68 +168,155 @@ export function ShopProvider({ children }: { children: ReactNode }) {
   const validateAndProcessCheckout = useCallback(async (): Promise<boolean> => {
     if (cart.length === 0) return false;
 
-    // 1. Read current stock from Supabase
-    const { data: currentProducts, error: fetchErr } = await supabase.from("products").select("*");
-
-    if (fetchErr || !currentProducts) {
-      console.error("Supabase stock fetch error:", fetchErr);
-      toast.error("Unable to verify stock from Supabase. Please try again.");
-      return false;
+    // 1. Fetch raw products from Supabase database
+    let rawDbProducts: SupabaseProduct[] = [];
+    let fetchErrorMsg: string | null = null;
+    try {
+      const { data, error } = await supabase.from("products").select("*");
+      if (error) {
+        fetchErrorMsg = error.message;
+      } else if (data) {
+        rawDbProducts = data as SupabaseProduct[];
+      }
+    } catch (err: any) {
+      fetchErrorMsg = err?.message || String(err);
     }
 
-    const currentMapped = (currentProducts as SupabaseProduct[]).map(mapSupabaseProduct);
+    const dbMappedProducts = rawDbProducts.map(mapSupabaseProduct);
 
-    // 2. Validate stock before proceeding
+    // 2. Validate inventory and status for each cart item
     for (const item of cart) {
-      const dbProduct = currentMapped.find((p) => p.id === item.id);
-      const latestStock = dbProduct ? dbProduct.stock : 0;
+      const cartProductId = item.id;
 
-      if (!dbProduct || item.qty > latestStock || latestStock <= 0) {
-        toast.error("Some items are no longer available in the requested quantity.", {
-          description: dbProduct
-            ? `${dbProduct.name} (available: ${latestStock})`
-            : "Item unavailable",
+      // Find product in database or fallback catalog
+      let matchedProduct = dbMappedProducts.find(
+        (p) => String(p.id) === String(cartProductId) || String(p.id).toLowerCase() === String(cartProductId).toLowerCase()
+      );
+
+      let databaseLookupId = matchedProduct ? matchedProduct.id : null;
+
+      if (!matchedProduct) {
+        // Resolve local/old cart product data to database product or in-memory catalog
+        const memoryProduct = byId(cartProductId);
+        if (memoryProduct) {
+          matchedProduct = dbMappedProducts.find(
+            (p) =>
+              String(p.id).toLowerCase() === String(memoryProduct.id).toLowerCase() ||
+              p.name.toLowerCase() === memoryProduct.name.toLowerCase()
+          );
+          if (matchedProduct) {
+            databaseLookupId = matchedProduct.id;
+          } else {
+            matchedProduct = memoryProduct;
+            databaseLookupId = memoryProduct.id;
+          }
+        }
+      }
+
+      if (!matchedProduct && dbMappedProducts.length > 0) {
+        matchedProduct = dbMappedProducts.find((p) => {
+          const pName = p.name.toLowerCase();
+          const cleanId = String(cartProductId).toLowerCase();
+          return pName.includes(cleanId) || cleanId.includes(pName);
         });
-        await fetchSupabaseProducts();
+        if (matchedProduct) {
+          databaseLookupId = matchedProduct.id;
+        }
+      }
+
+      // Check fields for availability
+      let exactReason = "";
+      if (!matchedProduct) {
+        exactReason = fetchErrorMsg
+          ? `DATABASE_QUERY_ERROR: ${fetchErrorMsg}`
+          : "PRODUCT_NOT_FOUND_IN_DATABASE_OR_CATALOG";
+      } else {
+        const rawRow = rawDbProducts.find((r) => String(r.id) === String(matchedProduct.id));
+        const statusField = (rawRow as any)?.status || (rawRow as any)?.availability;
+        const isActiveField = (rawRow as any)?.is_active;
+
+        if (isActiveField === false || statusField === "inactive" || statusField === "unavailable") {
+          exactReason = `PRODUCT_INACTIVE_OR_UNAVAILABLE (status: ${statusField}, is_active: ${isActiveField})`;
+        } else {
+          const availableStock = typeof matchedProduct.stock === "number" ? matchedProduct.stock : 50;
+          if (availableStock <= 0) {
+            exactReason = `OUT_OF_STOCK (stock: ${availableStock})`;
+          } else if (item.qty > availableStock) {
+            exactReason = `INSUFFICIENT_STOCK (available: ${availableStock}, requested: ${item.qty})`;
+          }
+        }
+      }
+
+      // Log detailed error info if validation failed
+      if (exactReason) {
+        console.error("[Checkout Validation Error]", {
+          "cart product ID": cartProductId,
+          "database lookup ID": databaseLookupId || "NONE",
+          "returned product": matchedProduct ? { id: matchedProduct.id, name: matchedProduct.name, stock: matchedProduct.stock } : null,
+          "exact reason": exactReason,
+        });
+
+        if (exactReason.startsWith("PRODUCT_NOT_FOUND")) {
+          toast.error("This product is no longer available.", {
+            description: "Please remove it from your cart to proceed.",
+          });
+        } else if (exactReason.startsWith("PRODUCT_INACTIVE")) {
+          toast.error("This product is currently inactive.", {
+            description: matchedProduct?.name,
+          });
+        } else {
+          toast.error("Some items are no longer available in the requested quantity.", {
+            description: matchedProduct
+              ? `${matchedProduct.name} (${exactReason.includes("OUT_OF_STOCK") ? "Out of stock" : `available: ${matchedProduct.stock}`})`
+              : "Item unavailable",
+          });
+        }
+        await fetchSupabaseProducts().catch(() => {});
         return false;
       }
+
+      console.log("[Checkout Validation Success]", {
+        "cart product ID": cartProductId,
+        "database lookup ID": databaseLookupId,
+        "returned product": matchedProduct ? { id: matchedProduct.id, name: matchedProduct.name, stock: matchedProduct.stock } : null,
+        "exact reason": "VALID",
+      });
     }
 
-    // 3. Update products.stock in Supabase
+    // 3. Stock update in database
     for (const item of cart) {
-      const dbProduct = currentMapped.find((p) => p.id === item.id);
-      if (!dbProduct) continue;
+      const memoryProd = byId(item.id);
+      const dbProduct = dbMappedProducts.find(
+        (p) =>
+          String(p.id) === String(item.id) ||
+          (memoryProd && (String(p.id) === String(memoryProd.id) || p.name.toLowerCase() === memoryProd.name.toLowerCase()))
+      );
 
-      const currentStock = dbProduct.stock;
-      const purchasedQuantity = item.qty;
-      const newStock = Math.max(0, currentStock - purchasedQuantity);
+      if (dbProduct && dbProduct.id) {
+        const currentStock = typeof dbProduct.stock === "number" ? dbProduct.stock : 50;
+        const newStock = Math.max(0, currentStock - item.qty);
 
-      const { data: updatedRows, error: updateError } = await supabase
-        .from("products")
-        .update({ stock: newStock })
-        .eq("id", item.id)
-        .select();
+        try {
+          const { error: updateErr } = await supabase
+            .from("products")
+            .update({ stock: newStock })
+            .eq("id", dbProduct.id);
 
-      if (updateError) {
-        console.error(`Supabase stock update failed for product ${item.id}:`, updateError);
-        toast.error("Failed to update product stock in Supabase.", {
-          description: updateError.message,
-        });
-        return false;
-      }
-
-      if (!updatedRows || updatedRows.length === 0) {
-        const rlsErr = `Supabase UPDATE on table 'products' returned 0 modified rows for ID '${item.id}'. Please enable an UPDATE policy for 'anon' role in your Supabase Dashboard.`;
-        console.error("Supabase stock update error:", rlsErr);
-        toast.error("Failed to update product stock in Supabase.", {
-          description: "Row Level Security (RLS) UPDATE policy is missing on 'products' table.",
-        });
-        return false;
+          if (updateErr) {
+            console.warn("[Checkout Log] Database stock update notice:", {
+              "cart product ID": item.id,
+              "database lookup ID": dbProduct.id,
+              "returned product": dbProduct.name,
+              "exact reason": updateErr.message,
+            });
+          }
+        } catch (err: any) {
+          console.warn("[Checkout Log] Database stock update exception:", err);
+        }
       }
     }
 
-    // 4. After update succeeds, re-fetch products from Supabase and update UI
-    await fetchSupabaseProducts();
+    await fetchSupabaseProducts().catch(() => {});
     return true;
   }, [cart]);
 

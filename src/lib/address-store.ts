@@ -12,6 +12,7 @@ export interface UserAddress {
   state: string;
   pincode: string;
   country: string;
+  address_type?: string | null;
   is_default: boolean;
   created_at?: string;
   updated_at?: string;
@@ -64,7 +65,11 @@ export async function fetchUserAddresses(userId: string): Promise<{ data: UserAd
       return { data: localData, error: null };
     }
 
-    const sbData = (data as UserAddress[]) || [];
+    const sbData = ((data as any[]) || []).map((row) => ({
+      ...row,
+      address_line1: row.address_line1 || row.house_flat || "",
+      address_line2: row.address_line2 || row.street_area || "",
+    })) as UserAddress[];
     // Sync local fallback with Supabase data if available
     saveFallbackAddresses(userId, sbData);
     return { data: sbData, error: null };
@@ -102,6 +107,7 @@ export async function addUserAddress(
     state: input.state.trim(),
     pincode: input.pincode.trim(),
     country: (input.country || "India").trim(),
+    address_type: input.address_type || "Home",
     is_default: shouldBeDefault,
     created_at: new Date().toISOString(),
     updated_at: new Date().toISOString(),
@@ -126,11 +132,14 @@ export async function addUserAddress(
         phone: newAddressRecord.phone,
         address_line1: newAddressRecord.address_line1,
         address_line2: newAddressRecord.address_line2,
+        house_flat: newAddressRecord.address_line1,
+        street_area: newAddressRecord.address_line2,
         landmark: newAddressRecord.landmark,
         city: newAddressRecord.city,
         state: newAddressRecord.state,
         pincode: newAddressRecord.pincode,
         country: newAddressRecord.country,
+        address_type: newAddressRecord.address_type,
         is_default: shouldBeDefault,
         updated_at: newAddressRecord.updated_at,
       })

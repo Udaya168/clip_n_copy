@@ -1,9 +1,10 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback, useRef } from "react";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { ArrowLeft, Banknote, CheckCircle2, CreditCard, Smartphone, Store, Truck, Zap, Loader2 } from "lucide-react";
 import { inr, useShop } from "@/lib/shop-store";
 import { useAuth, isEmailConfirmed } from "@/lib/auth-store";
 import { saveOrder, OrderRecord } from "@/lib/orders-store";
+import { UserAddress, fetchUserAddresses, addUserAddress } from "@/lib/address-store";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import { ShopLayout } from "@/components/ShopLayout";
@@ -45,23 +46,68 @@ function Checkout() {
   const { user, profile, loading } = useAuth();
   const navigate = useNavigate();
   const goBack = useAppBack();
+  const newAddressRef = useRef<HTMLDivElement>(null);
 
   const [delivery, setDelivery] = useState("standard");
   const [payment, setPayment] = useState("upi");
   const [placed, setPlaced] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  // Saved addresses state
+  const [savedAddresses, setSavedAddresses] = useState<UserAddress[]>([]);
+  const [isLoadingAddresses, setIsLoadingAddresses] = useState<boolean>(true);
+  const [selectedAddressId, setSelectedAddressId] = useState<string | null>(null);
+
   const userFullName = profile?.full_name || (user?.user_metadata?.["full_name"] as string) || "";
+  const userPhone = profile?.phone || (user?.user_metadata?.["phone"] as string) || "";
+
+  // New address form state
   const [nameInput, setNameInput] = useState(userFullName);
-  const [phoneInput, setPhoneInput] = useState("");
+  const [phoneInput, setPhoneInput] = useState(userPhone);
   const [addressInput, setAddressInput] = useState("");
+  const [cityInput, setCityInput] = useState("Bengaluru");
+  const [stateInput, setStateInput] = useState("Karnataka");
+  const [pincodeInput, setPincodeInput] = useState("560037");
+  const [saveNewAddress, setSaveNewAddress] = useState(false);
+
   const [createdOrder, setCreatedOrder] = useState<OrderRecord | null>(null);
 
   useEffect(() => {
     if (userFullName && !nameInput) {
       setNameInput(userFullName);
     }
-  }, [userFullName, nameInput]);
+    if (userPhone && !phoneInput) {
+      setPhoneInput(userPhone);
+    }
+  }, [userFullName, userPhone, nameInput, phoneInput]);
+
+  const loadSavedAddresses = useCallback(async () => {
+    if (!user?.id) return;
+    setIsLoadingAddresses(true);
+    try {
+      const { data } = await fetchUserAddresses(user.id);
+      const list = data || [];
+      setSavedAddresses(list);
+      if (list.length > 0) {
+        const defaultAddr = list.find((a) => a.is_default) || list[0];
+        if (defaultAddr) {
+          setSelectedAddressId(defaultAddr.id);
+        }
+      } else {
+        setSelectedAddressId(null);
+      }
+    } catch (err) {
+      console.error("[Checkout] Error loading saved addresses:", err);
+    } finally {
+      setIsLoadingAddresses(false);
+    }
+  }, [user?.id]);
+
+  useEffect(() => {
+    if (user?.id) {
+      loadSavedAddresses();
+    }
+  }, [user?.id, loadSavedAddresses]);
 
   useEffect(() => {
     if (!loading && (!user || !isEmailConfirmed(user))) {
@@ -127,6 +173,99 @@ function Checkout() {
     );
   }
 
+  const handlePlaceOrder = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (isSubmitting) return;
+    setIsSubmitting(true);
+
+    let finalCustomerName = nameInput || userFullName || "Customer";
+    let finalCustomerPhone = phoneInput || "+91 99860 55335";
+    let finalAddress = "";
+
+    const selectedAddrObj = savedAddresses.find((a) => a.id === selectedAddressId);
+
+    if (selectedAddrObj && selectedAddressId !== "new") {
+      finalCustomerName = selectedAddrObj.full_name;
+      finalCustomerPhone = selectedAddrObj.phone;
+      finalAddress = [
+        selectedAddrObj.address_line1,
+        selectedAddrObj.address_line2,
+        selectedAddrObj.landmark ? `Near ${selectedAddrObj.landmark}` : null,
+        `${selectedAddrObj.city}, ${selectedAddrObj.state} - ${selectedAddrObj.pincode}`,
+      ]
+        .filter(Boolean)
+        .join(", ");
+    } else {
+      if (!addressInput.trim()) {
+        toast.error("Please enter your delivery address.");
+        setIsSubmitting(false);
+        return;
+      }
+      finalAddress = `${addressInput.trim()}, ${cityInput.trim()}, ${stateInput.trim()} - ${pincodeInput.trim()}`;
+
+      if (saveNewAddress && user?.id) {
+        try {
+          await addUserAddress(user.id, {
+            full_name: nameInput.trim() || userFullName || "Customer",
+            phone: phoneInput.trim() || "+91 99860 55335",
+            address_line1: addressInput.trim(),
+            address_line2: `${cityInput.trim()}, ${stateInput.trim()}`,
+            city: cityInput.trim(),
+            state: stateInput.trim(),
+            pincode: pincodeInput.trim(),
+            country: "India",
+            address_type: "Home",
+            is_default: savedAddresses.length === 0,
+          });
+        } catch (err) {
+          console.error("Failed to save new address:", err);
+        }
+      }
+    }
+
+    const ok = await validateAndProcessCheckout();
+    if (ok) {
+      const orderNum = "CNC-2026-" + Math.floor(10000 + Math.random() * 90000);
+      const orderItemsInput = lines.map((l) => {
+        const { product, qty } = l;
+        return {
+          product_id: product.id,
+          product_name: product.name,
+          quantity: qty,
+          price: product.price,
+          image_url: product.image,
+          ...(l.variant ? { variant: l.variant } : {}),
+        };
+      });
+
+      const saved = await saveOrder(
+        {
+          orderNumber: orderNum,
+          customerName: finalCustomerName,
+          customerPhone: finalCustomerPhone,
+          customerEmail: user.email || "",
+          date: new Date().toISOString().split("T")[0] || "2026-08-13",
+          itemsCount: lines.reduce((s, l) => s + l.qty, 0),
+          totalAmount: total + shipping,
+          status: "Processing",
+          fulfillmentType: delivery === "pickup" ? "Pickup" : "Delivery",
+          address: finalAddress || "ITPL Main Road, Kundalahalli, Bengaluru",
+          deliveryMethod: DELIVERY.find((d) => d.id === delivery)?.label || "Standard Delivery",
+          paymentMethod: PAYMENTS.find((p) => p.id === payment)?.label || "UPI",
+          user_id: user.id,
+        },
+        orderItemsInput
+      );
+
+      setCreatedOrder(saved);
+      setPlaced(true);
+      clearCart();
+      window.dispatchEvent(new Event("cnc-order-placed"));
+      toast.success(`Order ${saved.orderNumber} placed successfully!`);
+    }
+    setIsSubmitting(false);
+  };
+
   return (
     <ShopLayout>
       <div className="section-shell py-10">
@@ -146,97 +285,243 @@ function Checkout() {
 
         <form
           className="mt-8 grid gap-6 lg:grid-cols-[minmax(0,1fr)_22rem]"
-          onSubmit={async (e) => {
-            e.preventDefault();
-            if (isSubmitting) return;
-            setIsSubmitting(true);
-
-            const ok = await validateAndProcessCheckout();
-            if (ok) {
-              const orderNum = "CNC-2026-" + Math.floor(10000 + Math.random() * 90000);
-              const orderItemsInput = lines.map((l) => {
-                const { product, qty } = l;
-                return {
-                  product_id: product.id,
-                  product_name: product.name,
-                  quantity: qty,
-                  price: product.price,
-                  image_url: product.image,
-                  ...(l.variant ? { variant: l.variant } : {}),
-                };
-              });
-
-              const saved = await saveOrder(
-                {
-                  orderNumber: orderNum,
-                  customerName: nameInput || userFullName || "Customer",
-                  customerPhone: phoneInput || "+91 99860 55335",
-                  customerEmail: user.email || "",
-                  date: new Date().toISOString().split("T")[0] || "2026-08-13",
-                  itemsCount: lines.reduce((s, l) => s + l.qty, 0),
-                  totalAmount: total + shipping,
-                  status: "Processing",
-                  fulfillmentType: delivery === "pickup" ? "Pickup" : "Delivery",
-                  address: addressInput || "ITPL Main Road, Kundalahalli, Bengaluru",
-                  deliveryMethod: DELIVERY.find((d) => d.id === delivery)?.label || "Standard Delivery",
-                  paymentMethod: PAYMENTS.find((p) => p.id === payment)?.label || "UPI",
-                  user_id: user.id,
-                },
-                orderItemsInput
-              );
-
-              setCreatedOrder(saved);
-              setPlaced(true);
-              clearCart();
-              window.dispatchEvent(new Event("cnc-order-placed"));
-              toast.success(`Order ${saved.orderNumber} placed successfully!`);
-            }
-            setIsSubmitting(false);
-          }}
+          onSubmit={handlePlaceOrder}
         >
           <div className="space-y-6">
             <section className="surface-card p-6">
-              <h2 className="font-display text-lg font-bold">Delivery Address</h2>
-              <div className="mt-4 grid gap-3 sm:grid-cols-2">
-                <Field label="Full name">
-                  <input
-                    required
-                    className="input-base"
-                    value={nameInput}
-                    onChange={(e) => setNameInput(e.target.value)}
-                    placeholder="Your Full Name"
-                  />
-                </Field>
-                <Field label="Phone">
-                  <input
-                    required
-                    type="tel"
-                    className="input-base"
-                    value={phoneInput}
-                    onChange={(e) => setPhoneInput(e.target.value)}
-                    placeholder="99860 55335"
-                  />
-                </Field>
-                <div className="sm:col-span-2">
-                  <Field label="Address">
+              <h2 className="font-display text-lg font-bold uppercase tracking-wider text-foreground">
+                SAVED ADDRESSES
+              </h2>
+              <p className="text-xs text-muted-foreground mt-0.5">
+                Select a saved delivery address
+              </p>
+
+              {isLoadingAddresses ? (
+                <div className="mt-4 flex items-center gap-2 text-xs text-muted-foreground py-4">
+                  <Loader2 className="size-4 animate-spin text-primary" /> Loading saved addresses...
+                </div>
+              ) : savedAddresses.length > 0 ? (
+                <div className="mt-4 grid gap-3">
+                  {savedAddresses.map((addr) => {
+                    const isSelected = selectedAddressId === addr.id;
+                    const addressType = addr.address_type || "Home";
+                    const formattedCompact = [
+                      addr.address_line1,
+                      addr.address_line2,
+                      addr.landmark ? `Near ${addr.landmark}` : null,
+                      `${addr.city}, ${addr.state} - ${addr.pincode}`,
+                    ]
+                      .filter(Boolean)
+                      .join(", ");
+
+                    return (
+                      <div
+                        key={addr.id}
+                        onClick={() => setSelectedAddressId(addr.id)}
+                        className={cn(
+                          "relative flex items-start gap-3.5 rounded-2xl border p-4 transition-all cursor-pointer select-none",
+                          isSelected
+                            ? "border-primary bg-primary/5 ring-2 ring-primary/20"
+                            : "border-border bg-background hover:bg-secondary"
+                        )}
+                      >
+                        <input
+                          type="radio"
+                          name="selected_delivery_address"
+                          checked={isSelected}
+                          onChange={() => setSelectedAddressId(addr.id)}
+                          className="mt-1 size-4 text-primary accent-primary shrink-0 cursor-pointer"
+                        />
+
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center justify-between gap-2 flex-wrap mb-1">
+                            <div className="flex items-center gap-2">
+                              <span className="font-display text-xs font-bold uppercase tracking-wider text-foreground">
+                                {addressType}
+                              </span>
+                              {addr.is_default && (
+                                <span className="inline-flex items-center px-2 py-0.5 rounded-full bg-primary/10 text-primary text-[10px] font-extrabold uppercase tracking-wider">
+                                  Default
+                                </span>
+                              )}
+                            </div>
+                          </div>
+
+                          <p className="text-sm font-bold text-foreground">
+                            {addr.full_name} <span className="text-muted-foreground font-normal">·</span> {addr.phone}
+                          </p>
+                          <p className="text-xs text-muted-foreground line-clamp-2 mt-0.5">
+                            {formattedCompact}
+                          </p>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              ) : (
+                <div className="mt-4 rounded-2xl border border-dashed border-border bg-secondary/30 p-5 text-center">
+                  <p className="text-xs text-muted-foreground font-medium">No saved addresses yet.</p>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setSelectedAddressId("new");
+                      newAddressRef.current?.scrollIntoView({ behavior: "smooth" });
+                    }}
+                    className="mt-3 inline-flex items-center gap-1.5 px-4 py-2 rounded-full bg-primary text-xs font-bold text-primary-foreground hover:bg-primary/90 transition-colors shadow-soft cursor-pointer"
+                  >
+                    + Add New Address
+                  </button>
+                </div>
+              )}
+
+              {/* Divider */}
+              <div className="relative my-6 flex items-center justify-center">
+                <div className="absolute inset-0 flex items-center">
+                  <div className="w-full border-t border-border" />
+                </div>
+                <div className="relative bg-card px-4 text-xs font-bold tracking-wider text-muted-foreground uppercase">
+                  OR ADD A NEW ADDRESS
+                </div>
+              </div>
+
+              {/* Add New Address Form */}
+              <div ref={newAddressRef} className="space-y-4">
+                {savedAddresses.length > 0 && (
+                  <div className="flex items-center gap-2">
                     <input
-                      required
+                      type="radio"
+                      id="use_new_address_radio"
+                      name="selected_delivery_address"
+                      checked={selectedAddressId === "new" || selectedAddressId === null}
+                      onChange={() => setSelectedAddressId("new")}
+                      className="size-4 text-primary accent-primary cursor-pointer"
+                    />
+                    <label htmlFor="use_new_address_radio" className="text-xs font-bold text-foreground cursor-pointer">
+                      Use a new address
+                    </label>
+                  </div>
+                )}
+
+                <div
+                  className={cn(
+                    "grid gap-3 sm:grid-cols-2 pt-1 transition-opacity",
+                    selectedAddressId && selectedAddressId !== "new" && savedAddresses.length > 0
+                      ? "opacity-60"
+                      : "opacity-100"
+                  )}
+                  onClick={() => {
+                    if (savedAddresses.length > 0 && selectedAddressId !== "new") {
+                      setSelectedAddressId("new");
+                    }
+                  }}
+                >
+                  <Field label="FULL NAME">
+                    <input
+                      required={selectedAddressId === "new" || !selectedAddressId}
                       className="input-base"
-                      value={addressInput}
-                      onChange={(e) => setAddressInput(e.target.value)}
-                      placeholder="Flat / street / landmark"
+                      value={nameInput}
+                      onChange={(e) => {
+                        setNameInput(e.target.value);
+                        if (selectedAddressId !== "new" && savedAddresses.length > 0) {
+                          setSelectedAddressId("new");
+                        }
+                      }}
+                      placeholder="Your Full Name"
+                    />
+                  </Field>
+                  <Field label="PHONE">
+                    <input
+                      required={selectedAddressId === "new" || !selectedAddressId}
+                      type="tel"
+                      className="input-base"
+                      value={phoneInput}
+                      onChange={(e) => {
+                        setPhoneInput(e.target.value);
+                        if (selectedAddressId !== "new" && savedAddresses.length > 0) {
+                          setSelectedAddressId("new");
+                        }
+                      }}
+                      placeholder="99860 55335"
+                    />
+                  </Field>
+                  <div className="sm:col-span-2">
+                    <Field label="ADDRESS / Flat / Street / Landmark">
+                      <input
+                        required={selectedAddressId === "new" || !selectedAddressId}
+                        className="input-base"
+                        value={addressInput}
+                        onChange={(e) => {
+                          setAddressInput(e.target.value);
+                          if (selectedAddressId !== "new" && savedAddresses.length > 0) {
+                            setSelectedAddressId("new");
+                          }
+                        }}
+                        placeholder="Flat / Street / Landmark"
+                      />
+                    </Field>
+                  </div>
+                  <Field label="CITY">
+                    <input
+                      required={selectedAddressId === "new" || !selectedAddressId}
+                      className="input-base"
+                      value={cityInput}
+                      onChange={(e) => {
+                        setCityInput(e.target.value);
+                        if (selectedAddressId !== "new" && savedAddresses.length > 0) {
+                          setSelectedAddressId("new");
+                        }
+                      }}
+                      placeholder="Bengaluru"
+                    />
+                  </Field>
+                  <Field label="STATE">
+                    <input
+                      required={selectedAddressId === "new" || !selectedAddressId}
+                      className="input-base"
+                      value={stateInput}
+                      onChange={(e) => {
+                        setStateInput(e.target.value);
+                        if (selectedAddressId !== "new" && savedAddresses.length > 0) {
+                          setSelectedAddressId("new");
+                        }
+                      }}
+                      placeholder="Karnataka"
+                    />
+                  </Field>
+                  <Field label="PINCODE">
+                    <input
+                      required={selectedAddressId === "new" || !selectedAddressId}
+                      className="input-base"
+                      value={pincodeInput}
+                      onChange={(e) => {
+                        setPincodeInput(e.target.value);
+                        if (selectedAddressId !== "new" && savedAddresses.length > 0) {
+                          setSelectedAddressId("new");
+                        }
+                      }}
+                      placeholder="560037"
                     />
                   </Field>
                 </div>
-                <Field label="City">
-                  <input required className="input-base" defaultValue="Bengaluru" />
-                </Field>
-                <Field label="State">
-                  <input required className="input-base" defaultValue="Karnataka" />
-                </Field>
-                <Field label="Pincode">
-                  <input required className="input-base" defaultValue="560037" />
-                </Field>
+
+                <div className="pt-2">
+                  <label className="flex items-center gap-2.5 cursor-pointer select-none">
+                    <input
+                      type="checkbox"
+                      checked={saveNewAddress}
+                      onChange={(e) => {
+                        setSaveNewAddress(e.target.checked);
+                        if (selectedAddressId !== "new" && savedAddresses.length > 0) {
+                          setSelectedAddressId("new");
+                        }
+                      }}
+                      className="size-4 rounded border-input text-primary accent-primary cursor-pointer"
+                    />
+                    <span className="text-xs font-semibold text-foreground">
+                      Save this address to my saved addresses
+                    </span>
+                  </label>
+                </div>
               </div>
             </section>
 

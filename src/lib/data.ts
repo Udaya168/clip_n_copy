@@ -634,7 +634,31 @@ export function setProductsCache(newProducts: Product[]) {
 
 export const discountOf = (p: Product) =>
   p.mrp && p.mrp > p.price ? Math.round(((p.mrp - p.price) / p.mrp) * 100) : 0;
-export const byId = (id: string) => PRODUCTS.find((p) => p.id === id);
+
+export const byId = (id: string): Product | undefined => {
+  if (!id) return undefined;
+  const cleanId = String(id).trim().toLowerCase();
+
+  // 1. Exact ID match or lowercased ID match in current PRODUCTS cache
+  let found = PRODUCTS.find((p) => String(p.id).toLowerCase() === cleanId);
+  if (found) return found;
+
+  // 2. Check if ID matches a static item in INITIAL_PRODUCTS
+  const initItem = INITIAL_PRODUCTS.find((p) => String(p.id).toLowerCase() === cleanId);
+  if (initItem) {
+    // Try finding mapped product in PRODUCTS by matching name
+    found = PRODUCTS.find((p) => p.name.toLowerCase() === initItem.name.toLowerCase());
+    if (found) return found;
+    return initItem;
+  }
+
+  // 3. Match by product name or partial name in current PRODUCTS cache
+  found = PRODUCTS.find((p) => p.name.toLowerCase() === cleanId || p.name.toLowerCase().includes(cleanId));
+  if (found) return found;
+
+  return undefined;
+};
+
 export const withTag = (tag: string) => PRODUCTS.filter((p) => p.tags?.includes(tag));
 export const inCategory = (slug: string) => PRODUCTS.filter((p) => p.category === slug);
 

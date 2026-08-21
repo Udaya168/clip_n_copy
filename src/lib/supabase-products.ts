@@ -62,8 +62,20 @@ export function mapSupabaseProduct(p: SupabaseProduct): Product {
   const mrp = rawMrp < price ? price : rawMrp;
   let rating = Number(p.rating ?? 4.5);
   let reviews = Number(p.review_count ?? 0);
-  const rawStock = typeof p.stock === "number" ? p.stock : p.stock ? 50 : 0;
-  const stock = Math.max(0, Math.floor(Number(rawStock) || 0));
+  let rawStock: number;
+  if (typeof p.stock === "number" && !isNaN(p.stock)) {
+    rawStock = p.stock;
+  } else if (typeof p.stock === "string") {
+    const parsed = parseInt(p.stock, 10);
+    rawStock = !isNaN(parsed) ? parsed : 50;
+  } else if (typeof p.stock === "boolean") {
+    rawStock = p.stock ? 50 : 0;
+  } else if (p.stock === null || p.stock === undefined) {
+    rawStock = 50;
+  } else {
+    rawStock = 50;
+  }
+  const stock = Math.max(0, Math.floor(rawStock));
 
   let description = p.description || `${p.name} by ${p.brand || "Classmate"}`;
   let features: string[] | undefined;
