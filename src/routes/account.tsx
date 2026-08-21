@@ -3,6 +3,7 @@ import { ShopLayout } from "@/components/ShopLayout";
 import { useAuth } from "@/lib/auth-store";
 import { useShop } from "@/lib/shop-store";
 import { MyOrdersList } from "@/components/orders/MyOrdersList";
+import { EditProfileModal } from "@/components/account/EditProfileModal";
 import {
   User,
   MapPin,
@@ -28,6 +29,7 @@ function AccountPage() {
   // Ensure wishlist is safely accessed even if local storage returned null/undefined
   const wishlist = shopContext?.wishlist || [];
 
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [orderStats, setOrderStats] = useState({
     total: 0,
     active: 0,
@@ -90,13 +92,13 @@ function AccountPage() {
   }
 
   // Graceful fallbacks for missing data to prevent runtime crashes
-  const userFullName = profile?.full_name || "Clip N Copy User";
+  const userMetadata = user.user_metadata || {};
+  const userFullName = profile?.full_name || userMetadata['full_name'] || userMetadata['name'] || "Clip N Copy User";
   const userInitial = userFullName.charAt(0) || user.email?.charAt(0) || "U";
   
-  // Safely access user_metadata with bracket notation to fix TS4111 error
-  const userMetadata = user.user_metadata || {};
-  const userPhone = userMetadata['phone'] || "Add phone number";
-  const defaultAddress = "Add your delivery address";
+  const userPhone = profile?.phone || userMetadata['phone'] || "Add phone number";
+  const userAvatar = profile?.avatar_url || userMetadata['avatar_url'] || userMetadata['picture'] || null;
+  const defaultAddress = profile?.address || "Add your delivery address";
   const safeEmail = user.email || "No email available";
 
   return (
@@ -121,8 +123,19 @@ function AccountPage() {
             {/* Profile Summary Card */}
             <div className="rounded-3xl border border-border bg-background p-6 shadow-soft">
               <div className="flex items-center gap-4">
-                <div className="flex size-16 shrink-0 items-center justify-center rounded-full bg-primary font-display text-2xl font-bold text-primary-foreground">
-                  {userInitial.toUpperCase()}
+                <div className="relative size-16 shrink-0 overflow-hidden rounded-full bg-primary font-display text-2xl font-bold text-primary-foreground flex items-center justify-center border border-border">
+                  {userAvatar ? (
+                    <img
+                      src={userAvatar}
+                      alt={userFullName}
+                      className="size-full object-cover"
+                      onError={(e) => {
+                        (e.target as HTMLElement).style.display = "none";
+                      }}
+                    />
+                  ) : (
+                    userInitial.toUpperCase()
+                  )}
                 </div>
                 <div className="min-w-0 flex-1">
                   <h2 className="truncate font-display text-lg font-black text-foreground">
@@ -143,7 +156,11 @@ function AccountPage() {
                 </div>
               </div>
 
-              <button className="mt-6 flex w-full items-center justify-center gap-2 rounded-xl bg-primary/10 px-4 py-2.5 text-sm font-bold text-primary transition-colors hover:bg-primary/20">
+              <button
+                type="button"
+                onClick={() => setIsEditModalOpen(true)}
+                className="mt-6 flex w-full items-center justify-center gap-2 rounded-xl bg-primary/10 px-4 py-2.5 text-sm font-bold text-primary transition-colors hover:bg-primary/20 cursor-pointer"
+              >
                 <Edit className="size-4" /> Edit Profile
               </button>
             </div>
@@ -164,7 +181,7 @@ function AccountPage() {
                 </Link>
                 <button
                   onClick={signOut}
-                  className="flex items-center gap-3 p-4 text-sm font-semibold text-destructive transition-colors hover:bg-destructive/5 text-left w-full"
+                  className="flex items-center gap-3 p-4 text-sm font-semibold text-destructive transition-colors hover:bg-destructive/5 text-left w-full cursor-pointer"
                 >
                   <LogOut className="size-4" /> Log out
                 </button>
@@ -226,8 +243,12 @@ function AccountPage() {
                     </p>
                   </div>
                 </div>
-                <button className="shrink-0 rounded-full border border-border px-4 py-2 text-xs font-bold transition-colors hover:bg-muted/50">
-                  Add Address
+                <button
+                  type="button"
+                  onClick={() => setIsEditModalOpen(true)}
+                  className="shrink-0 rounded-full border border-border px-4 py-2 text-xs font-bold transition-colors hover:bg-muted/50 cursor-pointer"
+                >
+                  Edit Profile
                 </button>
               </div>
             </div>
@@ -235,6 +256,12 @@ function AccountPage() {
           </div>
         </div>
       </div>
+
+      {/* Edit Profile Modal */}
+      <EditProfileModal
+        isOpen={isEditModalOpen}
+        onClose={() => setIsEditModalOpen(false)}
+      />
     </ShopLayout>
   );
 }

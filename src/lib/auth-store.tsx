@@ -7,7 +7,14 @@ export interface UserProfile {
   id: string;
   full_name: string | null;
   role: string | null;
+  avatar_url?: string | null;
+  phone?: string | null;
+  address?: string | null;
   updated_at?: string | null;
+}
+
+export interface isEmailConfirmedResult {
+  confirmed: boolean;
 }
 
 export function isEmailConfirmed(u: User | null): boolean {
@@ -29,6 +36,18 @@ export interface SignUpResult {
   confirmed: boolean;
 }
 
+export interface UpdateProfileParams {
+  fullName: string;
+  phone?: string;
+  avatarUrl?: string;
+  email?: string;
+}
+
+export interface UpdateProfileResult {
+  error: Error | null;
+  emailUpdateSent?: boolean;
+}
+
 interface AuthContextType {
   user: User | null;
   session: Session | null;
@@ -41,6 +60,8 @@ interface AuthContextType {
   signOut: () => Promise<void>;
   resetPassword: (email: string) => Promise<{ error: Error | null }>;
   resendConfirmation: (email: string) => Promise<{ error: Error | null }>;
+  updateProfile: (params: UpdateProfileParams) => Promise<UpdateProfileResult>;
+  refreshProfile: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -304,6 +325,86 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
+  // 5. Update user profile details
+  const updateProfile = async (params: UpdateProfileParams): Promise<UpdateProfileResult> => {
+    if (!user) {
+      return { error: new Error("No authenticated user found.") };
+    }
+
+    try {
+      const trimmedFullName = params.fullName.trim();
+      const trimmedPhone = params.phone !== undefined ? params.phone.trim() : (profile?.phone || null);
+      const trimmedAvatarUrl = params.avatarUrl !== undefined ? params.avatarUrl.trim() : (profile?.avatar_url || null);
+      const trimmedEmail = params.email ? params.email.trim() : user.email;
+
+      // Update public.profiles table in Supabase
+      const { data: updatedProfile, error: profileError } = await supabase
+        .from("profiles")
+        .upsert({
+          id: user.id,
+          full_name: trimmedFullName,
+          phone: trimmedPhone || null,
+          avatar_url: trimmedAvatarUrl || null,
+          role: profile?.role || "user",
+          updated_at: new Date().toISOString(),
+        })
+        .select()
+        .maybeSingle();
+
+      if (profileError) {
+        throw new Error(profileError.message || "Failed to update profile record");
+      }
+
+      // Update user metadata in Supabase Auth
+      const { error: metaError } = await supabase.auth.updateUser({
+        data: {
+          full_name: trimmedFullName,
+          phone: trimmedPhone || null,
+          avatar_url: trimmedAvatarUrl || null,
+        },
+      });
+
+      if (metaError) {
+        console.warn("Failed to update user metadata in Supabase auth:", metaError.message);
+      }
+
+      let emailUpdateSent = false;
+
+      // Handle email change if email was modified and differs from user.email
+      if (trimmedEmail && trimmedEmail.toLowerCase() !== user.email?.toLowerCase()) {
+        const { error: emailError } = await supabase.auth.updateUser({
+          email: trimmedEmail,
+        });
+
+        if (emailError) {
+          throw new Error(emailError.message || "Failed to update email address");
+        }
+        emailUpdateSent = true;
+      }
+
+      // Immediately update local state
+      if (updatedProfile) {
+        setProfile(updatedProfile as UserProfile);
+      }
+
+      // Refresh user object from Supabase auth
+      const { data: userData } = await supabase.auth.getUser();
+      if (userData?.user) {
+        setUser(userData.user);
+      }
+
+      return { error: null, emailUpdateSent };
+    } catch (err: any) {
+      return { error: err instanceof Error ? err : new Error(err?.message || "Failed to update profile") };
+    }
+  };
+
+  const refreshProfile = async () => {
+    if (user) {
+      await fetchAndSyncProfile(user);
+    }
+  };
+
   const role = profile?.role || "user";
 
   return (
@@ -320,6 +421,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         signOut,
         resetPassword,
         resendConfirmation,
+        updateProfile,
+        refreshProfile,
       }}
     >
       {children}
