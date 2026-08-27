@@ -1,4 +1,4 @@
-import { Link } from "@tanstack/react-router";
+import { Link } from "react-router-dom";
 import { Heart, ShoppingBag, User, UserCheck, Shield, LogOut, ArrowLeft } from "lucide-react";
 import { useShop } from "@/lib/shop-store";
 import { useAuth } from "@/lib/auth-store";

@@ -1,6 +1,6 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
 import { ChevronRight, FileText, BookOpen, Printer, Layers, Box, ShieldCheck, Zap } from "lucide-react";
 import { useMemo, useState } from "react";
+import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
 import { HeroSection } from "@/components/HeroSection";
 import { ProductCard, ProductSkeleton } from "@/components/ProductCard";
@@ -15,27 +15,8 @@ import { LandingLayout } from "@/components/LandingLayout";
 import { ProductCarousel, ProductCarouselItem } from "@/components/ProductCarousel";
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from "@/components/ui/carousel";
 
-export const Route = createFileRoute("/")({
-  head: () => ({
-    meta: [
-      { title: "Clip N Copy — Stationery, Office Supplies & Printing Services" },
-      {
-        name: "description",
-        content:
-          "Shop notebooks, pens, markers, and office supplies online. High-quality print and photocopy services available in-store at ITPL Main Road, Bengaluru.",
-      },
-      { property: "og:title", content: "Stationery & Printing Services — Clip N Copy" },
-      {
-        property: "og:description",
-        content:
-          "From school supplies to corporate printing. Best prices on top brands in Kundalahalli.",
-      },
-    ],
-  }),
-  component: Home,
-});
 
-function Home() {
+export default function IndexPage() {
   const { addToCart } = useShop();
   const [printOpen, setPrintOpen] = useState(false);
   const { data: products = [], isLoading, isError, error, refetch } = useSupabaseProducts();
@@ -43,10 +24,26 @@ function Home() {
   useScrollRestoration(!isLoading);
 
   const categoriesWithCounts = useMemo(() => {
-    return RAW_CATEGORIES.map((c) => ({
-      ...c,
-      count: products.filter((p) => p.category === c.slug).length,
-    }));
+    if (!products || products.length === 0) return [];
+
+    const categoryMap = new Map<string, { slug: string; name: string; image: string; count: number }>();
+    
+    products.forEach((p) => {
+      if (!p.category) return;
+      const slug = p.category;
+      if (!categoryMap.has(slug)) {
+        const raw = RAW_CATEGORIES.find(c => c.slug === slug);
+        categoryMap.set(slug, {
+          slug,
+          name: raw ? raw.name : slug.split('-').map(s => s.charAt(0).toUpperCase() + s.slice(1)).join(' '),
+          image: raw ? raw.image : RAW_CATEGORIES[0].image,
+          count: 0
+        });
+      }
+      categoryMap.get(slug)!.count++;
+    });
+
+    return Array.from(categoryMap.values()).sort((a, b) => b.count - a.count);
   }, [products]);
 
   const best = products.slice(0, 12);
@@ -78,9 +75,7 @@ function Home() {
                     viewport={{ once: true, margin: "-50px" }}
                     transition={{ duration: 0.4, delay: i * 0.1, ease: "easeOut" }}
                   >
-                    <Link
-                      to="/shop"
-                      search={{ category: c.slug }}
+                    <Link to={`/shop?category=${c.slug }`}
                       className="group relative flex items-center gap-4 overflow-hidden rounded-[1.25rem] bg-white p-3 shadow-[0_4px_16px_-4px_rgba(11,92,255,0.08)] ring-1 ring-[#EAF2FF] transition-all duration-300 hover:scale-[1.03] hover:-translate-y-1 hover:shadow-[0_12px_28px_-6px_rgba(11,92,255,0.15)] hover:ring-[#DCEBFF]"
                     >
                       <div className="grid size-14 shrink-0 place-items-center rounded-xl bg-[#F4F8FF] transition-transform duration-500 group-hover:scale-105 group-hover:bg-[#EAF2FF]">

@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useEffect, useState } from "react";
 import { User, Session } from "@supabase/supabase-js";
-import { useRouter } from "@tanstack/react-router";
+import { useNavigate } from "react-router-dom";
 import { supabase } from "./supabase";
 
 export interface UserProfile {
@@ -77,7 +77,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const [isLoggingOut, setIsLoggingOut] = useState<boolean>(false);
-  const router = useRouter();
+  const navigate = useNavigate();
 
   // Fetch or initialize user profile from `profiles` table
   const fetchAndSyncProfile = async (currentUser: User | null) => {
@@ -163,29 +163,37 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     initAuth();
 
-    // 7 & 9. Listen for Supabase auth state changes
-    const {
-      data: { subscription },
-    } = supabase.auth.onAuthStateChange(async (event, currentSession) => {
-      if (!isMounted) return;
+    let subscription: any = null;
 
-      const currentUser = currentSession?.user ?? null;
+    try {
+      // 7 & 9. Listen for Supabase auth state changes
+      const { data } = supabase.auth.onAuthStateChange(async (event, currentSession) => {
+        if (!isMounted) return;
 
-      if (currentUser && isEmailConfirmed(currentUser)) {
-        setSession(currentSession);
-        setUser(currentUser);
-        await fetchAndSyncProfile(currentUser);
-      } else {
-        setSession(null);
-        setUser(null);
-        setProfile(null);
-      }
+        const currentUser = currentSession?.user ?? null;
+
+        if (currentUser && isEmailConfirmed(currentUser)) {
+          setSession(currentSession);
+          setUser(currentUser);
+          await fetchAndSyncProfile(currentUser);
+        } else {
+          setSession(null);
+          setUser(null);
+          setProfile(null);
+        }
+        setLoading(false);
+      });
+      subscription = data.subscription;
+    } catch (err) {
+      console.warn("Supabase auth state change listener failed to initialize:", err);
       setLoading(false);
-    });
+    }
 
     return () => {
       isMounted = false;
-      subscription.unsubscribe();
+      if (subscription) {
+        subscription.unsubscribe();
+      }
     };
   }, []);
 
@@ -294,7 +302,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       
       // Requirement: Redirect to normal user website dashboard on logout
       // Use replace: true to prevent browser back button from re-entering admin context
-      router.navigate({ to: "/", replace: true });
+      navigate("/", { replace: true });
       
       // Reset isLoggingOut after a short delay so normal auth guard works again if they stay on page
       setTimeout(() => setIsLoggingOut(false), 1000);

@@ -1,5 +1,5 @@
+import { Link, useNavigate } from "react-router-dom";
 import { useEffect, useState, useCallback, useRef } from "react";
-import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { ArrowLeft, Banknote, CheckCircle2, CreditCard, Smartphone, Store, Truck, Zap, Loader2 } from "lucide-react";
 import { inr, useShop } from "@/lib/shop-store";
 import { useAuth, isEmailConfirmed } from "@/lib/auth-store";
@@ -10,24 +10,6 @@ import { toast } from "sonner";
 import { ShopLayout } from "@/components/ShopLayout";
 import { useAppBack } from "@/lib/useAppBack";
 
-export const Route = createFileRoute("/checkout")({
-  head: () => ({
-    meta: [
-      { title: "Checkout — Clip N Copy" },
-      {
-        name: "description",
-        content:
-          "Review your order, pick delivery or store pickup and place your Clip N Copy order. Demo checkout — no real payment is taken.",
-      },
-      { property: "og:title", content: "Checkout — Clip N Copy" },
-      {
-        property: "og:description",
-        content: "Delivery, pickup and payment options at Clip N Copy.",
-      },
-    ],
-  }),
-  component: Checkout,
-});
 
 const DELIVERY = [
   { id: "standard", label: "Standard Delivery", note: "2–3 days · Free above ₹79", icon: Truck },
@@ -41,7 +23,7 @@ const PAYMENTS = [
   { id: "cod", label: "Cash on Delivery", note: "Pay when it arrives", icon: Banknote },
 ];
 
-function Checkout() {
+export default function CheckoutPage() {
   const { lines, totalMrp, subtotal, savings, total, clearCart, validateAndProcessCheckout } = useShop();
   const { user, profile, loading } = useAuth();
   const navigate = useNavigate();

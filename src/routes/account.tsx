@@ -1,4 +1,4 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { Link } from "react-router-dom";
 import { ShopLayout } from "@/components/ShopLayout";
 import { useAuth } from "@/lib/auth-store";
 import { useShop } from "@/lib/shop-store";
@@ -25,11 +25,8 @@ import {
 import { useEffect, useState, useCallback } from "react";
 import { supabase } from "@/lib/supabase";
 
-export const Route = createFileRoute("/account")({
-  component: AccountPage,
-});
 
-function AccountPage() {
+export default function AccountPage() {
   const { user, profile, signOut } = useAuth();
   const shopContext = useShop();
   // Ensure wishlist is safely accessed even if local storage returned null/undefined

@@ -1,16 +1,7 @@
 import { useState } from "react";
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { Link } from "react-router-dom";
 import { ArrowLeft, ChevronDown, ChevronUp, LifeBuoy, HelpCircle, FileText, BookOpen, Truck, CreditCard, ShoppingBag, RotateCcw, User, MapPin, Printer } from "lucide-react";
 
-export const Route = createFileRoute("/help")({
-  head: () => ({
-    meta: [
-      { title: "Help & Support — Clip N Copy" },
-      { name: "description", content: "Find answers, get support, and learn more about shopping with Clip N Copy." }
-    ]
-  }),
-  component: HelpPage,
-});
 
 function FAQItem({ question, answer }: { question: string; answer: string }) {
   const [open, setOpen] = useState(false);
@@ -30,7 +21,7 @@ function FAQItem({ question, answer }: { question: string; answer: string }) {
 
 import { useAppBack } from "@/lib/useAppBack";
 
-function HelpPage() {
+export default function HelpPage() {
   const goBack = useAppBack();
 
   return (

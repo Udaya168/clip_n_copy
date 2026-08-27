@@ -1,4 +1,4 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { Link, useSearchParams } from "react-router-dom";
 import { SlidersHorizontal, X } from "lucide-react";
 import { useMemo, useState, useEffect } from "react";
 import { ProductCard, ProductSkeleton } from "@/components/ProductCard";
@@ -10,37 +10,7 @@ import { useScrollRestoration } from "@/lib/useScrollRestoration";
 import { inr } from "@/lib/shop-store";
 import { cn } from "@/lib/utils";
 
-type Search = {
-  category?: string | undefined;
-  q?: string | undefined;
-  tag?: string | undefined;
-};
-
 const str = (v: unknown) => (typeof v === "string" && v ? v : undefined);
-
-export const Route = createFileRoute("/shop")({
-  validateSearch: (search: Record<string, unknown>): Search => ({
-    category: str(search["category"]),
-    q: str(search["q"]),
-    tag: str(search["tag"]),
-  }),
-  head: () => ({
-    meta: [
-      { title: "Shop Stationery & Office Supplies — Clip N Copy" },
-      {
-        name: "description",
-        content:
-          "Filter and compare notebooks, pens, art supplies and office essentials at Clip N Copy Bengaluru. Sort by price, rating or discount.",
-      },
-      { property: "og:title", content: "Shop all products — Clip N Copy" },
-      {
-        property: "og:description",
-        content: "Notebooks, pens, art and office supplies with student-friendly prices.",
-      },
-    ],
-  }),
-  component: Shop,
-});
 
 const SORTS = [
   "Popularity",
@@ -49,8 +19,11 @@ const SORTS = [
   "Highest Rated",
 ] as const;
 
-function Shop() {
-  const { category, q, tag } = Route.useSearch();
+export default function ShopPage() {
+  const [searchParams] = useSearchParams();
+  const category = str(searchParams.get('category'));
+  const q = str(searchParams.get('q'));
+  const tag = str(searchParams.get('tag'));
   const { data: products = [], isLoading, isError, error, refetch } = useSupabaseProducts();
   
   useScrollRestoration(!isLoading);
@@ -162,8 +135,7 @@ function Shop() {
           {categoriesWithCounts.map((c) => (
             <Link
               key={c.slug}
-              to="/shop"
-              search={{ category: c.slug }}
+              to={`/shop?category=${c.slug}`}
               className={cn(
                 "flex items-center justify-between rounded-lg px-2 py-1.5 text-sm hover:bg-secondary",
                 category === c.slug && "bg-primary-soft font-semibold text-primary",

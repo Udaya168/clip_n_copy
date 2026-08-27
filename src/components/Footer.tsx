@@ -1,4 +1,4 @@
-import { Link } from "@tanstack/react-router";
+import { Link } from "react-router-dom";
 import { Facebook, Instagram, MapPin, Phone, Twitter, Youtube } from "lucide-react";
 import { STORE } from "@/lib/data";
 
@@ -58,13 +58,18 @@ export function Footer() {
         <div>
           <h3 className="font-display text-sm font-bold tracking-wide uppercase">Shop</h3>
           <ul className="mt-4 space-y-2.5 text-sm text-ink-foreground/70">
-            {SHOP.map((s) => (
-              <li key={s.label}>
-                <Link to={s.to} search={s.search as never} className="hover:text-accent">
-                  {s.label}
-                </Link>
-              </li>
-            ))}
+            {SHOP.map((s) => {
+              const toPath = s.search && s.search.category 
+                ? `${s.to}?category=${s.search.category}`
+                : s.to;
+              return (
+                <li key={s.label}>
+                  <Link to={toPath} className="hover:text-accent">
+                    {s.label}
+                  </Link>
+                </li>
+              );
+            })}
           </ul>
         </div>
 

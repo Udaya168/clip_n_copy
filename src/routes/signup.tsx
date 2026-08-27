@@ -1,5 +1,5 @@
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { useState } from "react";
-import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useAuth } from "@/lib/auth-store";
 import { AlertCircle, CheckCircle2, Loader2, Lock, Mail, User, MailCheck } from "lucide-react";
 import { Input } from "@/components/ui/input";
@@ -7,27 +7,13 @@ import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { AuthLayout } from "@/components/AuthLayout";
 
-export const Route = createFileRoute("/signup")({
-  validateSearch: (search: Record<string, unknown>): { redirect?: string } => {
-    const val = search["redirect"];
-    if (typeof val === "string" && val.trim().length > 0) {
-      return { redirect: val };
-    }
-    return {};
-  },
-  head: () => ({
-    meta: [
-      { title: "Sign Up — Clip N Copy" },
-      { name: "description", content: "Create a new Clip N Copy account to start ordering stationery and school supplies." },
-    ],
-  }),
-  component: SignupPage,
-});
 
-function SignupPage() {
+export default function SignupPage() {
   const { signUp, user, profile } = useAuth();
   const navigate = useNavigate();
-  const { redirect } = Route.useSearch();
+  const [searchParams] = useSearchParams();
+  const redirect = searchParams.get('redirect');
+
   const redirectTarget = redirect || "/";
 
   const [fullName, setFullName] = useState("");
@@ -53,7 +39,7 @@ function SignupPage() {
           </p>
           <div className="mt-8">
             <Button
-              onClick={() => navigate({ to: redirectTarget })}
+              onClick={() => navigate(redirectTarget )}
               className="w-full h-[52px] rounded-xl bg-[#0647E8] font-bold text-[16px] text-white hover:bg-[#062BCB] cursor-pointer"
             >
               Continue {redirectTarget === "/checkout" ? "to Checkout" : "Shopping"}
@@ -82,9 +68,7 @@ function SignupPage() {
             After confirming your email, return to Clip N Copy and sign in.
           </p>
           <div className="mt-8">
-            <Link
-              to="/login"
-              search={redirect ? { redirect } : {}}
+            <Link to={redirect ? `/login?redirect=${redirect}` : "/login"}
               className="inline-flex h-[52px] w-full items-center justify-center rounded-xl bg-[#0647E8] font-bold text-[16px] text-white hover:bg-[#062BCB] cursor-pointer"
             >
               Go to Login
@@ -137,7 +121,7 @@ function SignupPage() {
         // If email confirmation is disabled in Supabase, directly log in & redirect
         setSuccessMessage("Account created successfully! Redirecting...");
         setTimeout(() => {
-          navigate({ to: redirectTarget });
+          navigate(redirectTarget );
         }, 1000);
       } else {
         // Show post-signup confirmation message
@@ -272,9 +256,7 @@ function SignupPage() {
         <div className="mt-[16px] text-center">
           <p className="text-[14px] text-slate-600">
             Already have an account?{" "}
-            <Link
-              to="/login"
-              search={redirect ? { redirect } : {}}
+            <Link to={redirect ? `/login?redirect=${redirect}` : "/login"}
               className="font-bold text-[#0647E8] hover:text-[#062BCB] hover:underline transition-all duration-300"
             >
               Sign In

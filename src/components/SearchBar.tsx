@@ -1,4 +1,4 @@
-import { useNavigate, useSearch } from "@tanstack/react-router";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { Search, TrendingUp, X } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { POPULAR_SEARCHES, type Product } from "@/lib/data";
@@ -59,7 +59,7 @@ export function isProductMatch(p: Product, searchTerm: string): boolean {
 
 export function SearchBar({ className, autoFocus }: { className?: string; autoFocus?: boolean }) {
   const navigate = useNavigate();
-  const routeSearch = useSearch({ strict: false }) as { q?: string; category?: string };
+  const routeSearch = useSearchParams({ strict: false }) as { q?: string; category?: string };
 
   const [q, setQ] = useState("");
   const [open, setOpen] = useState(false);

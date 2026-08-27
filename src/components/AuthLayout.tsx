@@ -1,5 +1,5 @@
 import { ReactNode } from "react";
-import { Link } from "@tanstack/react-router";
+import { Link } from "react-router-dom";
 import { ArrowLeft, Zap, Edit3, Layers, Cloud } from "lucide-react";
 import { useAppBack } from "@/lib/useAppBack";
 

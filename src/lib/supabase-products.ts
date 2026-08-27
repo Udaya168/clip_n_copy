@@ -1,4 +1,4 @@
-import { useQuery } from "@tanstack/react-query";
+import { useState, useEffect } from "react";
 import { supabase } from "./supabase";
 import { type Product, INITIAL_PRODUCTS, setProductsCache } from "./data";
 import imgPens from "@/assets/cat-pens.webp";
@@ -1359,13 +1359,12 @@ export async function fetchSupabaseProducts(): Promise<Product[]> {
   try {
     const { data, error } = await supabase.from("products").select("*");
     if (error) {
-      console.warn("Supabase fetch error, using catalog fallback:", error.message);
-      setProductsCache(INITIAL_PRODUCTS);
-      return INITIAL_PRODUCTS;
+      console.error("Supabase fetch error:", error.message);
+      throw error;
     }
     if (!data || data.length === 0) {
-      setProductsCache(INITIAL_PRODUCTS);
-      return INITIAL_PRODUCTS;
+      setProductsCache([]);
+      return [];
     }
     
     const filteredData = (data as SupabaseProduct[]).filter((p) => {
@@ -1388,17 +1387,35 @@ export async function fetchSupabaseProducts(): Promise<Product[]> {
     setProductsCache(mapped);
     return mapped;
   } catch (err) {
-    console.warn("Supabase fetch exception, using catalog fallback:", err);
-    setProductsCache(INITIAL_PRODUCTS);
-    return INITIAL_PRODUCTS;
+    console.error("Supabase fetch exception:", err);
+    throw err;
   }
 }
 
 export function useSupabaseProducts() {
-  return useQuery({
-    queryKey: ["supabase-products"],
-    queryFn: fetchSupabaseProducts,
-    staleTime: 1000 * 60 * 5,
-    retry: false,
-  });
+  const [data, setData] = useState<Product[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isError, setIsError] = useState(false);
+  const [error, setError] = useState<Error | null>(null);
+
+  const fetch = async () => {
+    setIsLoading(true);
+    setIsError(false);
+    setError(null);
+    try {
+      const res = await fetchSupabaseProducts();
+      setData(res);
+    } catch (err: any) {
+      setIsError(true);
+      setError(err);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetch();
+  }, []);
+
+  return { data, isLoading, isError, error, refetch: fetch };
 }

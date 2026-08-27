@@ -1,4 +1,4 @@
-import { Link } from "@tanstack/react-router";
+import { Link } from "react-router-dom";
 import { Heart, ShoppingBag, Star } from "lucide-react";
 import { type Product } from "@/lib/data";
 import { inr, useShop } from "@/lib/shop-store";
@@ -12,9 +12,7 @@ export function ProductCard({ product, compact }: { product: Product; compact?: 
 
   return (
     <article className="group relative flex h-full flex-col overflow-hidden rounded-[1.25rem] bg-white shadow-[0_4px_16px_-4px_rgba(11,92,255,0.08)] ring-1 ring-[#EAF2FF] transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_12px_28px_-6px_rgba(11,92,255,0.2)] hover:ring-[#DCEBFF]">
-      <Link
-        to="/product/$id"
-        params={{ id: product.id }}
+      <Link to={`/product/${product.id }`}
         className="relative flex items-center justify-center aspect-4/3 overflow-hidden bg-[#F4F8FF]"
       >
         <img
@@ -41,9 +39,7 @@ export function ProductCard({ product, compact }: { product: Product; compact?: 
         <p className="text-[11px] font-semibold tracking-wide text-primary uppercase">
           {product.brand}
         </p>
-        <Link
-          to="/product/$id"
-          params={{ id: product.id }}
+        <Link to={`/product/${product.id }`}
           className={cn(
             "line-clamp-2 font-display font-semibold hover:text-primary",
             compact ? "text-sm" : "text-sm sm:text-[15px]",

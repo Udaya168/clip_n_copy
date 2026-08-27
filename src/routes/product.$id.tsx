@@ -1,4 +1,4 @@
-import { createFileRoute, Link, notFound } from "@tanstack/react-router";
+import { useParams, Link } from "react-router-dom";
 import { Check, Heart, ShoppingBag, Star, Truck, Minus, Plus, Store } from "lucide-react";
 import { useState, useEffect } from "react";
 import { toast } from "sonner";
@@ -18,53 +18,6 @@ import {
 import { inr, useShop } from "@/lib/shop-store";
 import { cn } from "@/lib/utils";
 
-export const Route = createFileRoute("/product/$id")({
-  loader: async ({ params }) => {
-    const { data, error } = await supabase
-      .from("products")
-      .select("*")
-      .eq("id", params.id)
-      .maybeSingle();
-
-    if (data) {
-      return { product: mapSupabaseProduct(data as SupabaseProduct) };
-    }
-
-    const products = await fetchSupabaseProducts();
-    const found = products.find(
-      (p) => String(p.id) === params.id || String(p.id).toLowerCase() === params.id.toLowerCase(),
-    );
-    if (!found) throw notFound();
-    return { product: found };
-  },
-  head: ({ loaderData }) => {
-    if (!loaderData) {
-      return {
-        meta: [
-          { title: "Product not found — Clip N Copy" },
-          { name: "robots", content: "noindex" },
-        ],
-      };
-    }
-    const { product } = loaderData;
-    return {
-      meta: [
-        { title: `${product.name} — Clip N Copy` },
-        {
-          name: "description",
-          content: `Buy ${product.name} by ${product.brand} at ${inr(product.price)} from Clip N Copy, Kundalahalli Bengaluru.`,
-        },
-        { property: "og:title", content: `${product.name} — Clip N Copy` },
-        {
-          property: "og:description",
-          content: `${product.brand} · ${inr(product.price)} · rated ${product.rating} by ${product.reviews} customers.`,
-        },
-      ],
-    };
-  },
-  component: ProductDetail,
-});
-
 const getGradient = (name: string) => {
   if (name.toLowerCase() === 'blue') return 'linear-gradient(135deg, #2563EB, #0F3FBF)';
   if (name.toLowerCase() === 'black') return 'linear-gradient(135deg, #374151, #000000)';
@@ -72,14 +25,19 @@ const getGradient = (name: string) => {
   return 'linear-gradient(135deg, #6B7280, #374151)';
 };
 
-function ProductDetail() {
-  const { product } = Route.useLoaderData();
+export default function ProductDetailsPage() {
+  const { id } = useParams();
+  const { data: products = [], isLoading } = useSupabaseProducts();
+  const product = products.find((p) => String(p.id) === id || String(p.id).toLowerCase() === id?.toLowerCase());
   const { addToCart, toggleWishlist, inWishlist, setCartOpen } = useShop();
   const [qty, setQty] = useState(1);
   const [active, setActive] = useState(0);
   const [api, setApi] = useState<CarouselApi>();
   const [zoom, setZoom] = useState<{ x: number; y: number } | null>(null);
   const [tab, setTab] = useState<"desc" | "specs" | "reviews">("desc");
+
+  if (isLoading) return <div className="flex justify-center py-20">Loading...</div>;
+  if (!product) return <div className="flex justify-center py-20">Product not found</div>;
 
   useEffect(() => {
     if (!api) return;
@@ -92,11 +50,11 @@ function ProductDetail() {
     });
   }, [api]);
 
-  const { data: products = [], isLoading } = useSupabaseProducts();
+  
   
   useScrollRestoration(!isLoading);
 
-  const [selectedVariant, setSelectedVariant] = useState(product.variants?.[0]?.name || "");
+  const [selectedVariant, setSelectedVariant] = useState(product?.variants?.[0]?.name || "");
 
   const currentVariantObj = product.variants?.find((v: import("@/lib/data").ProductVariant) => v.name === selectedVariant);
   const isSingleImageVariantProduct = 

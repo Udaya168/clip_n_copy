@@ -1,4 +1,4 @@
-import { Link, useLocation } from "@tanstack/react-router";
+import { Link, useLocation } from "react-router-dom";
 import {
   Heart,
   MapPin,
@@ -27,7 +27,7 @@ import {
   Backpack,
   Printer,
   ChevronRight,
-  HelpCircle,
+  CircleHelp,
   Settings,
 } from "lucide-react";
 import { useState } from "react";
@@ -266,11 +266,8 @@ export function Header() {
               return (
                 <Link
                   key={item.label}
-                  to={item.to}
-                  search={item.search as never}
-                  activeOptions={{ exact: true, includeSearch: true }}
-                  className="relative shrink-0 rounded-full px-3.5 py-1.5 text-sm font-semibold text-muted-foreground transition-colors hover:text-primary group"
-                  activeProps={{ className: "text-primary" }}
+                  to={item.search && item.search['category'] ? `${item.to}?category=${item.search['category']}` : item.to}
+                  className={cn("relative shrink-0 rounded-full px-3.5 py-1.5 text-sm font-semibold text-muted-foreground transition-colors hover:text-primary group", isActive ? "text-primary" : "")}
                 >
                   {item.label}
                   <span className={cn(
@@ -383,8 +380,7 @@ export function Header() {
                   {NAV_CATEGORIES.filter(item => item.label !== 'Home').map((item) => (
                     <Link
                       key={item.label}
-                      to={item.to}
-                      search={item.search as never}
+                      to={item.search && item.search['category'] ? `${item.to}?category=${item.search['category']}` : item.to}
                       onClick={() => setMobileMenuOpen(false)}
                       className="group flex items-center gap-3 h-[48px] px-3.5 rounded-xl bg-white border border-[#E5EAF2] text-foreground hover:border-primary/30 hover:bg-secondary/50 transition-colors shadow-sm"
                     >
@@ -450,6 +446,34 @@ export function Header() {
                       </button>
                     </>
                   )}
+                </div>
+              </div>
+
+              {/* 5. Support */}
+              <div className="pt-2">
+                <div className="h-[1px] w-full bg-[#E5EAF2] mb-4" />
+                <h3 className="text-[12px] font-bold uppercase tracking-[0.08em] text-muted-foreground px-2 mb-3">
+                  Support
+                </h3>
+                <div className="flex flex-col gap-1.5">
+                  <Link
+                    to="/help"
+                    onClick={() => setMobileMenuOpen(false)}
+                    className="group flex items-center gap-3 h-[48px] px-3.5 rounded-xl text-foreground hover:bg-secondary transition-colors font-medium"
+                  >
+                    <CircleHelp className="size-[18px] text-primary" />
+                    <span className="text-[14px] flex-1">Help & Support</span>
+                    <ChevronRight className="size-[18px] text-muted-foreground/50" />
+                  </Link>
+                  <Link
+                    to="/contact"
+                    onClick={() => setMobileMenuOpen(false)}
+                    className="group flex items-center gap-3 h-[48px] px-3.5 rounded-xl text-foreground hover:bg-secondary transition-colors font-medium"
+                  >
+                    <Phone className="size-[18px] text-primary" />
+                    <span className="text-[14px] flex-1">Contact Us</span>
+                    <ChevronRight className="size-[18px] text-muted-foreground/50" />
+                  </Link>
                 </div>
               </div>
 

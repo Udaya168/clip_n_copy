@@ -1,20 +1,10 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
 import { StoreSection } from "@/components/StoreSection";
 import { ArrowLeft } from "lucide-react";
 
-export const Route = createFileRoute("/contact")({
-  head: () => ({
-    meta: [
-      { title: "Contact Us — Clip N Copy" },
-      { name: "description", content: "Contact information and location for Clip N Copy store." },
-    ],
-  }),
-  component: ContactPage,
-});
 
 import { useAppBack } from "@/lib/useAppBack";
 
-function ContactPage() {
+export default function ContactPage() {
   const goBack = useAppBack();
 
   return (

@@ -1,4 +1,3 @@
-import { createFileRoute } from "@tanstack/react-router";
 import { ArrowRight, Clock, FileCheck2, Printer, Sparkles } from "lucide-react";
 import { useState } from "react";
 import { UploadPrintModal } from "@/components/UploadPrintModal";
@@ -9,25 +8,6 @@ import { ProductCarousel } from "@/components/ProductCarousel";
 
 import { useScrollRestoration } from "@/lib/useScrollRestoration";
 
-export const Route = createFileRoute("/services")({
-  head: () => ({
-    meta: [
-      { title: "Printing, Photocopy & Binding — Clip N Copy" },
-      {
-        name: "description",
-        content:
-          "B&W and colour printing from ₹2/page, jumbo xerox, spiral and thesis binding, AutoCAD prints and lamination at Clip N Copy, ITPL Main Road Bengaluru.",
-      },
-      { property: "og:title", content: "Print. Bind. Done. — Clip N Copy" },
-      {
-        property: "og:description",
-        content:
-          "Professional printing, photocopy and binding services in Kundalahalli, Bengaluru.",
-      },
-    ],
-  }),
-  component: Services,
-});
 
 const STEPS = [
   { title: "Share your file", note: "Bring a pen drive, email it or upload here." },
@@ -35,7 +15,7 @@ const STEPS = [
   { title: "Collect in minutes", note: "Most jobs are ready in 15 minutes." },
 ];
 
-function Services() {
+export default function ServicesPage() {
   const [open, setOpen] = useState(false);
   
   useScrollRestoration(true);

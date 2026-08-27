@@ -1,5 +1,5 @@
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { useEffect, useState, ReactNode } from "react";
-import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useAuth } from "@/lib/auth-store";
 import { supabase } from "@/lib/supabase";
 import { AlertCircle, CheckCircle2, Loader2, Lock, Mail, ArrowLeft, Send, Zap, Edit3, Layers, Cloud } from "lucide-react";
@@ -7,30 +7,14 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 
-export const Route = createFileRoute("/login")({
-  validateSearch: (search: Record<string, unknown>): { redirect?: string; confirmed?: string } => {
-    const res: { redirect?: string; confirmed?: string } = {};
-    if (typeof search["redirect"] === "string" && search["redirect"].trim().length > 0) {
-      res.redirect = search["redirect"];
-    }
-    if (typeof search["confirmed"] === "string" && search["confirmed"].trim().length > 0) {
-      res.confirmed = search["confirmed"];
-    }
-    return res;
-  },
-  head: () => ({
-    meta: [
-      { title: "Login — Clip N Copy" },
-      { name: "description", content: "Sign in to your Clip N Copy account to track orders and save wishlist items." },
-    ],
-  }),
-  component: LoginPage,
-});
 
 export default function LoginPage() {
   const { user, profile } = useAuth();
   const navigate = useNavigate();
-  const { redirect, confirmed } = Route.useSearch();
+  const [searchParams] = useSearchParams();
+  const redirect = searchParams.get('redirect');
+  const confirmed = searchParams.get('confirmed');
+
   const redirectTarget = redirect || "/";
 
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
@@ -55,7 +39,7 @@ export default function LoginPage() {
           </p>
           <div className="mt-8">
             <Button
-              onClick={() => navigate({ to: redirectTarget })}
+              onClick={() => navigate(redirectTarget )}
               className="w-full h-[52px] rounded-xl bg-[#0647E8] font-bold text-[16px] text-white hover:bg-[#062BCB] cursor-pointer"
             >
               Continue {redirectTarget === "/checkout" ? "to Checkout" : "Shopping"}
@@ -86,7 +70,9 @@ function SignInPage({ initialSuccessMessage }: { initialSuccessMessage: string |
 function LoginForm({ initialSuccessMessage }: { initialSuccessMessage: string | null }) {
   const { signIn, resetPassword, resendConfirmation } = useAuth();
   const navigate = useNavigate();
-  const { redirect } = Route.useSearch();
+  const [searchParams] = useSearchParams();
+  const redirect = searchParams.get('redirect');
+
   const redirectTarget = redirect || "/";
 
   const [email, setEmail] = useState("");
@@ -146,7 +132,7 @@ function LoginForm({ initialSuccessMessage }: { initialSuccessMessage: string | 
         }
         setSuccessMessage("Successfully logged in! Redirecting...");
         setTimeout(() => {
-          navigate({ to: target });
+          navigate(target );
         }, 800);
       }
     } catch (err: any) {
@@ -352,9 +338,7 @@ function LoginForm({ initialSuccessMessage }: { initialSuccessMessage: string | 
           <div className="mt-[16px] text-center">
             <p className="text-[14px] text-slate-600">
               Don't have an account?{" "}
-              <Link
-                to="/signup"
-                search={redirect ? { redirect } : {}}
+              <Link to={redirect ? `/signup?redirect=${redirect}` : "/signup"}
                 className="font-bold text-[#0647E8] hover:text-[#062BCB] hover:underline transition-all duration-300"
               >
                 Create an account

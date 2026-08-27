@@ -8,15 +8,12 @@ import { OrderManagement } from "./OrderManagement";
 import { fetchSupabaseProducts, SupabaseProduct, mapSupabaseProduct } from "@/lib/supabase-products";
 import { setProductsCache } from "@/lib/data";
 import { supabase } from "@/lib/supabase";
-import { useQueryClient } from "@tanstack/react-query";
 import { Sliders, ShieldCheck } from "lucide-react";
 
 export function AdminLayout() {
   const [activeTab, setActiveTab] = useState<AdminTab>("dashboard");
   const [products, setProducts] = useState<SupabaseProduct[]>([]);
   const [loading, setLoading] = useState(true);
-  const queryClient = useQueryClient();
-
   const loadAdminProducts = useCallback(async () => {
     setLoading(true);
     try {
@@ -52,15 +49,12 @@ export function AdminLayout() {
           }))
         );
       }
-
-      // Invalidate React Query cache so storefront updates
-      await queryClient.invalidateQueries({ queryKey: ["supabase-products"] });
     } catch (err) {
       console.error("Failed to load products in admin:", err);
     } finally {
       setLoading(false);
     }
-  }, [queryClient]);
+  }, []);
 
   useEffect(() => {
     loadAdminProducts();

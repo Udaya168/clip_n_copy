@@ -1,4 +1,4 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { Link } from "react-router-dom";
 import { Heart, ShoppingBag, Trash2 } from "lucide-react";
 import { useSupabaseProducts } from "@/lib/supabase-products";
 import { inr, useShop } from "@/lib/shop-store";
@@ -6,23 +6,8 @@ import { ShopLayout } from "@/components/ShopLayout";
 
 import { useScrollRestoration } from "@/lib/useScrollRestoration";
 
-export const Route = createFileRoute("/wishlist")({
-  head: () => ({
-    meta: [
-      { title: "Your Wishlist — Clip N Copy" },
-      {
-        name: "description",
-        content:
-          "Products you saved at Clip N Copy. Move stationery and office supplies to your cart whenever you are ready.",
-      },
-      { property: "og:title", content: "Your Wishlist — Clip N Copy" },
-      { property: "og:description", content: "Saved stationery and office supplies." },
-    ],
-  }),
-  component: Wishlist,
-});
 
-function Wishlist() {
+export default function WishlistPage() {
   const { wishlist, toggleWishlist, addToCart } = useShop();
   const { data: products = [], isLoading } = useSupabaseProducts();
   
@@ -67,9 +52,7 @@ function Wishlist() {
                 />
                 <div className="min-w-0 flex-1">
                   <p className="text-xs font-bold tracking-wide text-primary uppercase">{p.brand}</p>
-                  <Link
-                    to="/product/$id"
-                    params={{ id: p.id }}
+                  <Link to={`/product/${p.id }`}
                     className="font-display font-semibold hover:text-primary"
                   >
                     {p.name}

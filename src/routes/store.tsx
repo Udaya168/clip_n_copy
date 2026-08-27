@@ -1,5 +1,5 @@
+import { Link, useNavigate } from "react-router-dom";
 import { useState } from "react";
-import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { StoreSection } from "@/components/StoreSection";
 import { MyOrdersList } from "@/components/orders/MyOrdersList";
 import { useAuth } from "@/lib/auth-store";
@@ -9,20 +9,8 @@ import { Button } from "@/components/ui/button";
 import { ShopLayout } from "@/components/ShopLayout";
 import { useAppBack } from "@/lib/useAppBack";
 
-export const Route = createFileRoute("/store")({
-  head: () => ({
-    meta: [
-      { title: "My Account & Visit Store — Clip N Copy" },
-      {
-        name: "description",
-        content: "View your active orders, real-time tracking, store location, and account details at Clip N Copy, Kundalahalli Bengaluru.",
-      },
-    ],
-  }),
-  component: StorePage,
-});
 
-function StorePage() {
+export default function StorePage() {
   const { user, profile, role, loading, signOut } = useAuth();
   const navigate = useNavigate();
   const goBack = useAppBack();
@@ -110,7 +98,7 @@ function StorePage() {
             <div className="flex items-center gap-2">
               {role === "admin" && (
                 <Button
-                  onClick={() => navigate({ to: "/admin" })}
+                  onClick={() => navigate("/admin" )}
                   className="rounded-full bg-primary text-xs font-bold text-primary-foreground hover:bg-primary/90 cursor-pointer"
                 >
                   <Shield className="mr-1.5 size-3.5" /> Admin Portal

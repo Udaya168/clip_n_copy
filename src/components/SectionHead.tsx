@@ -1,4 +1,4 @@
-import { Link } from "@tanstack/react-router";
+import { Link } from "react-router-dom";
 import { ArrowRight } from "lucide-react";
 
 export function SectionHead({
@@ -28,7 +28,7 @@ export function SectionHead({
       {ctaLabel && to && (
         <Link
           to={to}
-          search={search as never}
+          
           className="inline-flex shrink-0 items-center gap-1.5 text-sm font-bold text-primary hover:gap-2.5 transition-all"
         >
           {ctaLabel} <ArrowRight className="size-4" />

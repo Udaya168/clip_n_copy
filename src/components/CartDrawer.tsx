@@ -1,4 +1,4 @@
-import { Link, useNavigate } from "@tanstack/react-router";
+import { Link, useNavigate } from "react-router-dom";
 import { Minus, Plus, ShoppingBag, Trash2, X } from "lucide-react";
 import { inr, useShop } from "@/lib/shop-store";
 import { useAuth, isEmailConfirmed } from "@/lib/auth-store";
@@ -70,9 +70,7 @@ export function CartDrawer() {
                     className="size-20 shrink-0 rounded-xl border border-border object-cover"
                   />
                   <div className="min-w-0 flex-1">
-                    <Link
-                      to="/product/$id"
-                      params={{ id: product.id }}
+                    <Link to={`/product/${product.id }`}
                       onClick={() => setCartOpen(false)}
                       className="line-clamp-2 text-sm font-semibold hover:text-primary"
                     >
