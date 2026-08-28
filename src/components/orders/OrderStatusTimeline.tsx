@@ -57,48 +57,53 @@ export function OrderStatusTimeline({ status, createdAt }: OrderStatusTimelinePr
             : 1;
 
   return (
-    <div className="rounded-2xl border border-border bg-background p-4 sm:p-6 shadow-xs">
-      <h4 className="font-display text-xs font-extrabold uppercase tracking-wider text-muted-foreground mb-4">
-        Order Status Timeline
+    <div className="flex flex-col">
+      <h4 className="font-display text-xs font-bold uppercase tracking-wider text-muted-foreground mb-6">
+        Order Status
       </h4>
 
-      <div className="relative flex items-center justify-between">
+      <div className="relative flex items-start justify-between">
         {/* Connecting Line */}
-        <div className="absolute left-4 right-4 top-4 h-0.5 bg-border -z-0" />
+        <div className="absolute left-[5%] right-[5%] top-4 h-[2px] bg-secondary -z-0 rounded-full" />
         <div
-          className="absolute left-4 top-4 h-0.5 bg-primary transition-all duration-500 -z-0"
-          style={{ width: `${(currentStepIndex / (STEPS.length - 1)) * 100}%` }}
+          className="absolute left-[5%] top-4 h-[2px] bg-primary transition-all duration-500 -z-0 rounded-full"
+          style={{ width: `${(currentStepIndex / (STEPS.length - 1)) * 90}%` }}
         />
 
         {/* Timeline Steps */}
         {STEPS.map((step, idx) => {
-          const isDone = idx <= currentStepIndex;
+          const isCompleted = idx < currentStepIndex;
           const isCurrent = idx === currentStepIndex;
-          const StepIcon = step.icon;
 
           return (
-            <div key={step.id} className="relative z-10 flex flex-col items-center">
+            <div key={step.id} className="relative z-10 flex flex-col items-center w-16 sm:w-20">
               <div
                 className={cn(
-                  "grid size-8 sm:size-9 place-items-center rounded-full border-2 transition-all",
+                  "grid size-8 place-items-center rounded-full border-2 transition-all bg-background",
                   isCurrent
-                    ? "border-primary bg-primary text-primary-foreground shadow-glow scale-110"
-                    : isDone
-                      ? "border-primary bg-primary/10 text-primary"
-                      : "border-border bg-background text-muted-foreground"
+                    ? "border-primary text-primary shadow-[0_0_0_4px_rgba(59,130,246,0.1)] scale-110"
+                    : isCompleted
+                      ? "border-primary bg-primary text-primary-foreground"
+                      : "border-border text-muted-foreground/30"
                 )}
               >
-                {isDone ? <StepIcon className="size-4 sm:size-4.5" /> : <Circle className="size-3 text-muted-foreground/40" />}
+                {isCompleted ? (
+                  <Check className="size-4 text-primary-foreground" strokeWidth={3} />
+                ) : isCurrent ? (
+                  <step.icon className="size-4" />
+                ) : (
+                  <Circle className="size-2.5 text-muted-foreground/20" />
+                )}
               </div>
 
               <span
                 className={cn(
-                  "mt-2 text-[10px] sm:text-xs font-bold text-center leading-tight max-w-[4.5rem]",
+                  "mt-3 text-[10px] sm:text-xs font-medium text-center leading-tight break-words",
                   isCurrent
-                    ? "text-primary font-black"
-                    : isDone
-                      ? "text-foreground font-semibold"
-                      : "text-muted-foreground/60 font-medium"
+                    ? "text-primary font-bold"
+                    : isCompleted
+                      ? "text-foreground"
+                      : "text-muted-foreground/50"
                 )}
               >
                 {step.label}
@@ -106,6 +111,13 @@ export function OrderStatusTimeline({ status, createdAt }: OrderStatusTimelinePr
             </div>
           );
         })}
+      </div>
+
+      <div className="mt-6 text-center text-sm font-medium text-muted-foreground bg-secondary/30 rounded-xl py-3 px-4">
+        {status === "processing" && "Your order is currently being processed."}
+        {status === "confirmed" && "Your order has been confirmed and is being prepared."}
+        {status === "shipped" && "Your order has been shipped and is on its way."}
+        {status === "delivered" && "Your order has been delivered successfully."}
       </div>
     </div>
   );

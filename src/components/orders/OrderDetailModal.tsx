@@ -36,111 +36,127 @@ export function OrderDetailModal({ order, onClose }: OrderDetailModalProps) {
   const itemsCount = items.reduce((s, i) => s + (i.quantity || 1), 0);
 
   return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 sm:p-6">
       {/* Backdrop */}
-      <div className="absolute inset-0 bg-ink/60 backdrop-blur-xs" onClick={onClose} />
+      <div className="absolute inset-0 bg-ink/60 backdrop-blur-sm transition-opacity" onClick={onClose} />
 
       {/* Modal Card */}
-      <div className="relative z-[101] flex max-h-[90vh] w-full max-w-2xl flex-col rounded-3xl border border-border bg-background shadow-2xl overflow-hidden rise-in">
+      <div className="relative z-[101] flex max-h-[90vh] w-full max-w-2xl flex-col rounded-2xl sm:rounded-[2rem] border border-border/40 bg-background shadow-[0_16px_64px_-12px_rgba(0,0,0,0.15)] overflow-hidden rise-in">
         
         {/* Header */}
-        <div className="flex shrink-0 items-center justify-between border-b border-border bg-background px-6 py-4">
+        <div className="flex shrink-0 items-center justify-between px-6 sm:px-8 pt-6 sm:pt-8 pb-5">
           <div>
-            <span className="text-[10px] font-extrabold uppercase tracking-wider text-primary">
+            <h4 className="text-[10px] font-bold uppercase tracking-wider text-primary mb-1">
               Order Details
-            </span>
-            <h3 className="font-display text-xl font-black tracking-tight">
+            </h4>
+            <h3 className="font-display text-2xl font-bold tracking-tight text-foreground">
               Order #{order.order_number}
             </h3>
           </div>
           <button
             onClick={onClose}
             aria-label="Close modal"
-            className="grid size-9 place-items-center rounded-full border border-border hover:bg-secondary transition-colors cursor-pointer"
+            className="grid size-9 place-items-center rounded-full bg-secondary/50 text-muted-foreground hover:bg-secondary hover:text-foreground transition-colors cursor-pointer"
           >
-            <X className="size-5" />
+            <X className="size-4.5" />
           </button>
         </div>
 
+        <div className="px-6 sm:px-8">
+          <div className="h-px w-full bg-border/40" />
+        </div>
+
         {/* Scrollable Modal Content */}
-        <div className="flex-1 overflow-y-auto p-6 space-y-6">
+        <div className="flex-1 overflow-y-auto px-6 sm:px-8 py-6 sm:py-8 space-y-8 sm:space-y-10">
           
           {/* Order Status Timeline */}
           <OrderStatusTimeline status={order.status} createdAt={order.created_at} updatedAt={order.updated_at} />
 
           {/* Purchased Items List */}
-          <div>
-            <h4 className="font-display text-xs font-extrabold uppercase tracking-wider text-muted-foreground mb-3">
-              Items Ordered ({itemsCount})
-            </h4>
+          <section>
+            <div className="flex items-center justify-between mb-4">
+              <h4 className="font-display text-xs font-bold uppercase tracking-wider text-muted-foreground">
+                Items Ordered
+              </h4>
+              <span className="text-xs font-medium text-muted-foreground">{itemsCount} {itemsCount === 1 ? 'item' : 'items'}</span>
+            </div>
 
             {items.length === 0 ? (
-              <div className="rounded-2xl border border-border bg-secondary/30 p-4 text-xs text-muted-foreground text-center">
+              <div className="rounded-xl border border-border/40 bg-secondary/20 p-4 text-sm text-muted-foreground text-center">
                 Order details confirmed.
               </div>
             ) : (
-              <ul className="divide-y divide-border rounded-2xl border border-border bg-background overflow-hidden">
+              <ul className="divide-y divide-border/40">
                 {items.map((item) => (
-                  <li key={item.id} className="flex items-center gap-3.5 p-3.5 text-xs">
+                  <li key={item.id} className="flex items-center gap-4 py-4 first:pt-0 last:pb-0">
                     <img
                       src={item.image_url || "/logo.webp"}
                       alt={item.product_name}
-                      className="size-12 shrink-0 rounded-xl object-cover border border-border/60 bg-secondary/40"
+                      className="size-14 sm:size-16 shrink-0 rounded-xl object-cover border border-border/40 bg-secondary/20"
                     />
-                    <div className="flex-1 min-w-0">
-                      <p className="font-bold text-foreground text-sm truncate">{item.product_name}</p>
-                      <p className="text-muted-foreground text-xs">Qty: {item.quantity} × {inr(Number(item.price))}</p>
+                    <div className="flex-1 min-w-0 flex flex-col justify-center">
+                      <p className="font-medium text-foreground text-sm sm:text-base truncate">{item.product_name}</p>
+                      <p className="text-muted-foreground text-xs sm:text-sm mt-0.5">Qty: {item.quantity}</p>
                     </div>
-                    <p className="font-bold text-foreground text-sm shrink-0">
+                    <p className="font-medium text-foreground text-sm sm:text-base shrink-0">
                       {inr(Number(item.price) * (item.quantity || 1))}
                     </p>
                   </li>
                 ))}
               </ul>
             )}
-          </div>
+          </section>
+
+          <div className="h-px w-full bg-border/40" />
 
           {/* Delivery & Payment Info */}
-          <div className="grid gap-3 sm:grid-cols-2 text-xs">
-            <div className="rounded-2xl border border-border bg-secondary/30 p-4 space-y-1.5">
-              <span className="flex items-center gap-1.5 font-bold text-foreground">
-                <Truck className="size-4 text-primary" /> Delivery Details
+          <section className="grid gap-8 sm:grid-cols-2">
+            <div className="flex flex-col gap-3.5">
+              <span className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-muted-foreground">
+                <Truck className="size-3.5" /> Delivery Details
               </span>
-              <p className="text-muted-foreground">{order.delivery_method || "Standard Delivery"}</p>
-              <p className="text-foreground font-medium">{order.address || "ITPL Main Road, Kundalahalli, Bengaluru"}</p>
+              <div>
+                <p className="text-sm font-medium text-foreground mb-1">{order.delivery_method || "Standard Delivery"}</p>
+                <p className="text-sm text-muted-foreground leading-relaxed whitespace-pre-wrap">{order.address || "ITPL Main Road, Kundalahalli, Bengaluru"}</p>
+              </div>
             </div>
 
-            <div className="rounded-2xl border border-border bg-secondary/30 p-4 space-y-1.5">
-              <span className="flex items-center gap-1.5 font-bold text-foreground">
-                <CreditCard className="size-4 text-primary" /> Payment &amp; Total
+            <div className="flex flex-col gap-3.5">
+              <span className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-muted-foreground">
+                <CreditCard className="size-3.5" /> Payment Summary
               </span>
-              <p className="text-muted-foreground">Payment Method: {order.payment_method || "UPI"}</p>
-              <p className="text-sm font-black text-primary">Total Paid: {inr(Number(order.total_amount))}</p>
+              <div className="space-y-2.5 text-sm">
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Payment Method</span>
+                  <span className="font-medium text-foreground">{order.payment_method || "UPI"}</span>
+                </div>
+                <div className="flex justify-between pt-3 mt-1.5 border-t border-border/40">
+                  <span className="font-medium text-foreground">Total Paid</span>
+                  <span className="font-bold text-base text-primary">{inr(Number(order.total_amount))}</span>
+                </div>
+              </div>
             </div>
-          </div>
+          </section>
 
           {/* Date info */}
-          <div className="flex items-center justify-between rounded-xl bg-secondary/50 px-4 py-3 text-xs text-muted-foreground">
-            <span className="flex items-center gap-2">
-              <Calendar className="size-4 text-primary" /> Placed on:{" "}
-              <strong className="text-foreground font-semibold">
-                {new Date(order.created_at).toLocaleDateString("en-IN", {
-                  day: "numeric",
-                  month: "short",
-                  year: "numeric",
-                  hour: "2-digit",
-                  minute: "2-digit",
-                })}
-              </strong>
-            </span>
-          </div>
+          <section className="flex items-center gap-2.5 text-sm text-muted-foreground pt-2">
+            <Calendar className="size-4" /> 
+            <span>Placed on {new Date(order.created_at).toLocaleDateString("en-IN", {
+              day: "2-digit",
+              month: "short",
+              year: "numeric",
+              hour: "numeric",
+              minute: "2-digit",
+              hour12: true,
+            })}</span>
+          </section>
 
         </div>
 
         {/* Modal Footer */}
-        <div className="shrink-0 border-t border-border bg-background p-4 text-right">
-          <Button onClick={onClose} className="rounded-full px-6 text-xs font-bold bg-primary text-primary-foreground hover:bg-primary/90 cursor-pointer">
-            Close Order View
+        <div className="shrink-0 border-t border-border/40 bg-background/80 backdrop-blur-md px-6 sm:px-8 py-4 sm:py-5 text-right z-10">
+          <Button onClick={onClose} className="rounded-full px-8 font-medium bg-primary text-primary-foreground hover:bg-primary/90 cursor-pointer w-full sm:w-auto">
+            Close
           </Button>
         </div>
 

@@ -1,4 +1,4 @@
-import { ChevronRight, FileText, BookOpen, Printer, Layers, Box, ShieldCheck, Zap } from "lucide-react";
+import { ChevronRight, Printer, Zap, Box, ShieldCheck, Book, Briefcase, Copy, Palette, FileText } from "lucide-react";
 import { useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
@@ -7,7 +7,7 @@ import { ProductCard, ProductSkeleton } from "@/components/ProductCard";
 import { SectionHead } from "@/components/SectionHead";
 import { StoreSection } from "@/components/StoreSection";
 import { UploadPrintModal } from "@/components/UploadPrintModal";
-import { RAW_CATEGORIES } from "@/lib/data";
+import { RAW_CATEGORIES, PRINT_SERVICES } from "@/lib/data";
 import { useShop } from "@/lib/shop-store";
 import { useSupabaseProducts } from "@/lib/supabase-products";
 import { useScrollRestoration } from "@/lib/useScrollRestoration";
@@ -16,10 +16,29 @@ import { ProductCarousel, ProductCarouselItem } from "@/components/ProductCarous
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from "@/components/ui/carousel";
 
 
+function getServiceIcon(name: string) {
+  switch (name) {
+    case "Color Printing": return <Palette className="size-6" />;
+    case "Photocopy": return <Copy className="size-6" />;
+    case "Spiral Binding": return <Book className="size-6" />;
+    case "Project Printing": return <FileText className="size-6" />;
+    case "Resume Printing": return <Briefcase className="size-6" />;
+    case "B&W Printing":
+    default:
+      return <Printer className="size-6" />;
+  }
+}
+
 export default function IndexPage() {
   const { addToCart } = useShop();
   const [printOpen, setPrintOpen] = useState(false);
+  const [selectedService, setSelectedService] = useState<string | null>(null);
   const { data: products = [], isLoading, isError, error, refetch } = useSupabaseProducts();
+
+  const handleOrder = (serviceName: string | null = null) => {
+    setSelectedService(serviceName);
+    setPrintOpen(true);
+  };
 
   useScrollRestoration(!isLoading);
 
@@ -160,25 +179,19 @@ export default function IndexPage() {
             <p className="mt-3 max-w-2xl text-[#0B2455]/70 text-lg font-medium">High quality printing, binding & finishing — fast, reliable & professional.</p>
           </div>
           
-          <div className="relative z-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-5">
-            {[
-              { name: "Printouts", icon: <Printer className="size-6" />, desc: "B&W and Color" },
-              { name: "Spiral Binding", icon: <BookOpen className="size-6" />, desc: "Durable binding" },
-              { name: "Lamination", icon: <Layers className="size-6" />, desc: "Glossy & Matte" },
-              { name: "Visiting Cards", icon: <Box className="size-6" />, desc: "Premium quality" },
-              { name: "Project Work", icon: <FileText className="size-6" />, desc: "Reports & files" }
-            ].map((service) => (
+          <div className="relative z-10 grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
+            {PRINT_SERVICES.map((service) => (
               <button
                 key={service.name}
-                onClick={() => setPrintOpen(true)}
+                onClick={() => handleOrder(service.name)}
                 className="group flex flex-col items-center justify-center gap-4 rounded-[1.25rem] bg-white p-6 shadow-[0_4px_16px_-4px_rgba(11,92,255,0.08)] border border-[#EAF2FF] transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_12px_28px_-6px_rgba(11,92,255,0.15)] hover:border-[#DCEBFF] text-center cursor-pointer"
               >
                 <div className="grid size-14 place-items-center rounded-2xl bg-[#075BFF]/10 text-[#075BFF] transition-all duration-300 group-hover:scale-110 group-hover:bg-[#075BFF] group-hover:text-white group-hover:shadow-[0_8px_16px_-4px_rgba(7,91,255,0.4)]">
-                  {service.icon}
+                  {getServiceIcon(service.name)}
                 </div>
                 <div>
                   <h3 className="font-display text-lg font-bold text-[#0B2455]">{service.name}</h3>
-                  <p className="mt-1 text-xs font-medium text-[#0B2455]/60">{service.desc}</p>
+                  <p className="mt-1 text-[13px] font-medium text-[#0B2455]/60 leading-tight">{service.note}</p>
                 </div>
               </button>
             ))}
@@ -210,7 +223,7 @@ export default function IndexPage() {
         </div>
       </section>
 
-      {printOpen && <UploadPrintModal onClose={() => setPrintOpen(false)} />}
+      {printOpen && <UploadPrintModal onClose={() => setPrintOpen(false)} serviceName={selectedService} />}
     </LandingLayout>
   );
 }
