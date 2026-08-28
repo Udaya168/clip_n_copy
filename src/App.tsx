@@ -24,6 +24,9 @@ import HelpPage from "@/routes/help";
 import OffersPage from "@/routes/offers";
 import ServicesPage from "@/routes/services";
 import WishlistPage from "@/routes/wishlist";
+import OrdersPage from "@/routes/orders";
+import TrackOrderPage from "@/routes/track-order";
+import ReturnsPage from "@/routes/returns";
 
 function NotFoundComponent() {
   return (
@@ -84,6 +87,9 @@ export default function App() {
               <Route path="/offers" element={<OffersPage />} />
               <Route path="/services" element={<ServicesPage />} />
               <Route path="/wishlist" element={<WishlistPage />} />
+              <Route path="/orders" element={<OrdersPage />} />
+              <Route path="/track-order" element={<TrackOrderPage />} />
+              <Route path="/returns" element={<ReturnsPage />} />
               <Route path="*" element={<NotFoundComponent />} />
             </Routes>
           </main>

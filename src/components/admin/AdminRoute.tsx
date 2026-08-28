@@ -82,11 +82,11 @@ export function AdminRoute({ children }: AdminRouteProps) {
     if (authStatus === "unauthenticated") {
       // 8. If the user is not authenticated: redirect to /login
       toast.error("Please sign in as administrator to access Admin Portal.");
-      navigate({ to: "/login" });
+      navigate("/login");
     } else if (authStatus === "denied") {
       // 6 & 7. If role is user or missing: deny access and redirect to normal customer homepage
       toast.error("You do not have permission to access the Admin Portal.");
-      navigate({ to: "/" });
+      navigate("/");
     }
   }, [authStatus, navigate, isLoggingOut]);
 

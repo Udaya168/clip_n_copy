@@ -36,7 +36,7 @@ export default function IndexPage() {
         categoryMap.set(slug, {
           slug,
           name: raw ? raw.name : slug.split('-').map(s => s.charAt(0).toUpperCase() + s.slice(1)).join(' '),
-          image: raw ? raw.image : RAW_CATEGORIES[0].image,
+          image: raw ? raw.image : (RAW_CATEGORIES[0]?.image || ""),
           count: 0
         });
       }

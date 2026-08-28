@@ -36,8 +36,7 @@ export default function ProductDetailsPage() {
   const [zoom, setZoom] = useState<{ x: number; y: number } | null>(null);
   const [tab, setTab] = useState<"desc" | "specs" | "reviews">("desc");
 
-  if (isLoading) return <div className="flex justify-center py-20">Loading...</div>;
-  if (!product) return <div className="flex justify-center py-20">Product not found</div>;
+  const [selectedVariant, setSelectedVariant] = useState("");
 
   useEffect(() => {
     if (!api) return;
@@ -48,69 +47,74 @@ export default function ProductDetailsPage() {
     api.on("select", () => {
       setActive(api.selectedScrollSnap());
     });
-  }, [api]);
+  }, [api, active]);
 
-  
-  
+  useEffect(() => {
+    if (product?.variants?.length && !selectedVariant) {
+      setSelectedVariant(product.variants[0].name);
+    }
+  }, [product, selectedVariant]);
+
   useScrollRestoration(!isLoading);
 
-  const [selectedVariant, setSelectedVariant] = useState(product?.variants?.[0]?.name || "");
+  if (isLoading) return <div className="flex justify-center py-20">Loading...</div>;
+  if (!product) return <div className="flex justify-center py-20">Product not found</div>;
 
-  const currentVariantObj = product.variants?.find((v: import("@/lib/data").ProductVariant) => v.name === selectedVariant);
+  const currentVariantObj = (product.variants || []).find((v: import("@/lib/data").ProductVariant) => v.name === (selectedVariant || product?.variants?.[0]?.name));
   const isSingleImageVariantProduct = 
-    (product.name?.toLowerCase().includes('hauser') && product.name?.toLowerCase().includes('xo')) ||
-    (product.name?.toLowerCase().includes('reynolds') && product.name?.toLowerCase().includes('trimax')) ||
-    (product.name?.toLowerCase().includes('luxor') && product.name?.toLowerCase().includes('fine writer')) ||
-    (product.name?.toLowerCase().includes('pentonic')) ||
-    (product.name?.toLowerCase().includes('pilot') && product.name?.toLowerCase().includes('v7'));
+    ((product.name || "").toLowerCase().includes('hauser') && (product.name || "").toLowerCase().includes('xo')) ||
+    ((product.name || "").toLowerCase().includes('reynolds') && (product.name || "").toLowerCase().includes('trimax')) ||
+    ((product.name || "").toLowerCase().includes('luxor') && (product.name || "").toLowerCase().includes('fine writer')) ||
+    ((product.name || "").toLowerCase().includes('pentonic')) ||
+    ((product.name || "").toLowerCase().includes('pilot') && (product.name || "").toLowerCase().includes('v7'));
   
   const allImages = product.variants && product.variants.length > 0
-    ? Array.from(new Set(product.variants.flatMap((v: import("@/lib/data").ProductVariant) => v.images)))
-    : (product.name?.toLowerCase().includes('apsara') && product.name?.toLowerCase().includes('drawing pencil')) ||
-      (product.name?.toLowerCase().includes('apsara') && product.name?.toLowerCase().includes('absolute')) ||
-      (product.name?.toLowerCase().includes('apsara') && product.name?.toLowerCase().includes('platinum')) ||
-      (product.name?.toLowerCase().includes('cello') && product.name?.toLowerCase().includes('butterflow')) ||
-      (product.name?.toLowerCase().includes('parker') && product.name?.toLowerCase().includes('vector')) ||
-      (product.name?.toLowerCase().includes('classmate') && product.name?.toLowerCase().includes('octane')) ||
-      (product.name?.toLowerCase().includes('nataraj') && product.name?.toLowerCase().includes('hb pencil')) ||
-      (product.name?.toLowerCase().includes('fevicol') && product.name?.toLowerCase().includes('mr')) ||
-      (product.name?.toLowerCase().includes('geometry') || product.id?.includes('geometry')) ||
-      (product.name?.toLowerCase().includes('crayons') && product.name?.toLowerCase().includes('24')) ||
-      (product.name?.toLowerCase().includes('apsara') && product.name?.toLowerCase().includes('non dust')) ||
-      (product.name?.toLowerCase().includes('highlighter') || product.id?.includes('highlighter')) ||
-      (product.name?.toLowerCase().includes('camlin') && product.name?.toLowerCase().includes('exam pad')) ||
-      (product.name?.toLowerCase().includes('pencil box')) ||
-      (product.name?.toLowerCase().includes('nataraj') && product.name?.toLowerCase().includes('eraser')) ||
-      (product.name?.toLowerCase().includes('scissors') || product.id?.includes('scissors')) ||
-      (product.name?.toLowerCase().includes('sharpener') || product.id?.includes('sharpener')) ||
-      (product.name?.toLowerCase().includes('ruler') || product.id?.includes('ruler')) ||
-      (product.name?.toLowerCase().includes('permanent marker') || product.id?.includes('permanent-marker')) ||
-      (product.name?.toLowerCase().includes('printer paper') || product.id?.includes('printer-paper') || product.name?.toLowerCase().includes('jk copier')) ||
-      (product.name?.toLowerCase().includes('whiteboard marker') || product.id?.includes('whiteboard-marker')) ||
-      (product.name?.toLowerCase().includes('document folder') || product.id?.includes('document-folder')) ||
-      (product.name?.toLowerCase().includes('stapler') || product.id?.includes('stapler')) ||
-      (product.name?.toLowerCase().includes('file folder') || product.id?.includes('file-folder')) ||
-      (product.name?.toLowerCase().includes('punch machine') || product.id?.includes('punch-machine')) ||
-      (product.name?.toLowerCase().includes('sticky notes') || product.id?.includes('sticky-notes')) ||
-      (product.name?.toLowerCase().includes('office register') || product.id?.includes('office-register')) ||
-      (product.name?.toLowerCase().includes('paper clips') || product.id?.includes('paper-clips')) ||
-      (product.name?.toLowerCase().includes('envelope') || product.id?.includes('envelope')) ||
-      (product.name?.toLowerCase().includes('color pencil') || product.name?.toLowerCase().includes('colour pencil') || product.id?.includes('color-pencil') || product.id?.includes('colour-pencil')) ||
-      (product.name?.toLowerCase().includes('oil pastel') || product.id?.includes('oil-pastel')) ||
-      (product.name?.toLowerCase().includes('sketch pen') || product.id?.includes('sketch-pen')) ||
-      (product.name?.toLowerCase().includes('poster colour') || product.name?.toLowerCase().includes('poster color') || product.id?.includes('poster-colour') || product.id?.includes('poster-color')) ||
-      (product.name?.toLowerCase().includes('water colour') || product.name?.toLowerCase().includes('water color') || product.id?.includes('water-colour') || product.id?.includes('water-color')) ||
-      (product.name?.toLowerCase().includes('drawing book') || product.id?.includes('drawing-book')) ||
-      (product.name?.toLowerCase().includes('craft paper') || product.id?.includes('craft-paper')) ||
-      (product.name?.toLowerCase().includes('paint brush') || product.id?.includes('paint-brush')) ||
-      (product.name?.toLowerCase().includes('plastic file') || product.id?.includes('plastic-file')) ||
-      (product.name?.toLowerCase().includes('button file') || product.id?.includes('button-file')) ||
-      (product.name?.toLowerCase().includes('ring binder') || product.id?.includes('ring-binder')) ||
-      (product.name?.toLowerCase().includes('expanding file') || product.id?.includes('expanding-file')) ||
-      (product.name?.toLowerCase().includes('calculator') || product.id?.includes('calculator')) ||
-      (product.name?.toLowerCase().includes('82ms') || product.id?.includes('82ms')) ||
-      (product.name?.toLowerCase().includes('12d') || product.id?.includes('12d')) ||
-      (product.name?.toLowerCase().includes('notebook') || product.id?.includes('notebook'))
+    ? Array.from(new Set(product.variants.flatMap((v: import("@/lib/data").ProductVariant) => v.images || [])))
+    : ((product.name || "").toLowerCase().includes('apsara') && (product.name || "").toLowerCase().includes('drawing pencil')) ||
+      ((product.name || "").toLowerCase().includes('apsara') && (product.name || "").toLowerCase().includes('absolute')) ||
+      ((product.name || "").toLowerCase().includes('apsara') && (product.name || "").toLowerCase().includes('platinum')) ||
+      ((product.name || "").toLowerCase().includes('cello') && (product.name || "").toLowerCase().includes('butterflow')) ||
+      ((product.name || "").toLowerCase().includes('parker') && (product.name || "").toLowerCase().includes('vector')) ||
+      ((product.name || "").toLowerCase().includes('classmate') && (product.name || "").toLowerCase().includes('octane')) ||
+      ((product.name || "").toLowerCase().includes('nataraj') && (product.name || "").toLowerCase().includes('hb pencil')) ||
+      ((product.name || "").toLowerCase().includes('fevicol') && (product.name || "").toLowerCase().includes('mr')) ||
+      ((product.name || "").toLowerCase().includes('geometry') || (product.id || "").includes('geometry')) ||
+      ((product.name || "").toLowerCase().includes('crayons') && (product.name || "").toLowerCase().includes('24')) ||
+      ((product.name || "").toLowerCase().includes('apsara') && (product.name || "").toLowerCase().includes('non dust')) ||
+      ((product.name || "").toLowerCase().includes('highlighter') || (product.id || "").includes('highlighter')) ||
+      ((product.name || "").toLowerCase().includes('camlin') && (product.name || "").toLowerCase().includes('exam pad')) ||
+      ((product.name || "").toLowerCase().includes('pencil box')) ||
+      ((product.name || "").toLowerCase().includes('nataraj') && (product.name || "").toLowerCase().includes('eraser')) ||
+      ((product.name || "").toLowerCase().includes('scissors') || (product.id || "").includes('scissors')) ||
+      ((product.name || "").toLowerCase().includes('sharpener') || (product.id || "").includes('sharpener')) ||
+      ((product.name || "").toLowerCase().includes('ruler') || (product.id || "").includes('ruler')) ||
+      ((product.name || "").toLowerCase().includes('permanent marker') || (product.id || "").includes('permanent-marker')) ||
+      ((product.name || "").toLowerCase().includes('printer paper') || (product.id || "").includes('printer-paper') || (product.name || "").toLowerCase().includes('jk copier')) ||
+      ((product.name || "").toLowerCase().includes('whiteboard marker') || (product.id || "").includes('whiteboard-marker')) ||
+      ((product.name || "").toLowerCase().includes('document folder') || (product.id || "").includes('document-folder')) ||
+      ((product.name || "").toLowerCase().includes('stapler') || (product.id || "").includes('stapler')) ||
+      ((product.name || "").toLowerCase().includes('file folder') || (product.id || "").includes('file-folder')) ||
+      ((product.name || "").toLowerCase().includes('punch machine') || (product.id || "").includes('punch-machine')) ||
+      ((product.name || "").toLowerCase().includes('sticky notes') || (product.id || "").includes('sticky-notes')) ||
+      ((product.name || "").toLowerCase().includes('office register') || (product.id || "").includes('office-register')) ||
+      ((product.name || "").toLowerCase().includes('paper clips') || (product.id || "").includes('paper-clips')) ||
+      ((product.name || "").toLowerCase().includes('envelope') || (product.id || "").includes('envelope')) ||
+      ((product.name || "").toLowerCase().includes('color pencil') || (product.name || "").toLowerCase().includes('colour pencil') || (product.id || "").includes('color-pencil') || (product.id || "").includes('colour-pencil')) ||
+      ((product.name || "").toLowerCase().includes('oil pastel') || (product.id || "").includes('oil-pastel')) ||
+      ((product.name || "").toLowerCase().includes('sketch pen') || (product.id || "").includes('sketch-pen')) ||
+      ((product.name || "").toLowerCase().includes('poster colour') || (product.name || "").toLowerCase().includes('poster color') || (product.id || "").includes('poster-colour') || (product.id || "").includes('poster-color')) ||
+      ((product.name || "").toLowerCase().includes('water colour') || (product.name || "").toLowerCase().includes('water color') || (product.id || "").includes('water-colour') || (product.id || "").includes('water-color')) ||
+      ((product.name || "").toLowerCase().includes('drawing book') || (product.id || "").includes('drawing-book')) ||
+      ((product.name || "").toLowerCase().includes('craft paper') || (product.id || "").includes('craft-paper')) ||
+      ((product.name || "").toLowerCase().includes('paint brush') || (product.id || "").includes('paint-brush')) ||
+      ((product.name || "").toLowerCase().includes('plastic file') || (product.id || "").includes('plastic-file')) ||
+      ((product.name || "").toLowerCase().includes('button file') || (product.id || "").includes('button-file')) ||
+      ((product.name || "").toLowerCase().includes('ring binder') || (product.id || "").includes('ring-binder')) ||
+      ((product.name || "").toLowerCase().includes('expanding file') || (product.id || "").includes('expanding-file')) ||
+      ((product.name || "").toLowerCase().includes('calculator') || (product.id || "").includes('calculator')) ||
+      ((product.name || "").toLowerCase().includes('82ms') || (product.id || "").includes('82ms')) ||
+      ((product.name || "").toLowerCase().includes('12d') || (product.id || "").includes('12d')) ||
+      ((product.name || "").toLowerCase().includes('notebook') || (product.id || "").includes('notebook'))
       ? [product.image]
       : [product.image, product.image, product.image, product.image];
 

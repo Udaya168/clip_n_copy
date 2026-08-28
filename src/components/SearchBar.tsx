@@ -90,11 +90,11 @@ export function SearchBar({ className, autoFocus }: { className?: string; autoFo
     const trimmed = value.trim();
     setOpen(false);
     if (!trimmed) {
-      navigate({ to: "/shop" });
+      navigate("/shop");
       return;
     }
     setQ(trimmed);
-    navigate({ to: "/shop", search: { q: trimmed } });
+    navigate(`/shop?q=${encodeURIComponent(trimmed)}`);
   };
 
   const handlePopularSearch = (item: string) => {
@@ -102,17 +102,17 @@ export function SearchBar({ className, autoFocus }: { className?: string; autoFo
     setQ(item);
     const lower = item.toLowerCase();
     if (lower.includes("notebook")) {
-      navigate({ to: "/shop", search: { category: "notebooks" } });
+      navigate("/shop?category=notebooks");
     } else if (lower.includes("pen")) {
-      navigate({ to: "/shop", search: { category: "pens-pencils" } });
+      navigate("/shop?category=pens-pencils");
     } else if (lower.includes("calc")) {
-      navigate({ to: "/shop", search: { category: "calculators" } });
+      navigate("/shop?category=calculators");
     } else if (lower.includes("book")) {
-      navigate({ to: "/shop", search: { category: "books" } });
+      navigate("/shop?category=books");
     } else if (lower.includes("art")) {
-      navigate({ to: "/shop", search: { category: "art-craft" } });
+      navigate("/shop?category=art-craft");
     } else {
-      navigate({ to: "/shop", search: { q: item } });
+      navigate(`/shop?q=${encodeURIComponent(item)}`);
     }
   };
 
@@ -177,7 +177,7 @@ export function SearchBar({ className, autoFocus }: { className?: string; autoFo
                       onMouseDown={(e) => e.preventDefault()}
                       onClick={() => {
                         setOpen(false);
-                        navigate({ to: "/product/$id", params: { id: p.id } });
+                        navigate(`/product/${p.id}`);
                       }}
                       className="flex w-full items-center gap-3 rounded-xl px-2 py-2 text-left transition-colors hover:bg-secondary"
                     >

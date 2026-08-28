@@ -18,9 +18,9 @@ export function CartDrawer() {
     // Requirement 6: Check auth & email confirmation status
     if (!user || !isEmailConfirmed(user)) {
       toast.error("Please confirm your email and sign in to continue with checkout.");
-      navigate({ to: "/login", search: { redirect: "/checkout" } });
+      navigate("/login?redirect=/checkout");
     } else {
-      navigate({ to: "/checkout" });
+      navigate("/checkout");
     }
   };
 

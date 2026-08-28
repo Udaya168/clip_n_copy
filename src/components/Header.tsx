@@ -29,6 +29,9 @@ import {
   ChevronRight,
   CircleHelp,
   Settings,
+  Package,
+  Truck,
+  RotateCcw,
 } from "lucide-react";
 import { useState } from "react";
 import { motion } from "framer-motion";
@@ -396,9 +399,12 @@ export function Header() {
                 </div>
               </div>
 
-              {/* 4. Account / Login */}
+              {/* 4. Account */}
               <div className="pt-2">
                 <div className="h-[1px] w-full bg-[#E5EAF2] mb-4" />
+                <h3 className="text-[12px] font-bold uppercase tracking-[0.08em] text-muted-foreground px-2 mb-3">
+                  Account
+                </h3>
                 <div className="flex flex-col gap-1.5">
                   {!user ? (
                     <Link
@@ -422,17 +428,15 @@ export function Header() {
                         <ChevronRight className="size-[18px] text-muted-foreground/50" />
                       </Link>
                       
-                      {role === "admin" && (
-                        <Link
-                          to="/admin"
-                          onClick={() => setMobileMenuOpen(false)}
-                          className="group flex items-center gap-3 h-[48px] px-3.5 rounded-xl text-foreground hover:bg-secondary transition-colors font-medium"
-                        >
-                          <Shield className="size-[18px] text-primary" />
-                          <span className="text-[14px] flex-1">Admin Dashboard</span>
-                          <ChevronRight className="size-[18px] text-muted-foreground/50" />
-                        </Link>
-                      )}
+                      <Link
+                        to="/orders"
+                        onClick={() => setMobileMenuOpen(false)}
+                        className="group flex items-center gap-3 h-[48px] px-3.5 rounded-xl text-foreground hover:bg-secondary transition-colors font-medium"
+                      >
+                        <Package className="size-[18px] text-primary" />
+                        <span className="text-[14px] flex-1">My Orders</span>
+                        <ChevronRight className="size-[18px] text-muted-foreground/50" />
+                      </Link>
 
                       <button
                         onClick={() => {
@@ -472,6 +476,24 @@ export function Header() {
                   >
                     <Phone className="size-[18px] text-primary" />
                     <span className="text-[14px] flex-1">Contact Us</span>
+                    <ChevronRight className="size-[18px] text-muted-foreground/50" />
+                  </Link>
+                  <Link
+                    to="/track-order"
+                    onClick={() => setMobileMenuOpen(false)}
+                    className="group flex items-center gap-3 h-[48px] px-3.5 rounded-xl text-foreground hover:bg-secondary transition-colors font-medium"
+                  >
+                    <Truck className="size-[18px] text-primary" />
+                    <span className="text-[14px] flex-1">Track Order</span>
+                    <ChevronRight className="size-[18px] text-muted-foreground/50" />
+                  </Link>
+                  <Link
+                    to="/returns"
+                    onClick={() => setMobileMenuOpen(false)}
+                    className="group flex items-center gap-3 h-[48px] px-3.5 rounded-xl text-foreground hover:bg-secondary transition-colors font-medium"
+                  >
+                    <RotateCcw className="size-[18px] text-primary" />
+                    <span className="text-[14px] flex-1">Returns</span>
                     <ChevronRight className="size-[18px] text-muted-foreground/50" />
                   </Link>
                 </div>
