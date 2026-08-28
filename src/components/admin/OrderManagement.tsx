@@ -5,6 +5,7 @@ import { ShoppingBag, Search, Filter, Clock, CheckCircle2, Truck, Package, Refre
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
+import { cn } from "@/lib/utils";
 import { AdminOrderDetailsModal } from "./AdminOrderDetailsModal";
 
 type OrderStatusType = "Processing" | "Confirmed" | "Shipped" | "Delivered" | "Cancelled";
@@ -130,14 +131,15 @@ export function OrderManagement() {
                 <th className="px-5 py-3.5">Date</th>
                 <th className="px-5 py-3.5">Fulfillment</th>
                 <th className="px-5 py-3.5">Total</th>
-                <th className="px-5 py-3.5">Status</th>
+                <th className="px-5 py-3.5">Payment</th>
+                <th className="px-5 py-3.5">Order Status</th>
                 <th className="px-5 py-3.5 text-right">Update Status</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-border">
               {filteredOrders.length === 0 ? (
                 <tr>
-                  <td colSpan={7} className="px-5 py-12 text-center text-muted-foreground">
+                  <td colSpan={8} className="px-5 py-12 text-center text-muted-foreground">
                     <ShoppingBag className="mx-auto size-8 opacity-40 mb-2" />
                     No orders found matching your search.
                   </td>
@@ -174,6 +176,23 @@ export function OrderManagement() {
                       </span>
                     </td>
                     <td className="px-5 py-4">
+                      <span
+                        className={cn(
+                          "inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-extrabold uppercase",
+                          o.paymentStatus === "Paid"
+                            ? "bg-emerald-500/10 text-emerald-600"
+                            : o.paymentStatus === "Failed"
+                            ? "bg-destructive/10 text-destructive"
+                            : "bg-amber-500/10 text-amber-600"
+                        )}
+                      >
+                        {o.paymentStatus || (o.paymentMethod === "COD" ? "COD / Pending" : "Payment Pending")}
+                      </span>
+                      <span className="block text-[10px] text-muted-foreground font-medium mt-0.5">
+                        {o.paymentMethod || "UPI"}
+                      </span>
+                    </td>
+                    <td className="px-5 py-4">
                       <StatusBadge status={o.status} />
                     </td>
                     <td className="px-5 py-4 text-right" onClick={(e) => e.stopPropagation()}>
@@ -201,7 +220,6 @@ export function OrderManagement() {
         </div>
       </div>
 
-      {/* Order Details Modal */}
       <AdminOrderDetailsModal
         order={selectedOrder}
         isOpen={isDetailsOpen}
@@ -210,6 +228,12 @@ export function OrderManagement() {
           setOrders((prev) => prev.map((o) => (o.id === orderId ? { ...o, status: newStatus } : o)));
           if (selectedOrder && selectedOrder.id === orderId) {
             setSelectedOrder((prev) => (prev ? { ...prev, status: newStatus } : null));
+          }
+        }}
+        onPaymentStatusUpdated={(orderId, newPaymentStatus) => {
+          setOrders((prev) => prev.map((o) => (o.id === orderId ? { ...o, paymentStatus: newPaymentStatus } : o)));
+          if (selectedOrder && selectedOrder.id === orderId) {
+            setSelectedOrder((prev) => (prev ? { ...prev, paymentStatus: newPaymentStatus } : null));
           }
         }}
       />

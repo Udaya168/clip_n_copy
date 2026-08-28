@@ -5,16 +5,18 @@ export interface OrderRecord {
   orderNumber: string;
   customerName: string;
   customerPhone: string;
-  customerEmail?: string;
+  customerEmail?: string | undefined;
   date: string;
   itemsCount: number;
   totalAmount: number;
   status: "Processing" | "Confirmed" | "Shipped" | "Delivered" | "Cancelled";
   fulfillmentType: "Delivery" | "Pickup";
-  address?: string;
-  deliveryMethod?: string;
-  paymentMethod?: string;
-  user_id?: string;
+  address?: string | undefined;
+  deliveryMethod?: string | undefined;
+  paymentMethod?: string | undefined;
+  paymentStatus?: string | undefined;
+  utrNumber?: string | undefined;
+  user_id?: string | undefined;
 }
 
 export interface OrderItemInput {
@@ -226,73 +228,144 @@ export async function fetchOrderItems(orderId: string): Promise<OrderItemRecord[
   return [];
 }
 
-// Save order to both Supabase (if table exists) and localStorage
-export async function saveOrder(
-  order: Omit<OrderRecord, "id">,
-  items?: OrderItemInput[]
+export interface CreateOrderRpcParams {
+  p_city: string;
+  p_coupon_code: string;
+  p_coupon_discount: number;
+  p_customer_email: string;
+  p_customer_name: string;
+  p_discount: number;
+  p_items: any[];
+  p_phone: string;
+  p_pincode: string;
+  p_shipping: number;
+  p_shipping_address: string;
+  p_state: string;
+  p_subtotal: number;
+  p_total: number;
+  p_payment_method: string;
+}
+
+// Execute public.create_order_and_decrement_inventory RPC for order placement
+export async function saveOrderViaRpc(
+  rpcParams: CreateOrderRpcParams,
+  extraInfo: {
+    orderNumber: string;
+    fulfillmentType: "Delivery" | "Pickup";
+    deliveryMethod: string;
+    user_id?: string | undefined;
+  }
 ): Promise<OrderRecord> {
   const generatedId = "ord-" + Date.now();
+  const isCod = rpcParams.p_payment_method === "COD";
+  const paymentStatus = isCod ? "COD / Pending" : "Payment Pending";
+
   const newOrder: OrderRecord = {
-    ...order,
     id: generatedId,
+    orderNumber: extraInfo.orderNumber,
+    customerName: rpcParams.p_customer_name,
+    customerPhone: rpcParams.p_phone,
+    customerEmail: rpcParams.p_customer_email,
+    date: new Date().toISOString().split("T")[0] || "2026-08-13",
+    itemsCount: (rpcParams.p_items || []).reduce((s, i) => s + (Number(i.quantity) || 1), 0),
+    totalAmount: rpcParams.p_total,
+    status: "Processing",
+    fulfillmentType: extraInfo.fulfillmentType,
+    address: rpcParams.p_shipping_address,
+    deliveryMethod: extraInfo.deliveryMethod,
+    paymentMethod: rpcParams.p_payment_method,
+    paymentStatus: paymentStatus,
+    user_id: extraInfo.user_id,
   };
 
-  // 1. Persist in LocalStorage
+  // 1. Persist in LocalStorage for client reactivity & offline display
   const existing = getStoredOrders();
   const updated = [newOrder, ...existing];
   if (typeof window !== "undefined") {
     window.localStorage.setItem(ORDERS_KEY, JSON.stringify(updated));
-    if (items && items.length > 0) {
-      window.localStorage.setItem(`cnc-order-items-${newOrder.id}`, JSON.stringify(items));
+    if (rpcParams.p_items && rpcParams.p_items.length > 0) {
+      window.localStorage.setItem(`cnc-order-items-${newOrder.id}`, JSON.stringify(rpcParams.p_items));
     }
   }
 
-  // 2. Try inserting into Supabase orders table if available
+  // 2. Execute the single RPC create_order_and_decrement_inventory with ALL 15 parameters
   try {
-    const { data: { session } } = await supabase.auth.getSession();
-    const authenticatedUserId = session?.user?.id || newOrder.user_id;
-
-    const { data, error } = await supabase
-      .from("orders")
-      .insert({
-        id: newOrder.id,
-        order_number: newOrder.orderNumber,
-        customer_name: newOrder.customerName,
-        customer_phone: newOrder.customerPhone,
-        customer_email: newOrder.customerEmail,
-        items_count: newOrder.itemsCount,
-        total_amount: newOrder.totalAmount,
-        status: newOrder.status.toLowerCase(),
-        fulfillment_type: newOrder.fulfillmentType,
-        address: newOrder.address,
-        delivery_method: newOrder.deliveryMethod,
-        payment_method: newOrder.paymentMethod,
-        user_id: authenticatedUserId,
-      })
-      .select()
-      .maybeSingle();
+    const { data, error } = await supabase.rpc(
+      "create_order_and_decrement_inventory",
+      {
+        p_city: rpcParams.p_city,
+        p_coupon_code: rpcParams.p_coupon_code,
+        p_coupon_discount: rpcParams.p_coupon_discount,
+        p_customer_email: rpcParams.p_customer_email,
+        p_customer_name: rpcParams.p_customer_name,
+        p_discount: rpcParams.p_discount,
+        p_items: rpcParams.p_items,
+        p_phone: rpcParams.p_phone,
+        p_pincode: rpcParams.p_pincode,
+        p_shipping: rpcParams.p_shipping,
+        p_shipping_address: rpcParams.p_shipping_address,
+        p_state: rpcParams.p_state,
+        p_subtotal: rpcParams.p_subtotal,
+        p_total: rpcParams.p_total,
+        p_payment_method: rpcParams.p_payment_method,
+      }
+    );
 
     if (error) {
-      // Supabase orders table fallback
-    } else if (data && items && items.length > 0) {
-      // Insert related order_items
-      const itemRows = items.map((item, idx) => ({
-        id: `item-${newOrder.id}-${idx}`,
-        order_id: newOrder.id,
-        product_id: item.product_id || null,
-        product_name: item.product_name,
-        quantity: item.quantity,
-        price: item.price,
-        image_url: item.image_url || null,
-      }));
-
-      await supabase.from("order_items").insert(itemRows);
+      console.warn("[RPC create_order_and_decrement_inventory notice]", error);
+    } else if (data) {
+      console.log("[RPC create_order_and_decrement_inventory success]", data);
+      if (typeof data === "object" && data !== null) {
+        if (data.id) newOrder.id = String(data.id);
+        if (data.order_number || data.orderNumber) {
+          newOrder.orderNumber = String(data.order_number || data.orderNumber);
+        }
+      }
     }
   } catch (err) {
-    // Fallback to local store
+    console.warn("[RPC Exception]", err);
   }
 
   return newOrder;
+}
+
+// Save order helper fallback for compatibility
+export async function saveOrder(
+  order: Omit<OrderRecord, "id">,
+  items?: OrderItemInput[]
+): Promise<OrderRecord> {
+  return saveOrderViaRpc(
+    {
+      p_city: "Bengaluru",
+      p_coupon_code: "",
+      p_coupon_discount: 0,
+      p_customer_email: order.customerEmail || "",
+      p_customer_name: order.customerName,
+      p_discount: 0,
+      p_items: (items || []).map((i) => ({
+        product_id: i.product_id || null,
+        product_name: i.product_name,
+        quantity: i.quantity,
+        price: i.price,
+        image_url: i.image_url || null,
+        ...(i.variant ? { variant: i.variant } : {}),
+      })),
+      p_phone: order.customerPhone,
+      p_pincode: "560037",
+      p_shipping: 0,
+      p_shipping_address: order.address || "",
+      p_state: "Karnataka",
+      p_subtotal: order.totalAmount,
+      p_total: order.totalAmount,
+      p_payment_method: order.paymentMethod || "COD",
+    },
+    {
+      orderNumber: order.orderNumber,
+      fulfillmentType: order.fulfillmentType,
+      deliveryMethod: order.deliveryMethod || "Standard Delivery",
+      user_id: order.user_id,
+    }
+  );
 }
 
 // Fetch all orders for Admin Portal
@@ -321,6 +394,8 @@ export async function fetchAllOrders(): Promise<OrderRecord[]> {
         address: d.address || "",
         deliveryMethod: d.delivery_method || d.deliveryMethod || "",
         paymentMethod: d.payment_method || d.paymentMethod || "",
+        paymentStatus: d.payment_status || d.paymentStatus || "",
+        utrNumber: d.utr_number || d.utrNumber || "",
         user_id: d.user_id,
       }));
       return dbOrders;
@@ -353,5 +428,37 @@ export async function updateOrderStatus(
       .eq("id", orderId);
   } catch (err) {
     // Supabase update skipped/fallback
+  }
+}
+
+// Update Payment Status (Admin)
+export async function updateOrderPaymentStatus(
+  orderId: string,
+  newPaymentStatus: string
+): Promise<void> {
+  const existing = getStoredOrders();
+  const updated = existing.map((o) =>
+    o.id === orderId ? { ...o, paymentStatus: newPaymentStatus } : o
+  );
+  if (typeof window !== "undefined") {
+    window.localStorage.setItem(ORDERS_KEY, JSON.stringify(updated));
+  }
+
+  try {
+    const { error } = await supabase
+      .from("orders")
+      .update({
+        payment_status: newPaymentStatus,
+        updated_at: new Date().toISOString(),
+      })
+      .eq("id", orderId);
+
+    if (error) {
+      console.error("[updateOrderPaymentStatus error]", error);
+      throw new Error(error.message || "Failed to update payment status");
+    }
+  } catch (err: any) {
+    console.warn("Supabase update payment_status notice:", err);
+    throw err;
   }
 }

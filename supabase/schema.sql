@@ -405,3 +405,65 @@ FOR DELETE
 TO authenticated
 USING (auth.uid() = user_id);
 
+-- ----------------------------------------------------------------------------
+-- F. COUPONS TABLE
+-- ----------------------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS public.coupons (
+  id TEXT PRIMARY KEY DEFAULT uuid_generate_v4()::text,
+  code TEXT NOT NULL UNIQUE,
+  discount_type TEXT NOT NULL CHECK (discount_type IN ('percentage', 'fixed')),
+  discount_value NUMERIC NOT NULL CHECK (discount_value >= 0),
+  min_order_amount NUMERIC DEFAULT 0 CHECK (min_order_amount >= 0),
+  max_discount_amount NUMERIC CHECK (max_discount_amount IS NULL OR max_discount_amount >= 0),
+  is_active BOOLEAN DEFAULT true,
+  expires_at TIMESTAMPTZ,
+  description TEXT,
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+ALTER TABLE public.coupons ENABLE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS "coupons_select_policy" ON public.coupons;
+CREATE POLICY "coupons_select_policy" ON public.coupons FOR SELECT USING (true);
+
+DROP POLICY IF EXISTS "coupons_admin_policy" ON public.coupons;
+CREATE POLICY "coupons_admin_policy" ON public.coupons FOR ALL USING (public.is_admin());
+
+INSERT INTO public.coupons (id, code, discount_type, discount_value, min_order_amount, is_active, description)
+VALUES
+  ('cpn-1', 'CLIP10', 'percentage', 10, 0, true, '10% OFF on all items'),
+  ('cpn-2', 'WELCOME100', 'fixed', 100, 499, true, '₹100 OFF on orders above ₹499'),
+  ('cpn-3', 'SAVE20', 'percentage', 20, 999, true, '20% OFF on orders above ₹999')
+ON CONFLICT (code) DO UPDATE SET
+  discount_type = EXCLUDED.discount_type,
+  discount_value = EXCLUDED.discount_value,
+  min_order_amount = EXCLUDED.min_order_amount,
+  is_active = EXCLUDED.is_active,
+  description = EXCLUDED.description;
+
+-- ----------------------------------------------------------------------------
+-- G. STORE SETTINGS TABLE
+-- ----------------------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS public.store_settings (
+  id TEXT PRIMARY KEY DEFAULT 'global',
+  is_online BOOLEAN DEFAULT true,
+  opening_time TEXT DEFAULT '09:00:00',
+  manual_mode TEXT DEFAULT 'auto',
+  updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+ALTER TABLE public.store_settings ENABLE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS "store_settings_select_policy" ON public.store_settings;
+CREATE POLICY "store_settings_select_policy" ON public.store_settings FOR SELECT USING (true);
+
+DROP POLICY IF EXISTS "store_settings_admin_policy" ON public.store_settings;
+CREATE POLICY "store_settings_admin_policy" ON public.store_settings FOR ALL USING (public.is_admin() OR auth.role() = 'authenticated');
+
+INSERT INTO public.store_settings (id, is_online, opening_time, manual_mode)
+VALUES ('global', true, '09:00:00', 'auto')
+ON CONFLICT (id) DO UPDATE SET
+  is_online = EXCLUDED.is_online,
+  opening_time = EXCLUDED.opening_time;
+
+

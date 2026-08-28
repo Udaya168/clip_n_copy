@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { Dialog, DialogContent, DialogTitle, DialogDescription } from "@/components/ui/dialog";
-import { OrderRecord, OrderItemRecord, fetchOrderItems, updateOrderStatus } from "@/lib/orders-store";
+import { OrderRecord, OrderItemRecord, fetchOrderItems, updateOrderStatus, updateOrderPaymentStatus } from "@/lib/orders-store";
 import { inr } from "@/lib/shop-store";
 import { byId } from "@/lib/data";
 import {
@@ -20,6 +20,7 @@ import {
   ShoppingBag,
   ArrowLeft,
   DollarSign,
+  ShieldCheck,
 } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
@@ -31,6 +32,7 @@ interface AdminOrderDetailsModalProps {
   isOpen: boolean;
   onClose: () => void;
   onStatusUpdated?: (orderId: string, newStatus: OrderStatusType) => void;
+  onPaymentStatusUpdated?: (orderId: string, newPaymentStatus: string) => void;
 }
 
 export function AdminOrderDetailsModal({
@@ -38,16 +40,21 @@ export function AdminOrderDetailsModal({
   isOpen,
   onClose,
   onStatusUpdated,
+  onPaymentStatusUpdated,
 }: AdminOrderDetailsModalProps) {
   const [items, setItems] = useState<OrderItemRecord[]>([]);
   const [loadingItems, setLoadingItems] = useState<boolean>(true);
   const [itemsError, setItemsError] = useState<string | null>(null);
   const [currentStatus, setCurrentStatus] = useState<OrderStatusType>("Processing");
+  const [currentPaymentStatus, setCurrentPaymentStatus] = useState<string>("Payment Pending");
   const [isUpdatingStatus, setIsUpdatingStatus] = useState<boolean>(false);
+  const [isUpdatingPaymentStatus, setIsUpdatingPaymentStatus] = useState<boolean>(false);
 
   useEffect(() => {
     if (order) {
       setCurrentStatus(order.status as OrderStatusType);
+      const defaultPayStatus = order.paymentStatus || (order.paymentMethod === "COD" ? "COD / Pending" : "Payment Pending");
+      setCurrentPaymentStatus(defaultPayStatus);
       loadItems(order.id);
     }
   }, [order]);
@@ -72,7 +79,7 @@ export function AdminOrderDetailsModal({
     try {
       await updateOrderStatus(order.id, newStatus);
       setCurrentStatus(newStatus);
-      toast.success(`Order ${order.orderNumber} updated to ${newStatus}`);
+      toast.success(`Order #${order.orderNumber} status updated to ${newStatus}`);
       if (onStatusUpdated) {
         onStatusUpdated(order.id, newStatus);
       }
@@ -80,6 +87,23 @@ export function AdminOrderDetailsModal({
       toast.error("Failed to update order status");
     } finally {
       setIsUpdatingStatus(false);
+    }
+  };
+
+  const handlePaymentStatusChange = async (newPaymentStatus: string) => {
+    if (!order || isUpdatingPaymentStatus) return;
+    setIsUpdatingPaymentStatus(true);
+    try {
+      await updateOrderPaymentStatus(order.id, newPaymentStatus);
+      setCurrentPaymentStatus(newPaymentStatus);
+      toast.success(`Order #${order.orderNumber} payment status updated to ${newPaymentStatus}`);
+      if (onPaymentStatusUpdated) {
+        onPaymentStatusUpdated(order.id, newPaymentStatus);
+      }
+    } catch (err) {
+      toast.error("Failed to update payment status");
+    } finally {
+      setIsUpdatingPaymentStatus(false);
     }
   };
 
@@ -95,7 +119,7 @@ export function AdminOrderDetailsModal({
   const shipping = order.totalAmount > itemsSubtotal ? order.totalAmount - itemsSubtotal : 0;
   const finalTotal = order.totalAmount || itemsSubtotal + shipping;
 
-  const isPaid = order.paymentMethod !== "Cash on Delivery" && order.status !== "Cancelled";
+  const displayPaymentMethod = order.paymentMethod || "UPI";
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
@@ -128,71 +152,28 @@ export function AdminOrderDetailsModal({
         {/* Modal Scrollable Body */}
         <div className="p-6 overflow-y-auto flex-1 space-y-6">
           
-          {/* Section 1: Order Information */}
-          <div className="rounded-2xl border border-border bg-secondary/20 p-4">
-            <h3 className="text-xs font-bold uppercase tracking-wider text-muted-foreground mb-3 flex items-center gap-2">
-              <Calendar className="size-3.5 text-primary" /> Order Information
-            </h3>
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs">
-              <div>
-                <p className="text-muted-foreground text-[11px]">Date &amp; Time</p>
-                <p className="font-bold text-foreground mt-0.5">{order.date}</p>
-              </div>
-              <div>
-                <p className="text-muted-foreground text-[11px]">Fulfillment</p>
-                <span className="inline-flex items-center gap-1 font-bold text-foreground mt-0.5">
-                  {order.fulfillmentType === "Delivery" ? (
-                    <Truck className="size-3 text-primary" />
-                  ) : (
-                    <Package className="size-3 text-primary" />
-                  )}
-                  {order.fulfillmentType}
-                </span>
-              </div>
-              <div>
-                <p className="text-muted-foreground text-[11px]">Payment Method</p>
-                <p className="font-bold text-foreground mt-0.5">{order.paymentMethod || "UPI"}</p>
-              </div>
-              <div>
-                <p className="text-muted-foreground text-[11px]">Payment Status</p>
-                <span
-                  className={cn(
-                    "inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-extrabold uppercase mt-0.5",
-                    isPaid
-                      ? "bg-emerald-500/10 text-emerald-600"
-                      : "bg-amber-500/10 text-amber-600"
-                  )}
-                >
-                  {isPaid ? "Paid" : "Pending"}
-                </span>
-              </div>
-            </div>
-          </div>
-
-          {/* Section 2: Customer Details & Delivery Address Snapshot */}
+          {/* Section 1: Customer Details & Delivery Address */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             
-            {/* Customer Details */}
+            {/* 1. Customer Details */}
             <div className="rounded-2xl border border-border p-4 bg-card">
               <h3 className="text-xs font-bold uppercase tracking-wider text-muted-foreground mb-3 flex items-center gap-2">
                 <User className="size-3.5 text-primary" /> Customer Details
               </h3>
               <div className="space-y-1.5 text-xs">
                 <p className="font-bold text-foreground text-sm">{order.customerName}</p>
-                {order.customerEmail && (
-                  <p className="flex items-center gap-2 text-muted-foreground">
-                    <Mail className="size-3.5 shrink-0 text-primary/70" /> {order.customerEmail}
-                  </p>
-                )}
-                {order.customerPhone && (
-                  <p className="flex items-center gap-2 text-muted-foreground">
-                    <Phone className="size-3.5 shrink-0 text-primary/70" /> {order.customerPhone}
-                  </p>
-                )}
+                <p className="flex items-center gap-2 text-muted-foreground">
+                  <Phone className="size-3.5 shrink-0 text-primary/70" />
+                  <span>{order.customerPhone || "No phone provided"}</span>
+                </p>
+                <p className="flex items-center gap-2 text-muted-foreground">
+                  <Mail className="size-3.5 shrink-0 text-primary/70" />
+                  <span>{order.customerEmail || "No email provided"}</span>
+                </p>
               </div>
             </div>
 
-            {/* Delivery Address Snapshot */}
+            {/* 2. Delivery Address Snapshot */}
             <div className="rounded-2xl border border-border p-4 bg-card">
               <h3 className="text-xs font-bold uppercase tracking-wider text-muted-foreground mb-3 flex items-center gap-2">
                 <MapPin className="size-3.5 text-primary" /> Delivery Address
@@ -201,14 +182,14 @@ export function AdminOrderDetailsModal({
                 <p className="font-bold text-foreground">{order.customerName}</p>
                 <p className="text-muted-foreground font-medium">{order.customerPhone}</p>
                 <p className="mt-1 leading-relaxed text-muted-foreground">
-                  {order.address || "No address details specified"}
+                  {order.address || "No address details recorded"}
                 </p>
               </div>
             </div>
 
           </div>
 
-          {/* Section 3: Ordered Products List */}
+          {/* Section 2: Order Items */}
           <div className="rounded-2xl border border-border p-4 bg-card">
             <h3 className="text-xs font-bold uppercase tracking-wider text-muted-foreground mb-3 flex items-center gap-2">
               <ShoppingBag className="size-3.5 text-primary" /> Order Items ({items.length || order.itemsCount})
@@ -255,7 +236,7 @@ export function AdminOrderDetailsModal({
                         <p className="font-bold text-foreground truncate">{item.product_name}</p>
                         {item.variant && (
                           <p className="text-[11px] font-semibold text-primary">
-                            Variant: {item.variant}
+                            Variant / Size: {item.variant}
                           </p>
                         )}
                         <p className="text-muted-foreground mt-0.5">
@@ -279,42 +260,102 @@ export function AdminOrderDetailsModal({
             )}
           </div>
 
-          {/* Section 4: Price Breakdown */}
-          <div className="rounded-2xl border border-border p-4 bg-secondary/30 text-xs space-y-2">
-            <h3 className="font-bold uppercase tracking-wider text-muted-foreground mb-3 flex items-center gap-2">
-              <DollarSign className="size-3.5 text-primary" /> Price Summary
+          {/* Section 3: Payment Details & Price Breakdown */}
+          <div className="rounded-2xl border border-border p-4 bg-secondary/30 text-xs space-y-3">
+            <h3 className="font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-2">
+              <CreditCard className="size-3.5 text-primary" /> Payment Details
             </h3>
-            {itemsMrp > 0 && itemsMrp > itemsSubtotal && (
+            
+            <div className="grid grid-cols-3 gap-3 border-b border-border pb-3">
+              <div>
+                <p className="text-muted-foreground text-[11px]">Payment Method</p>
+                <p className="font-bold text-foreground mt-0.5">{displayPaymentMethod}</p>
+              </div>
+              <div>
+                <p className="text-muted-foreground text-[11px]">Current Payment Status</p>
+                <span
+                  className={cn(
+                    "inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-extrabold uppercase mt-0.5",
+                    currentPaymentStatus === "Paid"
+                      ? "bg-emerald-500/10 text-emerald-600"
+                      : currentPaymentStatus === "Failed"
+                      ? "bg-destructive/10 text-destructive"
+                      : "bg-amber-500/10 text-amber-600"
+                  )}
+                >
+                  {currentPaymentStatus}
+                </span>
+              </div>
+              <div>
+                <p className="text-muted-foreground text-[11px]">Order Total</p>
+                <p className="font-black text-primary text-sm mt-0.5">{inr(finalTotal)}</p>
+              </div>
+            </div>
+
+            {/* Price breakdown */}
+            <div className="space-y-1.5 pt-1">
+              {itemsMrp > 0 && itemsMrp > itemsSubtotal && (
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Total MRP</span>
+                  <span className="line-through">{inr(itemsMrp)}</span>
+                </div>
+              )}
+              {discount > 0 && (
+                <div className="flex justify-between text-emerald-600 font-semibold">
+                  <span>Discount</span>
+                  <span>-{inr(discount)}</span>
+                </div>
+              )}
               <div className="flex justify-between">
-                <span className="text-muted-foreground">Total MRP</span>
-                <span className="line-through">{inr(itemsMrp)}</span>
+                <span className="text-muted-foreground">Subtotal</span>
+                <span>{inr(itemsSubtotal || order.totalAmount)}</span>
               </div>
-            )}
-            {discount > 0 && (
-              <div className="flex justify-between text-emerald-600 font-semibold">
-                <span>Discount</span>
-                <span>-{inr(discount)}</span>
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">Shipping / Delivery</span>
+                <span>{shipping === 0 ? "FREE" : inr(shipping)}</span>
               </div>
-            )}
-            <div className="flex justify-between">
-              <span className="text-muted-foreground">Subtotal</span>
-              <span>{inr(itemsSubtotal || order.totalAmount)}</span>
-            </div>
-            <div className="flex justify-between">
-              <span className="text-muted-foreground">Shipping / Delivery</span>
-              <span>{shipping === 0 ? "FREE" : inr(shipping)}</span>
-            </div>
-            <div className="flex justify-between border-t border-border pt-2 text-sm font-black">
-              <span>Final Total</span>
-              <span className="text-primary">{inr(finalTotal)}</span>
+              <div className="flex justify-between border-t border-border pt-2 text-sm font-black">
+                <span>Final Total</span>
+                <span className="text-primary">{inr(finalTotal)}</span>
+              </div>
             </div>
           </div>
 
-          {/* Section 5: Order Status & Update Controls */}
+          {/* Section 4: Payment Status Control */}
           <div className="rounded-2xl border border-border p-4 bg-card flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div>
-              <p className="text-xs font-bold text-foreground">Order Status</p>
-              <p className="text-[11px] text-muted-foreground">Change current status for customer tracking.</p>
+              <p className="text-xs font-bold text-foreground flex items-center gap-1.5">
+                <ShieldCheck className="size-3.5 text-primary" /> Update Payment Status
+              </p>
+              <p className="text-[11px] text-muted-foreground mt-0.5">
+                Manually verify UPI/QR Payment before marking as Paid.
+              </p>
+            </div>
+
+            <div className="flex items-center gap-3">
+              <select
+                value={currentPaymentStatus}
+                disabled={isUpdatingPaymentStatus}
+                onChange={(e) => handlePaymentStatusChange(e.target.value)}
+                className="rounded-xl border border-border bg-background px-3 py-2 text-xs font-bold text-foreground focus:ring-2 focus:ring-primary focus:outline-none cursor-pointer disabled:opacity-50"
+              >
+                <option value="Payment Pending">Payment Pending</option>
+                <option value="Paid">Paid</option>
+                <option value="Failed">Failed</option>
+                <option value="Pending / COD">Pending / COD</option>
+              </select>
+            </div>
+          </div>
+
+          {/* Section 5: Order Status Control (Completely Separate) */}
+          <div className="rounded-2xl border border-border p-4 bg-card flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div>
+              <p className="text-xs font-bold text-foreground flex items-center gap-1.5">
+                <Truck className="size-3.5 text-primary" /> Update Order Status
+              </p>
+              <p className="text-[11px] text-muted-foreground mt-0.5">
+                Update overall fulfillment tracking stage.
+              </p>
             </div>
 
             <div className="flex items-center gap-3">

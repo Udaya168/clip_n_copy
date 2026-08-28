@@ -23,6 +23,7 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { AdminTab } from "./AdminSidebar";
+import { StoreStatusCard } from "./StoreStatusCard";
 import { Link } from "react-router-dom";
 import {
   AreaChart,
@@ -190,6 +191,9 @@ export function DashboardOverview({
           </Button>
         </div>
       </div>
+
+      {/* Store Status Card */}
+      <StoreStatusCard />
 
       {/* Premium KPI Grid */}
       <div className="grid grid-cols-1 min-[400px]:grid-cols-2 lg:grid-cols-5 gap-4">

@@ -36,6 +36,7 @@ import {
 import { useState } from "react";
 import { motion } from "framer-motion";
 import { SearchBar } from "./SearchBar";
+import { StoreStatusBadge } from "./StoreStatusBadge";
 import { STORE } from "@/lib/data";
 import { useShop } from "@/lib/shop-store";
 import { useAuth } from "@/lib/auth-store";
@@ -130,6 +131,8 @@ export function Header() {
             >
               <Search className="size-5" />
             </button>
+
+            <StoreStatusBadge className="hidden sm:inline-flex" />
 
             <span className="hidden max-w-45 items-center gap-2 rounded-full border border-border px-3 py-2 text-left xl:flex">
               <MapPin className="size-4 shrink-0 text-primary" />
@@ -263,7 +266,8 @@ export function Header() {
           <div className="section-shell flex h-12 items-center gap-1 overflow-x-auto no-scrollbar">
             {NAV_CATEGORIES.map((item) => {
               const isRouteActive = pathname === item.to;
-              const isSearchMatch = !item.search?.['category'] || (location.search as Record<string, unknown>)?.['category'] === item.search['category'];
+              const searchCategory = new URLSearchParams(location.search).get("category");
+              const isSearchMatch = !item.search?.['category'] || searchCategory === item.search['category'];
               const isActive = isRouteActive && isSearchMatch;
               
               return (

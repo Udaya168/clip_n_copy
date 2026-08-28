@@ -11,6 +11,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { useAppBack } from "@/lib/useAppBack";
+import { StoreStatusBadge } from "./StoreStatusBadge";
 
 export function ShopHeader() {
   const { cartCount, wishlist, setCartOpen } = useShop();
@@ -36,6 +37,7 @@ export function ShopHeader() {
         </div>
 
         <div className="flex items-center gap-2 md:gap-3">
+          <StoreStatusBadge className="hidden xs:inline-flex" />
           {user ? (
             <DropdownMenu>
               <div className="flex items-center gap-1.5">

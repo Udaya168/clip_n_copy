@@ -18,6 +18,47 @@ import {
 
 type CartLine = { id: string; qty: number; variant?: string };
 
+export interface Coupon {
+  id: string;
+  code: string;
+  discount_type: "percentage" | "fixed";
+  discount_value: number;
+  min_order_amount?: number | undefined;
+  max_discount_amount?: number | undefined;
+  is_active?: boolean | undefined;
+  expires_at?: string | undefined;
+  description?: string | undefined;
+}
+
+const DEFAULT_COUPONS: Coupon[] = [
+  {
+    id: "cpn-1",
+    code: "CLIP10",
+    discount_type: "percentage",
+    discount_value: 10,
+    is_active: true,
+    description: "10% OFF on all items",
+  },
+  {
+    id: "cpn-2",
+    code: "WELCOME100",
+    discount_type: "fixed",
+    discount_value: 100,
+    min_order_amount: 499,
+    is_active: true,
+    description: "₹100 OFF on orders above ₹499",
+  },
+  {
+    id: "cpn-3",
+    code: "SAVE20",
+    discount_type: "percentage",
+    discount_value: 20,
+    min_order_amount: 999,
+    is_active: true,
+    description: "20% OFF on orders above ₹999",
+  },
+];
+
 type ShopState = {
   cart: CartLine[];
   wishlist: string[];
@@ -38,12 +79,18 @@ type ShopState = {
   subtotal: number;
   savings: number;
   total: number;
+  appliedCoupon: Coupon | null;
+  couponDiscount: number;
+  applyCoupon: (code: string) => Promise<{ success: boolean; message: string }>;
+  removeCoupon: () => void;
+  availableCoupons: Coupon[];
 };
 
 const ShopContext = createContext<ShopState | null>(null);
 
 const CART_KEY = "cnc-cart-v1";
 const WISH_KEY = "cnc-wishlist-v1";
+const COUPON_KEY = "cnc-applied-coupon-v1";
 
 function read<T>(key: string, fallback: T): T {
   if (typeof window === "undefined") return fallback;
@@ -58,14 +105,39 @@ function read<T>(key: string, fallback: T): T {
 export function ShopProvider({ children }: { children: ReactNode }) {
   const [cart, setCart] = useState<CartLine[]>(() => read<CartLine[]>(CART_KEY, []));
   const [wishlist, setWishlist] = useState<string[]>(() => read<string[]>(WISH_KEY, []));
+  const [appliedCoupon, setAppliedCoupon] = useState<Coupon | null>(() => read<Coupon | null>(COUPON_KEY, null));
+  const [availableCoupons, setAvailableCoupons] = useState<Coupon[]>(DEFAULT_COUPONS);
   const [cartOpen, setCartOpen] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [productsVersion, setProductsVersion] = useState(0);
 
   useEffect(() => {
     fetchSupabaseProducts().catch(() => {});
+    fetchCouponsFromDb();
     return subscribeProducts(() => setProductsVersion((v) => v + 1));
   }, []);
+
+  const fetchCouponsFromDb = async () => {
+    try {
+      const { data, error } = await supabase.from("coupons").select("*");
+      if (!error && data && data.length > 0) {
+        const mapped: Coupon[] = data.map((d: any) => ({
+          id: d.id || `cpn-${d.code}`,
+          code: String(d.code).toUpperCase(),
+          discount_type: d.discount_type || (d.discount_percent ? "percentage" : "fixed"),
+          discount_value: Number(d.discount_value || d.discount_percent || d.discount_amount || 0),
+          min_order_amount: d.min_order_amount ? Number(d.min_order_amount) : undefined,
+          max_discount_amount: d.max_discount_amount ? Number(d.max_discount_amount) : undefined,
+          is_active: d.is_active ?? true,
+          expires_at: d.expires_at,
+          description: d.description || `${d.code} discount coupon`,
+        }));
+        setAvailableCoupons(mapped);
+      }
+    } catch (err) {
+      // Use DEFAULT_COUPONS
+    }
+  };
 
   useEffect(() => {
     if (typeof window !== "undefined") {
@@ -78,6 +150,16 @@ export function ShopProvider({ children }: { children: ReactNode }) {
       window.localStorage.setItem(WISH_KEY, JSON.stringify(wishlist));
     }
   }, [wishlist]);
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      if (appliedCoupon) {
+        window.localStorage.setItem(COUPON_KEY, JSON.stringify(appliedCoupon));
+      } else {
+        window.localStorage.removeItem(COUPON_KEY);
+      }
+    }
+  }, [appliedCoupon]);
 
   const addToCart = useCallback((id: string, qty = 1, variant?: string, openCart = true) => {
     const product = byId(id);
@@ -283,39 +365,6 @@ export function ShopProvider({ children }: { children: ReactNode }) {
       });
     }
 
-    // 3. Stock update in database
-    for (const item of cart) {
-      const memoryProd = byId(item.id);
-      const dbProduct = dbMappedProducts.find(
-        (p) =>
-          String(p.id) === String(item.id) ||
-          (memoryProd && (String(p.id) === String(memoryProd.id) || p.name.toLowerCase() === memoryProd.name.toLowerCase()))
-      );
-
-      if (dbProduct && dbProduct.id) {
-        const currentStock = typeof dbProduct.stock === "number" ? dbProduct.stock : 50;
-        const newStock = Math.max(0, currentStock - item.qty);
-
-        try {
-          const { error: updateErr } = await supabase
-            .from("products")
-            .update({ stock: newStock })
-            .eq("id", dbProduct.id);
-
-          if (updateErr) {
-            console.warn("[Checkout Log] Database stock update notice:", {
-              "cart product ID": item.id,
-              "database lookup ID": dbProduct.id,
-              "returned product": dbProduct.name,
-              "exact reason": updateErr.message,
-            });
-          }
-        } catch (err: any) {
-          console.warn("[Checkout Log] Database stock update exception:", err);
-        }
-      }
-    }
-
     await fetchSupabaseProducts().catch(() => {});
     return true;
   }, [cart]);
@@ -330,11 +379,101 @@ export function ShopProvider({ children }: { children: ReactNode }) {
       .filter((l) => l.product);
   }, [cart, productsVersion]);
 
+  const removeCoupon = useCallback(() => {
+    setAppliedCoupon(null);
+    toast("Coupon removed");
+  }, []);
+
+  const applyCoupon = useCallback(
+    async (rawCode: string): Promise<{ success: boolean; message: string }> => {
+      const code = rawCode.trim().toUpperCase();
+      if (!code) {
+        toast.error("Please enter a coupon code.");
+        return { success: false, message: "Please enter a coupon code." };
+      }
+
+      let foundCoupon: Coupon | undefined = availableCoupons.find(
+        (c) => c.code.toUpperCase() === code
+      );
+
+      if (!foundCoupon) {
+        try {
+          const { data, error } = await supabase
+            .from("coupons")
+            .select("*")
+            .ilike("code", code)
+            .maybeSingle();
+
+          if (!error && data) {
+            foundCoupon = {
+              id: data.id || `cpn-${data.code}`,
+              code: String(data.code).toUpperCase(),
+              discount_type: data.discount_type || (data.discount_percent ? "percentage" : "fixed"),
+              discount_value: Number(data.discount_value || data.discount_percent || data.discount_amount || 0),
+              min_order_amount: data.min_order_amount ? Number(data.min_order_amount) : undefined,
+              max_discount_amount: data.max_discount_amount ? Number(data.max_discount_amount) : undefined,
+              is_active: data.is_active ?? true,
+              expires_at: data.expires_at,
+              description: data.description,
+            };
+          }
+        } catch (err) {
+          console.warn("Error fetching coupon:", err);
+        }
+      }
+
+      if (!foundCoupon) {
+        toast.error(`Invalid coupon code "${code}".`);
+        return { success: false, message: `Invalid coupon code "${code}".` };
+      }
+
+      if (foundCoupon.is_active === false) {
+        toast.error("This coupon is currently inactive.");
+        return { success: false, message: "This coupon is currently inactive." };
+      }
+
+      if (foundCoupon.expires_at && new Date(foundCoupon.expires_at) < new Date()) {
+        toast.error("This coupon has expired.");
+        return { success: false, message: "This coupon has expired." };
+      }
+
+      const currentSubtotal = lines.reduce((s, l) => s + l.product.price * l.qty, 0);
+
+      if (foundCoupon.min_order_amount && currentSubtotal < foundCoupon.min_order_amount) {
+        const msg = `Minimum order amount of ₹${foundCoupon.min_order_amount} required for coupon ${foundCoupon.code}.`;
+        toast.error(msg);
+        return { success: false, message: msg };
+      }
+
+      setAppliedCoupon(foundCoupon);
+      toast.success(`Coupon "${foundCoupon.code}" applied successfully!`);
+      return { success: true, message: `Coupon "${foundCoupon.code}" applied successfully!` };
+    },
+    [availableCoupons, lines]
+  );
+
   const value = useMemo<ShopState>(() => {
     const totalMrp = lines.reduce((s, l) => s + (l.product.mrp || l.product.price) * l.qty, 0);
     const subtotal = lines.reduce((s, l) => s + l.product.price * l.qty, 0);
     const savings = Math.max(0, totalMrp - subtotal);
-    const total = subtotal;
+
+    let couponDiscount = 0;
+    if (appliedCoupon) {
+      if (!appliedCoupon.min_order_amount || subtotal >= appliedCoupon.min_order_amount) {
+        if (appliedCoupon.discount_type === "percentage") {
+          couponDiscount = (subtotal * appliedCoupon.discount_value) / 100;
+          if (appliedCoupon.max_discount_amount) {
+            couponDiscount = Math.min(couponDiscount, appliedCoupon.max_discount_amount);
+          }
+        } else {
+          couponDiscount = appliedCoupon.discount_value;
+        }
+        couponDiscount = Math.min(couponDiscount, subtotal);
+      }
+    }
+
+    const total = Math.max(0, subtotal - couponDiscount);
+
     return {
       cart,
       wishlist,
@@ -355,6 +494,11 @@ export function ShopProvider({ children }: { children: ReactNode }) {
       subtotal,
       savings,
       total,
+      appliedCoupon,
+      couponDiscount,
+      applyCoupon,
+      removeCoupon,
+      availableCoupons,
     };
   }, [
     cart,
@@ -367,6 +511,11 @@ export function ShopProvider({ children }: { children: ReactNode }) {
     clearCart,
     toggleWishlist,
     validateAndProcessCheckout,
+    lines,
+    appliedCoupon,
+    applyCoupon,
+    removeCoupon,
+    availableCoupons,
   ]);
 
   return <ShopContext.Provider value={value}>{children}</ShopContext.Provider>;

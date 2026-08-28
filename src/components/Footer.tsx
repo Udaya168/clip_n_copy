@@ -42,11 +42,18 @@ export function Footer() {
           </p>
           <p className="text-xs text-ink-foreground/60">Associated under Mavros Tech Pvt Ltd.</p>
           <div className="flex gap-2 pt-2">
-            {[Instagram, Facebook, Twitter, Youtube].map((Icon, i) => (
+            {[
+              { Icon: Instagram, href: "https://www.instagram.com/rudrikhemanshujoshi/", label: "Instagram" },
+              { Icon: Facebook, href: "https://facebook.com", label: "Facebook" },
+              { Icon: Twitter, href: "https://twitter.com", label: "Twitter" },
+              { Icon: Youtube, href: "https://youtube.com", label: "Youtube" },
+            ].map(({ Icon, href, label }) => (
               <a
-                key={i}
-                href="#"
-                aria-label="Social link"
+                key={label}
+                href={href}
+                target={href.startsWith("http") ? "_blank" : undefined}
+                rel={href.startsWith("http") ? "noopener noreferrer" : undefined}
+                aria-label={label}
                 className="grid size-9 place-items-center rounded-full border border-ink-foreground/20 transition-colors hover:border-accent hover:text-accent"
               >
                 <Icon className="size-4" />

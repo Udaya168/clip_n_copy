@@ -56,7 +56,7 @@ export function mapSupabaseProduct(p: SupabaseProduct): Product {
   if (rawUrl && rawUrl.startsWith('/products/')) {
     rawUrl = rawUrl.replace(/\.(jpg|jpeg|png)$/i, '.webp');
   }
-  const image = rawUrl || fallbackImage;
+  let image = rawUrl || fallbackImage;
   const price = Number(p.price) || 0;
   const rawMrp = Number(p.original_price ?? p.price) || price;
   const mrp = rawMrp < price ? price : rawMrp;
@@ -418,6 +418,8 @@ export function mapSupabaseProduct(p: SupabaseProduct): Product {
     ];
     reviews = 0;
   } else if (p.name?.toLowerCase().includes('hauser') && p.name?.toLowerCase().includes('xo')) {
+    const hauserImgUrl = "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRWj0oaAQn5gMz6zcY1sAGGA6TMoiOKqeKGTEY2Mk0ICg&s";
+    image = hauserImgUrl;
     description = "Hauser XO Ball Pen is an everyday ballpoint pen designed for smooth and comfortable writing. It features a fine 0.6 mm tip, a lightweight plastic body and a comfortable ribbed grip for easy handling. The pen is suitable for note-taking, journaling, underlining, schoolwork, office work and everyday writing.";
     features = [
       "0.6 mm fine ballpoint tip",
@@ -453,15 +455,15 @@ export function mapSupabaseProduct(p: SupabaseProduct): Product {
     variants = [
       {
         name: "Blue",
-        images: [image]
+        images: [hauserImgUrl]
       },
       {
         name: "Black",
-        images: ["/products/hauser-black.webp"]
+        images: [hauserImgUrl, "/products/hauser-black.webp"]
       },
       {
         name: "Red",
-        images: ["/products/hauser-red.webp"]
+        images: [hauserImgUrl, "/products/hauser-red.webp"]
       }
     ];
   } else if (p.name?.toLowerCase().includes('nataraj') && p.name?.toLowerCase().includes('hb pencil')) {
@@ -1367,19 +1369,32 @@ export async function fetchSupabaseProducts(): Promise<Product[]> {
       return [];
     }
     
+    const seenNames = new Set<string>();
     const filteredData = (data as SupabaseProduct[]).filter((p) => {
-      const n = (p.name || "").toLowerCase();
+      const n = (p.name || "").toLowerCase().trim();
       const c = (p.category || "").toLowerCase();
+      const id = (p.id || "").toLowerCase();
       if (
         c === "books" ||
         n.includes("python") ||
         n.includes("data structure") ||
         n.includes("engineering math") ||
         n.includes("exam guide") ||
-        n.includes("robotics")
+        n.includes("robotics") ||
+        n.includes("mini stapler") ||
+        id.includes("mini-stapler") ||
+        n.includes("oil pastel set") ||
+        (n.includes("oil pastel") && n.includes("24")) ||
+        id.includes("oil-pastel")
       ) {
         return false;
       }
+
+      if (seenNames.has(n)) {
+        return false;
+      }
+      seenNames.add(n);
+
       return true;
     });
 
