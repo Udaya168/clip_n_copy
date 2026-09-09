@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { Minus, Plus, ShoppingBag, Trash2, X, Tag, CheckCircle2 } from "lucide-react";
+import { Minus, Plus, ShoppingBag, Trash2, X, AlertCircle } from "lucide-react";
 import { inr, useShop } from "@/lib/shop-store";
 import { useAuth, isEmailConfirmed } from "@/lib/auth-store";
 import { toast } from "sonner";
@@ -16,16 +16,9 @@ export function CartDrawer() {
     subtotal,
     savings,
     total,
-    appliedCoupon,
-    couponDiscount,
-    applyCoupon,
-    removeCoupon,
-    availableCoupons,
   } = useShop();
   const { user } = useAuth();
   const navigate = useNavigate();
-  const [couponInput, setCouponInput] = useState("");
-  const [isApplying, setIsApplying] = useState(false);
 
 
   
@@ -52,6 +45,10 @@ export function CartDrawer() {
 
   const handleCheckoutClick = (e: React.MouseEvent) => {
     e.preventDefault();
+    if (total < 400) {
+      toast.error(`Minimum order value is ₹400. Add ${inr(400 - total)} more to proceed.`);
+      return;
+    }
     setCartOpen(false);
     // Requirement 6: Check auth & email confirmation status
     if (!user || !isEmailConfirmed(user)) {
@@ -158,101 +155,13 @@ export function CartDrawer() {
               ))}
             </div>
 
-            {/* COUPON SECTION & SUMMARY FOOTER */}
+            {/* SUMMARY FOOTER */}
             <footer className="space-y-4 border-t border-border p-4">
-              {/* COUPON SECTION */}
-              <div className="rounded-2xl border border-border bg-secondary/30 p-3.5 space-y-3">
-                <div className="flex items-center justify-between">
-                  <h3 className="text-xs font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">
-                    <Tag className="size-3.5 text-primary" /> HAVE A COUPON?
-                  </h3>
-                </div>
-
-                {appliedCoupon ? (
-                  <div className="rounded-xl border border-emerald-500/30 bg-emerald-500/10 p-3 flex items-center justify-between gap-2">
-                    <div className="min-w-0">
-                      <div className="flex items-center gap-1.5 font-bold text-xs text-emerald-700 dark:text-emerald-400">
-                        <CheckCircle2 className="size-4 shrink-0 text-emerald-600" />
-                        <span>Coupon Applied: {appliedCoupon.code}</span>
-                      </div>
-                      <p className="text-[11px] text-emerald-600 dark:text-emerald-400 mt-0.5 font-medium">
-                        Saved {inr(couponDiscount)} on this order!
-                      </p>
-                    </div>
-                    <button
-                      type="button"
-                      onClick={removeCoupon}
-                      className="text-xs font-bold text-destructive hover:underline shrink-0 cursor-pointer"
-                    >
-                      Remove
-                    </button>
-                  </div>
-                ) : (
-                  <div className="space-y-2">
-                    <form
-                      onSubmit={async (e) => {
-                        e.preventDefault();
-                        if (!couponInput.trim() || isApplying) return;
-                        setIsApplying(true);
-                        await applyCoupon(couponInput.trim());
-                        setIsApplying(false);
-                      }}
-                      className="flex gap-2"
-                    >
-                      <input
-                        type="text"
-                        value={couponInput}
-                        onChange={(e) => setCouponInput(e.target.value)}
-                        placeholder="Enter coupon code"
-                        className="flex-1 rounded-xl border border-input bg-background px-3 py-2 text-xs font-bold uppercase text-foreground placeholder:normal-case placeholder:font-normal placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary"
-                      />
-                      <button
-                        type="submit"
-                        disabled={isApplying || !couponInput.trim()}
-                        className="rounded-xl bg-primary px-4 py-2 text-xs font-bold text-primary-foreground hover:bg-primary/90 transition-all cursor-pointer disabled:opacity-50"
-                      >
-                        {isApplying ? "APPLYING..." : "APPLY"}
-                      </button>
-                    </form>
-
-                    {/* Suggested / Available Coupons */}
-                    {availableCoupons && availableCoupons.length > 0 && (
-                      <div className="pt-1">
-                        <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider mb-1.5">
-                          Available Coupons:
-                        </p>
-                        <div className="flex flex-wrap gap-1.5">
-                          {availableCoupons.map((c) => (
-                            <button
-                              key={c.code}
-                              type="button"
-                              onClick={() => {
-                                setCouponInput(c.code);
-                                applyCoupon(c.code);
-                              }}
-                              className="inline-flex items-center gap-1 rounded-lg border border-primary/20 bg-primary/5 px-2 py-1 text-[11px] font-bold text-primary hover:bg-primary hover:text-primary-foreground transition-all cursor-pointer"
-                            >
-                              <span>{c.code}</span>
-                              <span className="text-[10px] opacity-80 font-normal">
-                                ({c.discount_type === "percentage" ? `${c.discount_value}% OFF` : `₹${c.discount_value} OFF`})
-                              </span>
-                            </button>
-                          ))}
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                )}
-              </div>
-
               {/* PRICE SUMMARY */}
               <div className="space-y-1.5 text-sm">
                 <Row label="Total MRP" value={inr(totalMrp)} />
                 {savings > 0 && (
                   <Row label="Product Discount" value={`-${inr(savings)}`} tone="success" />
-                )}
-                {appliedCoupon && couponDiscount > 0 && (
-                  <Row label={`Coupon Discount (${appliedCoupon.code})`} value={`-${inr(couponDiscount)}`} tone="success" />
                 )}
                 <Row label="Subtotal" value={inr(subtotal)} />
 
@@ -261,9 +170,21 @@ export function CartDrawer() {
                   <span className="text-primary">{inr(total)}</span>
                 </div>
               </div>
+
+              {total < 400 && (
+                <div className="rounded-xl border border-amber-500/30 bg-amber-500/10 p-3 text-xs text-amber-700 dark:text-amber-400 flex items-start gap-2.5">
+                  <AlertCircle className="size-4 shrink-0 mt-0.5 text-amber-600 dark:text-amber-400" />
+                  <div className="space-y-0.5">
+                    <p className="font-bold">Minimum order value is ₹400</p>
+                    <p className="opacity-90 font-medium">Add {inr(400 - total)} more to proceed</p>
+                  </div>
+                </div>
+              )}
+
               <button
                 onClick={handleCheckoutClick}
-                className="inline-flex h-12 w-full items-center justify-center rounded-full bg-primary font-semibold text-primary-foreground shadow-glow transition-transform active:scale-98 cursor-pointer"
+                disabled={total < 400}
+                className="inline-flex h-12 w-full items-center justify-center rounded-full bg-primary font-semibold text-primary-foreground shadow-glow transition-transform active:scale-98 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed disabled:shadow-none"
               >
                 Proceed to Checkout
               </button>

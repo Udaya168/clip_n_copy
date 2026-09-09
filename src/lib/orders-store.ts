@@ -230,8 +230,8 @@ export async function fetchOrderItems(orderId: string): Promise<OrderItemRecord[
 
 export interface CreateOrderRpcParams {
   p_city: string;
-  p_coupon_code: string;
-  p_coupon_discount: number;
+  p_coupon_code?: string;
+  p_coupon_discount?: number;
   p_customer_email: string;
   p_customer_name: string;
   p_discount: number;
@@ -294,8 +294,8 @@ export async function saveOrderViaRpc(
       "create_order_and_decrement_inventory",
       {
         p_city: rpcParams.p_city,
-        p_coupon_code: rpcParams.p_coupon_code,
-        p_coupon_discount: rpcParams.p_coupon_discount,
+        p_coupon_code: rpcParams.p_coupon_code ?? "",
+        p_coupon_discount: rpcParams.p_coupon_discount ?? 0,
         p_customer_email: rpcParams.p_customer_email,
         p_customer_name: rpcParams.p_customer_name,
         p_discount: rpcParams.p_discount,

@@ -24,8 +24,10 @@ export interface isEmailConfirmedResult {
 export function isEmailConfirmed(u: User | null): boolean {
   if (!u) return false;
   if (u.email_confirmed_at || (u as unknown as Record<string, unknown>)["confirmed_at"]) return true;
+  if (u.phone_confirmed_at || u.phone) return true;
+  if (u.app_metadata?.provider === "google" || u.app_metadata?.providers?.includes("google")) return true;
   // Preserve authenticated sessions on page refresh
-  return !!(u.id && u.email);
+  return !!(u.id && (u.email || u.phone));
 }
 
 export interface SignInResult {
@@ -62,6 +64,9 @@ interface AuthContextType {
   role: string | null;
   signIn: (email: string, password: string) => Promise<SignInResult>;
   signUp: (fullName: string, email: string, password: string) => Promise<SignUpResult>;
+  signInWithPhoneOtp: (phone: string) => Promise<{ error: Error | null }>;
+  verifyPhoneOtp: (phone: string, token: string) => Promise<{ error: Error | null; user: User | null }>;
+  signInWithGoogle: (redirectTarget?: string) => Promise<{ error: Error | null }>;
   signOut: () => Promise<void>;
   resetPassword: (email: string) => Promise<{ error: Error | null }>;
   resendConfirmation: (email: string) => Promise<{ error: Error | null }>;
@@ -95,6 +100,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         .maybeSingle();
 
       if (data) {
+        if (currentUser.phone && !data.phone) {
+          try {
+            await supabase.from("profiles").update({ phone: currentUser.phone }).eq("id", currentUser.id);
+            data.phone = currentUser.phone;
+          } catch (e) {
+            console.warn("Could not update profile phone:", e);
+          }
+        }
         setProfile(data as UserProfile);
       } else {
         if (error) {
@@ -105,6 +118,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           const defaultName =
             currentUser.user_metadata?.["full_name"] ||
             currentUser.user_metadata?.["name"] ||
+            (currentUser.phone ? `User (${currentUser.phone.slice(-4)})` : null) ||
             currentUser.email?.split("@")[0] ||
             "User";
 
@@ -113,6 +127,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             .insert({
               id: currentUser.id,
               full_name: defaultName,
+              phone: currentUser.phone || null,
               role: "user",
             })
             .select()
@@ -167,7 +182,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     try {
       // 7 & 9. Listen for Supabase auth state changes
-      const { data } = supabase.auth.onAuthStateChange(async (event, currentSession) => {
+      const { data } = supabase.auth.onAuthStateChange(async (_event: any, currentSession: Session | null) => {
         if (!isMounted) return;
 
         const currentUser = currentSession?.user ?? null;
@@ -412,6 +427,60 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
+  const signInWithPhoneOtp = async (phone: string): Promise<{ error: Error | null }> => {
+    try {
+      const formattedPhone = phone.startsWith("+") ? phone : `+91${phone.replace(/\D/g, "")}`;
+      const { error } = await supabase.auth.signInWithOtp({
+        phone: formattedPhone,
+      });
+      if (error) throw error;
+      return { error: null };
+    } catch (err: any) {
+      return { error: err instanceof Error ? err : new Error(err?.message || "Failed to send OTP.") };
+    }
+  };
+
+  const verifyPhoneOtp = async (
+    phone: string,
+    token: string
+  ): Promise<{ error: Error | null; user: User | null }> => {
+    try {
+      const formattedPhone = phone.startsWith("+") ? phone : `+91${phone.replace(/\D/g, "")}`;
+      const { data, error } = await supabase.auth.verifyOtp({
+        phone: formattedPhone,
+        token,
+        type: "sms",
+      });
+      if (error) throw error;
+      if (data.user) {
+        setUser(data.user);
+        setSession(data.session);
+        await fetchAndSyncProfile(data.user);
+        return { error: null, user: data.user };
+      }
+      return { error: new Error("Failed to verify OTP."), user: null };
+    } catch (err: any) {
+      return { error: err instanceof Error ? err : new Error(err?.message || "Invalid or expired OTP."), user: null };
+    }
+  };
+
+  const signInWithGoogle = async (redirectTarget?: string): Promise<{ error: Error | null }> => {
+    try {
+      const target = redirectTarget || "/";
+      const redirectUrl = `${window.location.origin}/login?redirect=${encodeURIComponent(target)}`;
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: "google",
+        options: {
+          redirectTo: redirectUrl,
+        },
+      });
+      if (error) throw error;
+      return { error: null };
+    } catch (err: any) {
+      return { error: err instanceof Error ? err : new Error(err?.message || "Google sign in failed.") };
+    }
+  };
+
   const role = profile?.role || "user";
 
   return (
@@ -425,6 +494,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         role,
         signIn,
         signUp,
+        signInWithPhoneOtp,
+        verifyPhoneOtp,
+        signInWithGoogle,
         signOut,
         resetPassword,
         resendConfirmation,

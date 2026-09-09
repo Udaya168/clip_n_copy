@@ -1,11 +1,25 @@
 import fs from "node:fs";
 import path from "node:path";
 
-const publicDir = path.resolve(".output/public");
-const assetsDir = path.join(publicDir, "assets");
+const rootPublicDir = path.resolve("public");
+const outputPublicDir = path.resolve(".output/public");
+const assetsDir = path.join(outputPublicDir, "assets");
 
-if (!fs.existsSync(publicDir)) {
-  fs.mkdirSync(publicDir, { recursive: true });
+if (!fs.existsSync(outputPublicDir)) {
+  fs.mkdirSync(outputPublicDir, { recursive: true });
+}
+
+// Copy all root public files into .output/public/ if missing (e.g. sw.js, icons)
+if (fs.existsSync(rootPublicDir)) {
+  const publicFiles = fs.readdirSync(rootPublicDir);
+  for (const file of publicFiles) {
+    const srcPath = path.join(rootPublicDir, file);
+    const destPath = path.join(outputPublicDir, file);
+    const stat = fs.statSync(srcPath);
+    if (stat.isFile()) {
+      fs.copyFileSync(srcPath, destPath);
+    }
+  }
 }
 
 let jsFile = "";
@@ -39,9 +53,9 @@ const htmlContent = `<!DOCTYPE html>
 </html>
 `;
 
-fs.writeFileSync(path.join(publicDir, "index.html"), htmlContent, "utf-8");
+fs.writeFileSync(path.join(outputPublicDir, "index.html"), htmlContent, "utf-8");
 console.log("Generated .output/public/index.html with JS:", jsFile, "CSS:", cssFile);
 
 const redirectsContent = `/*    /index.html   200\n`;
-fs.writeFileSync(path.join(publicDir, "_redirects"), redirectsContent, "utf-8");
+fs.writeFileSync(path.join(outputPublicDir, "_redirects"), redirectsContent, "utf-8");
 console.log("Generated .output/public/_redirects");

@@ -9,12 +9,8 @@ import {
   Truck,
   Zap,
   Loader2,
-  Copy,
-  Check,
   QrCode,
-  ShieldCheck,
   AlertCircle,
-  Info,
 } from "lucide-react";
 import { inr, useShop } from "@/lib/shop-store";
 import { useAuth, isEmailConfirmed } from "@/lib/auth-store";
@@ -25,7 +21,7 @@ import { toast } from "sonner";
 import { ShopLayout } from "@/components/ShopLayout";
 import { useAppBack } from "@/lib/useAppBack";
 
-const MERCHANT_UPI_ID = "9380657027-2@axl";
+
 
 const DELIVERY = [
   { id: "standard", label: "Standard Delivery", note: "2–3 days · Free above ₹400", icon: Truck },
@@ -50,8 +46,6 @@ export default function CheckoutPage() {
     subtotal,
     savings,
     total,
-    appliedCoupon,
-    couponDiscount,
     clearCart,
     validateAndProcessCheckout,
   } = useShop();
@@ -64,20 +58,7 @@ export default function CheckoutPage() {
   const [placed, setPlaced] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // UPI payment state
-  const [customerUpiId, setCustomerUpiId] = useState("");
-  const [copiedUpi, setCopiedUpi] = useState(false);
 
-  const handleCopyUpiId = () => {
-    try {
-      navigator.clipboard.writeText(MERCHANT_UPI_ID);
-    } catch {
-      // Fallback if clipboard API restricted
-    }
-    setCopiedUpi(true);
-    toast.success(`Merchant UPI ID (${MERCHANT_UPI_ID}) copied to clipboard!`);
-    setTimeout(() => setCopiedUpi(false), 2500);
-  };
 
   // Saved addresses state
   const [savedAddresses, setSavedAddresses] = useState<UserAddress[]>([]);
@@ -136,11 +117,18 @@ export default function CheckoutPage() {
   }, [user?.id, loadSavedAddresses]);
 
   useEffect(() => {
-    if (!loading && (!user || !isEmailConfirmed(user))) {
-      toast.error("Please confirm your email and sign in to continue with checkout.");
-      navigate("/login?redirect=/checkout");
+    if (!loading) {
+      if (!user || !isEmailConfirmed(user)) {
+        toast.error("Please confirm your email and sign in to continue with checkout.");
+        navigate("/login?redirect=/checkout");
+      } else if (subtotal < 400) {
+        toast.error(`Minimum order value is ₹400. Current cart total is ${inr(subtotal)}.`, {
+          description: `Add ${inr(400 - subtotal)} more to proceed to checkout.`,
+        });
+        navigate("/shop");
+      }
     }
-  }, [user, loading, navigate]);
+  }, [user, loading, subtotal, navigate]);
 
   if (loading) {
     return (
@@ -161,7 +149,6 @@ export default function CheckoutPage() {
   const shipping =
     delivery === "express" ? 150 : delivery === "standard" ? (subtotal >= 400 ? 0 : 79) : 0;
   const finalAmount = total + shipping;
-  const upiUri = `upi://pay?pa=${MERCHANT_UPI_ID}&pn=Clip%20n%20Copy&am=${finalAmount}&cu=INR`;
 
   if (placed && createdOrder) {
     const isPendingPayment = createdOrder.paymentStatus === "Payment Pending";
@@ -222,6 +209,12 @@ export default function CheckoutPage() {
     e.preventDefault();
     if (isSubmitting) return;
     setIsSubmitting(true);
+
+    if (subtotal < 400) {
+      toast.error(`Minimum order value is ₹400. Add ${inr(400 - subtotal)} more to proceed.`);
+      setIsSubmitting(false);
+      return;
+    }
 
     const freshSettings = await fetchStoreSettings();
     const { isOnline: freshIsOnline } = evaluateStoreStatus(freshSettings);
@@ -302,8 +295,8 @@ export default function CheckoutPage() {
       const saved = await saveOrderViaRpc(
         {
           p_city: finalCity,
-          p_coupon_code: appliedCoupon ? appliedCoupon.code : "",
-          p_coupon_discount: couponDiscount,
+          p_coupon_code: "",
+          p_coupon_discount: 0,
           p_customer_email: user.email || "",
           p_customer_name: finalCustomerName,
           p_discount: savings,
@@ -597,204 +590,7 @@ export default function CheckoutPage() {
                 ))}
               </div>
 
-              {/* QR PAYMENT PANEL */}
-              {payment === "qr" && (
-                <div className="mt-6 rounded-2xl border border-primary/20 bg-gradient-to-b from-primary/5 via-card to-card p-5 sm:p-6 shadow-sm rise-in space-y-5">
-                  {/* Header */}
-                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-border/60 pb-4">
-                    <div>
-                      <div className="flex items-center gap-2">
-                        <span className="inline-flex items-center justify-center size-6 rounded-full bg-primary/10 text-primary">
-                          <QrCode className="size-3.5" />
-                        </span>
-                        <h3 className="font-display text-sm font-bold text-foreground uppercase tracking-wider">
-                          Scan & Pay (UPI QR)
-                        </h3>
-                      </div>
-                      <p className="text-xs text-muted-foreground mt-0.5">
-                        Scan &amp; pay using PhonePe, GPay, Paytm or any UPI app
-                      </p>
-                    </div>
 
-                    {/* App badges */}
-                    <div className="flex items-center gap-1.5 flex-wrap">
-                      <span className="inline-flex items-center px-2.5 py-1 rounded-lg bg-background border border-border text-[11px] font-bold text-purple-600 shadow-2xs">
-                        PhonePe
-                      </span>
-                      <span className="inline-flex items-center px-2.5 py-1 rounded-lg bg-background border border-border text-[11px] font-bold text-foreground shadow-2xs">
-                        <span className="text-blue-500 font-extrabold mr-1">G</span>Pay
-                      </span>
-                      <span className="inline-flex items-center px-2.5 py-1 rounded-lg bg-background border border-border text-[11px] font-bold text-sky-500 shadow-2xs">
-                        Paytm
-                      </span>
-                    </div>
-                  </div>
-
-                  {/* QR Code & Merchant Details Grid */}
-                  <div className="grid gap-6 sm:grid-cols-[auto_1fr] items-center">
-                    {/* PhonePe Merchant QR Code Card */}
-                    <div className="flex flex-col items-center justify-center rounded-2xl border border-border bg-white p-3 text-center shadow-soft shrink-0 self-center mx-auto sm:mx-0 max-w-[220px]">
-                      <img
-                        src="/phonepe-qr.png"
-                        alt={`PhonePe QR Code for Udaya K - ${inr(finalAmount)}`}
-                        className="w-full h-auto max-h-72 object-contain rounded-lg"
-                        loading="eager"
-                      />
-                      <div className="mt-2 text-[11px] font-extrabold text-slate-900 tracking-tight">
-                        SCAN & PAY {inr(finalAmount)}
-                      </div>
-                      <p className="text-[10px] font-semibold text-slate-500 mt-0.5">
-                        Merchant: Udaya K
-                      </p>
-                    </div>
-
-                    {/* Merchant Details */}
-                    <div className="space-y-4">
-                      {/* Exact Amount Display */}
-                      <div className="rounded-xl border border-primary/20 bg-primary/10 p-3 flex items-center justify-between">
-                        <div>
-                          <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">
-                            Exact Amount to Pay
-                          </p>
-                          <p className="font-display text-xl sm:text-2xl font-black text-primary">
-                            {inr(finalAmount)}
-                          </p>
-                        </div>
-                        <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-primary text-primary-foreground text-xs font-bold shadow-xs">
-                          <ShieldCheck className="size-3.5" /> Scan &amp; Pay
-                        </span>
-                      </div>
-
-                      {/* Merchant Name & UPI ID Box */}
-                      <div className="space-y-2">
-                        <p className="text-xs font-semibold text-foreground">
-                          <span className="text-muted-foreground font-normal">Merchant Name:</span> Udaya K (Clip N Copy)
-                        </p>
-                        <div>
-                          <label className="block text-[11px] font-bold text-muted-foreground uppercase tracking-wider mb-1.5">
-                            Merchant UPI ID
-                          </label>
-                          <div className="flex items-center gap-2">
-                            <div className="flex-1 rounded-xl border border-input bg-background px-3.5 py-2.5 font-mono text-sm font-bold text-foreground select-all truncate">
-                              {MERCHANT_UPI_ID}
-                            </div>
-                            <button
-                              type="button"
-                              onClick={handleCopyUpiId}
-                              className="inline-flex items-center gap-1.5 h-10 px-4 rounded-xl bg-secondary text-secondary-foreground hover:bg-primary hover:text-primary-foreground text-xs font-bold transition-all cursor-pointer shrink-0 border border-border shadow-2xs"
-                            >
-                              {copiedUpi ? (
-                                <>
-                                  <Check className="size-3.5 text-emerald-500" /> Copied
-                                </>
-                              ) : (
-                                <>
-                                  <Copy className="size-3.5" /> Copy UPI ID
-                                </>
-                              )}
-                            </button>
-                          </div>
-                        </div>
-                      </div>
-
-                      {/* Status Notice */}
-                      <div className="flex items-start gap-2 rounded-xl bg-amber-500/10 border border-amber-500/20 p-3 text-xs text-amber-700 dark:text-amber-400">
-                        <AlertCircle className="size-4 shrink-0 mt-0.5 text-amber-600 dark:text-amber-400" />
-                        <p>
-                          <span className="font-bold">Payment Status:</span> Orders placed with QR Payment are saved as <span className="font-extrabold underline">Payment Pending</span> until manually verified by our merchant team.
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              {/* UPI PAYMENT PANEL */}
-              {payment === "upi" && (
-                <div className="mt-6 rounded-2xl border border-primary/20 bg-gradient-to-b from-primary/5 via-card to-card p-5 sm:p-6 shadow-sm rise-in space-y-5">
-                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-border/60 pb-4">
-                    <div>
-                      <div className="flex items-center gap-2">
-                        <span className="inline-flex items-center justify-center size-6 rounded-full bg-primary/10 text-primary">
-                          <Smartphone className="size-3.5" />
-                        </span>
-                        <h3 className="font-display text-sm font-bold text-foreground uppercase tracking-wider">
-                          Pay using UPI
-                        </h3>
-                      </div>
-                      <p className="text-xs text-muted-foreground mt-0.5">
-                        Open an installed UPI app on your device or copy the UPI ID
-                      </p>
-                    </div>
-
-                    <div className="rounded-xl border border-primary/20 bg-primary/10 px-3 py-1.5 text-right">
-                      <p className="text-[10px] font-semibold text-muted-foreground uppercase">Amount</p>
-                      <p className="font-display text-lg font-black text-primary">{inr(finalAmount)}</p>
-                    </div>
-                  </div>
-
-                  <div className="space-y-4">
-                    {/* Merchant UPI ID Box */}
-                    <div>
-                      <label className="block text-[11px] font-bold text-muted-foreground uppercase tracking-wider mb-1.5">
-                        Merchant UPI ID
-                      </label>
-                      <div className="flex items-center gap-2">
-                        <div className="flex-1 rounded-xl border border-input bg-background px-3.5 py-2.5 font-mono text-sm font-bold text-foreground select-all truncate">
-                          {MERCHANT_UPI_ID}
-                        </div>
-                        <button
-                          type="button"
-                          onClick={handleCopyUpiId}
-                          className="inline-flex items-center gap-1.5 h-10 px-4 rounded-xl bg-secondary text-secondary-foreground hover:bg-primary hover:text-primary-foreground text-xs font-bold transition-all cursor-pointer shrink-0 border border-border shadow-2xs"
-                        >
-                          {copiedUpi ? (
-                            <>
-                              <Check className="size-3.5 text-emerald-500" /> Copied
-                            </>
-                          ) : (
-                            <>
-                              <Copy className="size-3.5" /> Copy UPI ID
-                            </>
-                          )}
-                        </button>
-                      </div>
-                    </div>
-
-                    {/* Customer UPI ID Input Field */}
-                    <Field label="YOUR UPI ID (OPTIONAL)">
-                      <input
-                        type="text"
-                        className="input-base font-mono"
-                        value={customerUpiId}
-                        onChange={(e) => setCustomerUpiId(e.target.value)}
-                        placeholder="e.g. yourname@upi (optional for record)"
-                      />
-                    </Field>
-
-                    {/* Open UPI App Button & Fallback text */}
-                    <div className="space-y-2 pt-1">
-                      <a
-                        href={upiUri}
-                        className="flex h-11 w-full items-center justify-center gap-2 rounded-xl bg-primary px-4 font-bold text-primary-foreground hover:bg-primary/90 transition-all shadow-soft cursor-pointer text-xs sm:text-sm"
-                      >
-                        <Smartphone className="size-4" /> Open UPI App ({inr(finalAmount)})
-                      </a>
-                      <p className="text-[11px] text-muted-foreground flex items-center gap-1">
-                        <Info className="size-3 shrink-0 text-primary" /> Copy UPI ID and pay using your preferred UPI app if your app does not open automatically.
-                      </p>
-                    </div>
-
-                    {/* Status Notice */}
-                    <div className="flex items-start gap-2 rounded-xl bg-amber-500/10 border border-amber-500/20 p-3 text-xs text-amber-700 dark:text-amber-400">
-                      <AlertCircle className="size-4 shrink-0 mt-0.5 text-amber-600 dark:text-amber-400" />
-                      <p>
-                        <span className="font-bold">Payment Status:</span> UPI payments are registered as <span className="font-extrabold underline">Payment Pending</span> until manually verified by our merchant team.
-                      </p>
-                    </div>
-                  </div>
-                </div>
-              )}
             </section>
           </div>
 
@@ -838,12 +634,7 @@ export default function CheckoutPage() {
                     <span>-{inr(savings)}</span>
                   </div>
                 )}
-                {appliedCoupon && couponDiscount > 0 && (
-                  <div className="flex justify-between text-success font-semibold">
-                    <span>Coupon Discount ({appliedCoupon.code})</span>
-                    <span>-{inr(couponDiscount)}</span>
-                  </div>
-                )}
+
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">Subtotal</span>
                   <span>{inr(subtotal)}</span>
@@ -868,9 +659,19 @@ export default function CheckoutPage() {
                 </div>
               )}
 
+              {subtotal < 400 && (
+                <div className="mt-4 rounded-xl border border-amber-500/30 bg-amber-500/10 p-3.5 text-xs text-amber-700 dark:text-amber-400 flex items-start gap-2.5">
+                  <AlertCircle className="size-4 shrink-0 mt-0.5 text-amber-600 dark:text-amber-400" />
+                  <div>
+                    <p className="font-bold">Minimum order value is ₹400</p>
+                    <p className="opacity-90 mt-0.5 font-medium">Add {inr(400 - subtotal)} more to proceed.</p>
+                  </div>
+                </div>
+              )}
+
               <button
                 type="submit"
-                disabled={isSubmitting || lines.length === 0 || !isOnline}
+                disabled={isSubmitting || lines.length === 0 || !isOnline || subtotal < 400}
                 className="mt-6 flex h-12 w-full items-center justify-center gap-2 rounded-full bg-primary font-bold text-primary-foreground shadow-glow hover:bg-primary/90 transition-all cursor-pointer text-sm px-4 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {isSubmitting ? (
@@ -879,6 +680,8 @@ export default function CheckoutPage() {
                   </>
                 ) : !isOnline ? (
                   "Store is Closed"
+                ) : subtotal < 400 ? (
+                  "Minimum Order ₹400"
                 ) : (
                   `Place Order (${inr(finalAmount)})`
                 )}
