@@ -1,10 +1,13 @@
 // Synthesized Web Audio API Alarm Sound for New Order Alerts
 // Uses dual sine-wave bell tones (880Hz & 1046.5Hz - A5 & C6)
+// Automatically stops after a maximum specified duration (default 10 seconds)
 
 class OrderAlarmSound {
   private ctx: AudioContext | null = null;
   private intervalId: any = null;
+  private autoStopTimer: any = null;
   private isPlaying = false;
+  private onStopCallback: (() => void) | null = null;
 
   private getAudioContext(): AudioContext | null {
     if (typeof window === "undefined") return null;
@@ -41,9 +44,10 @@ class OrderAlarmSound {
     return false;
   }
 
-  start() {
+  start(durationMs: number = 10000, onStop?: () => void) {
     if (this.isPlaying) return;
     this.isPlaying = true;
+    this.onStopCallback = onStop || null;
 
     try {
       const ctx = this.getAudioContext();
@@ -56,9 +60,16 @@ class OrderAlarmSound {
         if (this.isPlaying) {
           this.playChime();
         } else {
-          this.clearTimer();
+          this.clearTimers();
         }
       }, 2500);
+
+      // Auto-stop sound after maximum duration (default 10 seconds)
+      if (durationMs > 0) {
+        this.autoStopTimer = setTimeout(() => {
+          this.stop();
+        }, durationMs);
+      }
     } catch (e) {
       console.warn("[OrderAlarmSound] AudioContext init notice:", e);
     }
@@ -66,17 +77,30 @@ class OrderAlarmSound {
 
   stop() {
     this.isPlaying = false;
-    this.clearTimer();
+    this.clearTimers();
+    if (this.onStopCallback) {
+      const cb = this.onStopCallback;
+      this.onStopCallback = null;
+      try {
+        cb();
+      } catch (e) {
+        // ignore
+      }
+    }
   }
 
   get active(): boolean {
     return this.isPlaying;
   }
 
-  private clearTimer() {
+  private clearTimers() {
     if (this.intervalId) {
       clearInterval(this.intervalId);
       this.intervalId = null;
+    }
+    if (this.autoStopTimer) {
+      clearTimeout(this.autoStopTimer);
+      this.autoStopTimer = null;
     }
   }
 

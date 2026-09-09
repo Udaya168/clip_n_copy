@@ -3,6 +3,7 @@ import { supabase } from "./supabase";
 import { useAuth } from "./auth-store";
 import { orderAlarm } from "./audio-alarm";
 import { inr } from "./shop-store";
+import { toast } from "sonner";
 import {
   subscribeAdminPush,
   checkExistingPushSubscription,
@@ -56,6 +57,7 @@ export function AdminNotificationProvider({ children }: { children: React.ReactN
   const sessionStartTime = useRef<number>(Date.now());
   const notifiedOrderIds = useRef<Set<string>>(new Set());
   const broadcastChannel = useRef<BroadcastChannel | null>(null);
+  const soundTimerRef = useRef<any>(null);
 
   // Check push subscription on mount
   useEffect(() => {
@@ -75,6 +77,7 @@ export function AdminNotificationProvider({ children }: { children: React.ReactN
     bc.onmessage = (event) => {
       if (event.data?.type === "MUTE_ALARM") {
         orderAlarm.stop();
+        if (soundTimerRef.current) clearTimeout(soundTimerRef.current);
         setActiveAlarm(false);
       } else if (event.data?.type === "NEW_ORDER_ALERT" && event.data?.orderId) {
         notifiedOrderIds.current.add(event.data.orderId);
@@ -89,21 +92,23 @@ export function AdminNotificationProvider({ children }: { children: React.ReactN
   // Stop alarm helper
   const stopAlarm = useCallback(() => {
     orderAlarm.stop();
+    if (soundTimerRef.current) {
+      clearTimeout(soundTimerRef.current);
+      soundTimerRef.current = null;
+    }
     setActiveAlarm(false);
     if (broadcastChannel.current) {
       broadcastChannel.current.postMessage({ type: "MUTE_ALARM" });
     }
   }, []);
 
-  // Test sound helper (also unlocks AudioContext)
+  // Test sound helper (plays for max 2.5s and unlocks AudioContext)
   const testSound = useCallback(() => {
     orderAlarm.unlock();
-    orderAlarm.start();
     setActiveAlarm(true);
-    setTimeout(() => {
-      orderAlarm.stop();
+    orderAlarm.start(2500, () => {
       setActiveAlarm(false);
-    }, 2500);
+    });
   }, []);
 
   // Enable push notifications
@@ -132,7 +137,7 @@ export function AdminNotificationProvider({ children }: { children: React.ReactN
       const orderId = String(orderPayload.id || orderPayload.order_number || Date.now());
       const orderNumber = String(orderPayload.order_number || orderPayload.orderNumber || orderId);
 
-      // 1. Deduplication check
+      // 1. Deduplication check - ONLY process genuinely NEW orders once
       if (notifiedOrderIds.current.has(orderId)) {
         return;
       }
@@ -172,16 +177,55 @@ export function AdminNotificationProvider({ children }: { children: React.ReactN
       // Add to notifications list
       setNotifications((prev) => [newNotif, ...prev.filter((n) => n.orderId !== orderId)]);
 
-      // Start Audio Alarm
+      // 3. Start 10-SECOND AUDIO ALARM SOUND
       orderAlarm.unlock();
-      orderAlarm.start();
       setActiveAlarm(true);
 
-      // Trigger Native Browser Web Notification if permission granted
+      // Clear any previous sound timer
+      if (soundTimerRef.current) {
+        clearTimeout(soundTimerRef.current);
+      }
+
+      // Start alarm sound for maximum 10 seconds
+      orderAlarm.start(10000, () => {
+        setActiveAlarm(false);
+      });
+
+      // Backup 10-second timer to ensure activeAlarm state resets
+      soundTimerRef.current = setTimeout(() => {
+        orderAlarm.stop();
+        setActiveAlarm(false);
+      }, 10000);
+
+      // 4. Trigger In-App Toast Popup with full order details
+      toast.custom(
+        (_t) => (
+          <div className="w-full max-w-sm rounded-2xl border border-primary/40 bg-card p-4 shadow-xl ring-1 ring-primary/20 space-y-2">
+            <div className="flex items-center justify-between">
+              <span className="font-display text-xs font-black uppercase text-primary tracking-wider">
+                🔔 New Order Received!
+              </span>
+              <span className="text-[10px] font-bold text-muted-foreground">Just Now</span>
+            </div>
+            <div>
+              <p className="text-sm font-bold text-foreground">Order #{orderNumber}</p>
+              <p className="text-xs text-muted-foreground mt-0.5">
+                {customerName} {customerPhone ? `(${customerPhone})` : ""}
+              </p>
+              <p className="text-xs font-extrabold text-foreground mt-1">
+                {inr(totalAmount)} · {itemsCount} {itemsCount === 1 ? "item" : "items"}
+              </p>
+            </div>
+          </div>
+        ),
+        { duration: 12000 }
+      );
+
+      // 5. Trigger Native Browser Notification if permission granted
       if (typeof window !== "undefined" && "Notification" in window && Notification.permission === "granted") {
         try {
           const nativeNotif = new Notification("🔔 New Order Received!", {
-            body: `New order #${orderNumber} from ${customerName} — ${inr(totalAmount)} (${itemsCount} items)`,
+            body: `Order #${orderNumber} from ${customerName} — ${inr(totalAmount)} (${itemsCount} items)`,
             icon: "/favicon.ico",
             tag: `order-${orderId}`,
           });
@@ -261,6 +305,9 @@ export function AdminNotificationProvider({ children }: { children: React.ReactN
       window.removeEventListener("storage", handleStorageChange);
       if (channel) {
         supabase.removeChannel(channel).catch(() => {});
+      }
+      if (soundTimerRef.current) {
+        clearTimeout(soundTimerRef.current);
       }
       orderAlarm.stop();
     };

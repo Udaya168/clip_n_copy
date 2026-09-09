@@ -4,23 +4,51 @@ import { supabase } from "./supabase";
 export interface StoreSettings {
   id?: string | number | undefined;
   is_online: boolean;
-  opening_time: string; // "09:00:00" or "09:00"
-  startTime?: string | undefined;
-  openingTime?: string | undefined;
-  manual_mode?: "auto" | "online" | "offline" | undefined;
+  opening_time?: string | undefined; // "09:00:00"
+  manual_mode?: boolean | "auto" | "online" | "offline" | undefined;
+  auto_closed_at?: string | null | undefined;
   updated_at?: string | undefined;
 }
 
-const SETTINGS_KEY = "cnc-store-settings-v1";
+const SETTINGS_KEY = "cnc-store-settings-v3";
 
 export const DEFAULT_SETTINGS: StoreSettings = {
   id: "global",
   is_online: true,
   opening_time: "09:00:00",
-  startTime: "09:00:00",
-  openingTime: "09:00:00",
-  manual_mode: "auto",
+  manual_mode: false,
+  auto_closed_at: null,
 };
+
+function getStoreNowDate(): Date {
+  const now = new Date();
+  try {
+    const formatter = new Intl.DateTimeFormat("en-US", {
+      timeZone: "Asia/Kolkata",
+      year: "numeric",
+      month: "numeric",
+      day: "numeric",
+      hour: "numeric",
+      minute: "numeric",
+      second: "numeric",
+      hour12: false,
+    });
+    const parts = formatter.formatToParts(now);
+    const getPart = (type: string) => Number(parts.find((p) => p.type === type)?.value || 0);
+
+    const year = getPart("year");
+    const month = getPart("month") - 1;
+    const day = getPart("day");
+    let hour = getPart("hour");
+    if (hour === 24) hour = 0;
+    const minute = getPart("minute");
+    const second = getPart("second");
+
+    return new Date(year, month, day, hour, minute, second);
+  } catch (e) {
+    return now;
+  }
+}
 
 function readSettings(): StoreSettings {
   if (typeof window === "undefined") return DEFAULT_SETTINGS;
@@ -28,12 +56,9 @@ function readSettings(): StoreSettings {
     const raw = window.localStorage.getItem(SETTINGS_KEY);
     if (!raw) return DEFAULT_SETTINGS;
     const parsed = JSON.parse(raw);
-    const openingTime = parsed.opening_time || parsed.openingTime || parsed.startTime || "09:00:00";
     return {
+      ...DEFAULT_SETTINGS,
       ...parsed,
-      opening_time: openingTime,
-      startTime: openingTime,
-      openingTime: openingTime,
     };
   } catch {
     return DEFAULT_SETTINGS;
@@ -50,54 +75,78 @@ function writeSettings(settings: StoreSettings) {
   }
 }
 
-export function evaluateStoreStatus(settings?: StoreSettings | null): {
+export interface EvaluatedStoreStatus {
   isOnline: boolean;
   statusLabel: string;
-  statusBadge: "online" | "offline" | "before_opening";
-} {
-  const currentSettings = settings || DEFAULT_SETTINGS;
+  statusBadge: "online" | "offline";
+  statusMessage?: string;
+}
 
-  // 1. Check explicit is_online false / manual offline
-  if (currentSettings.is_online === false || currentSettings.manual_mode === "offline") {
+export function evaluateStoreStatus(settings?: StoreSettings | null): EvaluatedStoreStatus {
+  const currentSettings = settings || DEFAULT_SETTINGS;
+  const now = getStoreNowDate();
+
+  // Today 9:00 PM threshold in store timezone (IST UTC+5:30)
+  const today9PM = new Date(now);
+  today9PM.setHours(21, 0, 0, 0);
+
+  const isAfter9PM = now.getTime() >= today9PM.getTime();
+
+  // 1. AT OR AFTER 9:00 PM TODAY
+  if (isAfter9PM) {
+    const updatedAtTime = currentSettings.updated_at
+      ? new Date(currentSettings.updated_at).getTime()
+      : 0;
+
+    // Check if owner manually turned store ON AFTER today's 9:00 PM
+    const isManualReopenAfter9PM =
+      currentSettings.is_online === true &&
+      (currentSettings.manual_mode === true || currentSettings.manual_mode === "online") &&
+      !currentSettings.auto_closed_at &&
+      updatedAtTime >= today9PM.getTime();
+
+    if (isManualReopenAfter9PM) {
+      return {
+        isOnline: true,
+        statusLabel: "Store is Open (Reopened)",
+        statusBadge: "online",
+        statusMessage: "Store manually reopened after 9:00 PM.",
+      };
+    }
+
+    // Check if owner manually turned store OFF after 9 PM
+    if (
+      currentSettings.is_online === false &&
+      (currentSettings.manual_mode === true || currentSettings.manual_mode === "offline") &&
+      updatedAtTime >= today9PM.getTime()
+    ) {
+      return {
+        isOnline: false,
+        statusLabel: "Store is Closed",
+        statusBadge: "offline",
+        statusMessage: "Store manually closed.",
+      };
+    }
+
+    // Otherwise automatically closed at 9:00 PM today
+    return {
+      isOnline: false,
+      statusLabel: "Closed at 9:00 PM",
+      statusBadge: "offline",
+      statusMessage: "Store automatically closed at 9:00 PM. You can manually reopen it.",
+    };
+  }
+
+  // 2. BEFORE 9:00 PM TODAY
+  if (
+    currentSettings.is_online === false ||
+    currentSettings.manual_mode === "offline"
+  ) {
     return {
       isOnline: false,
       statusLabel: "Store is Closed",
       statusBadge: "offline",
-    };
-  }
-
-  // 2. Check explicit manual online override
-  if (currentSettings.manual_mode === "online") {
-    return {
-      isOnline: true,
-      statusLabel: "Store is Open",
-      statusBadge: "online",
-    };
-  }
-
-  // 3. Auto mode: check opening_time / startTime / openingTime (default "09:00:00")
-  const rawOpeningTime =
-    currentSettings.opening_time ||
-    currentSettings.startTime ||
-    currentSettings.openingTime ||
-    "09:00:00";
-
-  const parts = String(rawOpeningTime).split(":");
-  const openH = Number(parts[0]) || 9;
-  const openM = Number(parts[1]) || 0;
-
-  const now = new Date();
-  const currentHours = now.getHours();
-  const currentMinutes = now.getMinutes();
-
-  const openTimeInMinutes = openH * 60 + openM;
-  const currentTimeInMinutes = currentHours * 60 + currentMinutes;
-
-  if (currentTimeInMinutes < openTimeInMinutes) {
-    return {
-      isOnline: false,
-      statusLabel: "Opens at 9:00 AM",
-      statusBadge: "before_opening",
+      statusMessage: "Store manually closed.",
     };
   }
 
@@ -105,6 +154,7 @@ export function evaluateStoreStatus(settings?: StoreSettings | null): {
     isOnline: true,
     statusLabel: "Store is Open",
     statusBadge: "online",
+    statusMessage: "Store is open.",
   };
 }
 
@@ -118,7 +168,7 @@ export async function fetchStoreSettings(): Promise<StoreSettings> {
   if (isApiFetchDisabled && now - lastApiFetchTime < 60000) {
     return cachedSettings || DEFAULT_SETTINGS;
   }
-  if (now - lastApiFetchTime < 5000) {
+  if (now - lastApiFetchTime < 2000) {
     return cachedSettings || DEFAULT_SETTINGS;
   }
   lastApiFetchTime = now;
@@ -131,26 +181,27 @@ export async function fetchStoreSettings(): Promise<StoreSettings> {
       .maybeSingle();
 
     if (error) {
-      console.warn("[store_settings Notice] Using local fallback store settings.");
+      console.error("[store_settings Fetch Error]", error.message, error);
       isApiFetchDisabled = true;
     } else if (data) {
       isApiFetchDisabled = false;
       const openingTime = data.opening_time || data.openingTime || data.startTime || "09:00:00";
-      const isOnline = data.is_online ?? (data.manual_mode === "offline" ? false : true);
+      const isOnline = data.is_online ?? true;
+      const manualMode = typeof data.manual_mode === "boolean" ? data.manual_mode : data.manual_mode === "online" || data.manual_mode === "offline";
 
       cachedSettings = {
         id: data.id || "global",
         is_online: isOnline,
         opening_time: openingTime,
-        startTime: openingTime,
-        openingTime: openingTime,
-        manual_mode: data.manual_mode || (isOnline === false ? "offline" : "auto"),
+        manual_mode: manualMode,
+        auto_closed_at: data.auto_closed_at || null,
         updated_at: data.updated_at,
       };
       writeSettings(cachedSettings);
       listeners.forEach((cb) => cb());
     }
   } catch (err) {
+    console.error("[store_settings Fetch Exception]", err);
     isApiFetchDisabled = true;
   }
 
@@ -158,67 +209,83 @@ export async function fetchStoreSettings(): Promise<StoreSettings> {
 }
 
 export async function updateStoreSettings(newMode: "auto" | "online" | "offline" | boolean): Promise<StoreSettings> {
-  let isOnline = true;
-  let manualMode: "auto" | "online" | "offline" = "auto";
+  let targetOnline = true;
 
   if (typeof newMode === "boolean") {
-    isOnline = newMode;
-    manualMode = newMode ? "online" : "offline";
-  } else if (newMode === "online") {
-    isOnline = true;
-    manualMode = "online";
+    targetOnline = newMode;
   } else if (newMode === "offline") {
-    isOnline = false;
-    manualMode = "offline";
+    targetOnline = false;
+  } else if (newMode === "online") {
+    targetOnline = true;
   } else {
-    isOnline = true;
-    manualMode = "auto";
+    targetOnline = true;
   }
 
-  const openingTime = cachedSettings?.opening_time || cachedSettings?.startTime || "09:00:00";
+  const nowIso = new Date().toISOString();
+  const openingTime = cachedSettings?.opening_time || "09:00:00";
 
-  const updated: StoreSettings = {
-    id: cachedSettings?.id || "global",
-    is_online: isOnline,
-    manual_mode: manualMode,
+  // Requirement 1 & 4:
+  // When owner manually changes store status:
+  // - is_online = targetOnline
+  // - manual_mode = true (boolean)
+  // - auto_closed_at = null
+  const updatePayload = {
+    is_online: targetOnline,
+    manual_mode: true,
+    auto_closed_at: null,
     opening_time: openingTime,
-    startTime: openingTime,
-    openingTime: openingTime,
-    updated_at: new Date().toISOString(),
+    updated_at: nowIso,
   };
 
-  cachedSettings = updated;
-  writeSettings(updated);
-  listeners.forEach((cb) => cb());
-
   try {
-    const { error: updateError } = await supabase
+    // 1. Fetch existing store_settings row to get exact row ID
+    const { data: existingRow, error: checkError } = await supabase
       .from("store_settings")
-      .update({
-        is_online: isOnline,
-        opening_time: openingTime,
-        updated_at: updated.updated_at,
-      })
-      .limit(1);
+      .select("*")
+      .limit(1)
+      .maybeSingle();
 
-    if (updateError) {
-      await supabase
+    if (checkError) {
+      console.error("[store_settings Check Error]", checkError.message, checkError);
+    }
+
+    if (existingRow && existingRow.id !== undefined && existingRow.id !== null) {
+      // 2. Requirement 1 & 2: UPDATE existing row using .eq('id', existingRow.id)
+      const { data: updatedRow, error: updateError } = await supabase
         .from("store_settings")
-        .upsert({
-          id: cachedSettings?.id || "global",
-          is_online: isOnline,
-          opening_time: openingTime,
-          manual_mode: manualMode,
-          updated_at: updated.updated_at,
-        });
+        .update(updatePayload)
+        .eq("id", existingRow.id)
+        .select()
+        .maybeSingle();
+
+      if (updateError) {
+        console.error("[store_settings Update Error]", updateError.message, updateError);
+      } else if (updatedRow) {
+        isApiFetchDisabled = false;
+      }
     } else {
-      isApiFetchDisabled = false;
+      // 3. Requirement 5: Only INSERT if no row exists
+      const { data: insertedRow, error: insertError } = await supabase
+        .from("store_settings")
+        .insert({
+          id: cachedSettings?.id || "global",
+          ...updatePayload,
+        })
+        .select()
+        .maybeSingle();
+
+      if (insertError) {
+        console.error("[store_settings Insert Error]", insertError.message, insertError);
+      } else if (insertedRow) {
+        isApiFetchDisabled = false;
+      }
     }
   } catch (err) {
-    console.warn("Supabase store_settings update exception:", err);
+    console.error("[store_settings Update Exception]", err);
   }
 
-  return updated;
+  // Requirement 9: Refresh store_settings after every successful status update
+  return await fetchStoreSettings();
 }
 
 export function useStoreStatus() {
@@ -244,7 +311,9 @@ export function useStoreStatus() {
     isOnline: statusInfo.isOnline,
     statusLabel: statusInfo.statusLabel,
     statusBadge: statusInfo.statusBadge,
+    statusMessage: statusInfo.statusMessage,
     updateMode: updateStoreSettings,
+    updateStatus: updateStoreSettings,
     refresh: fetchStoreSettings,
   };
 }
