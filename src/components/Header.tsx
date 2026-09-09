@@ -95,14 +95,45 @@ export function Header() {
   return (
     <>
       <header className="sticky top-0 z-50 w-full border-b border-border bg-background/85 backdrop-blur-xl">
+        <style>
+          {`
+            @keyframes marquee {
+              0% { transform: translateX(100%); }
+              100% { transform: translateX(-100%); }
+            }
+            .marquee-container {
+              overflow: hidden;
+              white-space: nowrap;
+              width: 100%;
+            }
+            .animate-marquee {
+              display: inline-block;
+              animation: marquee 20s linear infinite;
+              padding-left: 100%;
+            }
+            @media (min-width: 768px) {
+              .marquee-container {
+                overflow: visible;
+                white-space: normal;
+              }
+              .animate-marquee {
+                animation: none;
+                transform: none;
+                display: block;
+                padding-left: 0;
+              }
+            }
+          `}
+        </style>
         <motion.div
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5, ease: "easeOut" }}
-          className="hidden bg-ink py-1.5 text-center text-xs text-ink-foreground md:block"
+          className="bg-ink py-1.5 text-xs text-ink-foreground marquee-container"
         >
-          Free delivery around ITPL Main Road on orders above ₹79 · Printing &amp; binding ready in
-          minutes
+          <div className="animate-marquee md:text-center">
+            Free delivery up to 5 km on orders ₹400 and above &middot; Printing &amp; binding ready in minutes
+          </div>
         </motion.div>
 
         <div className="section-shell flex h-16 items-center gap-3 md:h-20 md:gap-6">
@@ -151,7 +182,7 @@ export function Header() {
                       className="rounded-full border border-primary/30 bg-primary-soft/80 px-3.5 py-2 text-xs font-bold text-primary transition-colors hover:bg-primary-soft max-w-28 sm:max-w-44 truncate focus:outline-none focus:ring-2 focus:ring-primary cursor-pointer"
                       aria-label="User Full Name"
                     >
-                      {fullName}
+                      Welcome, {fullName.split(' ')[0]}
                     </button>
                   </DropdownMenuTrigger>
                   <DropdownMenuTrigger asChild>
@@ -489,15 +520,6 @@ export function Header() {
                   >
                     <Truck className="size-[18px] text-primary" />
                     <span className="text-[14px] flex-1">Track Order</span>
-                    <ChevronRight className="size-[18px] text-muted-foreground/50" />
-                  </Link>
-                  <Link
-                    to="/returns"
-                    onClick={() => setMobileMenuOpen(false)}
-                    className="group flex items-center gap-3 h-[48px] px-3.5 rounded-xl text-foreground hover:bg-secondary transition-colors font-medium"
-                  >
-                    <RotateCcw className="size-[18px] text-primary" />
-                    <span className="text-[14px] flex-1">Returns</span>
                     <ChevronRight className="size-[18px] text-muted-foreground/50" />
                   </Link>
                 </div>

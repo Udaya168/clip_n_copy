@@ -72,7 +72,7 @@ export default function IndexPage() {
       <HeroSection />
 
       {/* Categories - Compact Premium Cards */}
-      <section className="section-shell py-12">
+      <section className="section-shell py-6 md:py-8">
         <SectionHead
           title="Shop by Category"
           ctaLabel="View All →"
@@ -82,6 +82,7 @@ export default function IndexPage() {
           <Carousel
             opts={{
               align: "start",
+              loop: true
             }}
             className="w-full"
           >
@@ -124,7 +125,7 @@ export default function IndexPage() {
       </section>
 
       {/* Best sellers */}
-      <section className="section-shell py-12">
+      <section className="section-shell py-6 md:py-8">
         <div className="rounded-[2.5rem] bg-white p-6 shadow-[0_4px_24px_-8px_rgba(11,92,255,0.08)] border border-[#EAF2FF] sm:p-10 lg:p-12">
           <SectionHead
             title="Best Sellers"
@@ -170,7 +171,7 @@ export default function IndexPage() {
       </section>
 
       {/* Printing & Services */}
-      <section className="section-shell py-12">
+      <section className="section-shell py-6 md:py-8">
         <div className="rounded-[2.5rem] bg-[#F4F8FF] p-8 sm:p-12 shadow-[0_4px_24px_-8px_rgba(11,92,255,0.08)] border border-[#EAF2FF] relative overflow-hidden">
           <div className="absolute top-0 right-0 -mr-20 -mt-20 w-96 h-96 rounded-full bg-[#075BFF]/5 blur-3xl pointer-events-none" />
           
@@ -202,7 +203,7 @@ export default function IndexPage() {
       <StoreSection />
 
       {/* Benefits Strip */}
-      <section className="section-shell py-10 pb-16">
+      <section className="section-shell py-6 pb-10 md:py-8 md:pb-12">
         <div className="grid grid-cols-2 gap-4 md:grid-cols-4 bg-white rounded-[2rem] shadow-sm border border-slate-100 p-6 md:p-8">
           {[
             { title: "Wide Range", desc: "1000+ products", icon: <Box className="size-6" /> },

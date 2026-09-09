@@ -1,10 +1,11 @@
+import { memo } from "react";
 import { Link } from "react-router-dom";
 import { Heart, ShoppingBag, Star } from "lucide-react";
 import { type Product } from "@/lib/data";
 import { inr, useShop } from "@/lib/shop-store";
 import { cn } from "@/lib/utils";
 
-export function ProductCard({ product, compact }: { product: Product; compact?: boolean }) {
+export const ProductCard = memo(function ProductCard({ product, compact }: { product: Product; compact?: boolean }) {
   const { addToCart, toggleWishlist, inWishlist, cart, setQty } = useShop();
   const saved = inWishlist(product.id);
   const cartItem = cart.find(item => item.id === product.id);
@@ -110,7 +111,7 @@ export function ProductCard({ product, compact }: { product: Product; compact?: 
       </div>
     </article>
   );
-}
+});
 
 export function ProductSkeleton() {
   return (

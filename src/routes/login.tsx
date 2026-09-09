@@ -26,23 +26,35 @@ export default function LoginPage() {
   }, [confirmed]);
 
   if (user) {
-    const userDisplayName = profile?.full_name || (user.user_metadata?.["full_name"] as string) || user.email;
+    const rawName = profile?.full_name || (user.user_metadata?.["full_name"] as string);
+    const userDisplayName = rawName ? rawName.split(" ")[0] : (user.email ? user.email.split("@")[0] : "");
+    const welcomeText = rawName ? `Welcome back,\n${rawName}` : (userDisplayName ? `Welcome back,\n${userDisplayName}` : "Welcome back");
+    
     return (
-      <div className="flex min-h-[100dvh] items-center justify-center p-6 bg-blue-50 font-sans">
-        <div className="w-full max-w-md rounded-3xl border border-slate-200 bg-white p-8 text-center shadow-lg">
-          <div className="mx-auto flex size-14 items-center justify-center rounded-full bg-[#0647E8]/10 text-[#0647E8]">
+      <div className="flex min-h-[100dvh] items-center justify-center p-6 bg-slate-50/50 font-sans">
+        <div className="w-full max-w-md rounded-[24px] border border-slate-200 bg-white p-8 sm:p-10 text-center shadow-[0_8px_30px_-4px_rgba(6,71,232,0.08)]">
+          <div className="mx-auto flex size-16 items-center justify-center rounded-full bg-[#0647E8]/10 text-[#0647E8] mb-6">
             <CheckCircle2 className="size-8" />
           </div>
-          <h1 className="mt-4 text-[24px] font-black text-slate-900">Already Logged In</h1>
-          <p className="mt-2 text-[15px] text-slate-500">
-            You are signed in as <span className="font-semibold text-slate-900">{userDisplayName}</span>.
+          <h1 className="text-[28px] font-black text-slate-900 leading-tight whitespace-pre-line tracking-tight">
+            {welcomeText}
+          </h1>
+          <p className="mt-3 text-[15px] font-medium text-slate-500">
+            You’re signed in and ready to shop.
           </p>
-          <div className="mt-8">
+          <div className="mt-8 flex flex-col gap-3">
             <Button
-              onClick={() => navigate(redirectTarget )}
-              className="w-full h-[52px] rounded-xl bg-[#0647E8] font-bold text-[16px] text-white hover:bg-[#062BCB] cursor-pointer"
+              onClick={() => navigate(redirectTarget)}
+              className="w-full h-[52px] rounded-[14px] bg-[#0647E8] font-bold text-[16px] text-white shadow-[0_8px_20px_-8px_rgba(6,71,232,0.5)] hover:-translate-y-[2px] hover:shadow-[0_12px_24px_-8px_rgba(6,71,232,0.6)] hover:bg-[#062BCB] transition-all duration-300 cursor-pointer"
             >
               Continue {redirectTarget === "/checkout" ? "to Checkout" : "Shopping"}
+            </Button>
+            <Button
+              variant="outline"
+              onClick={() => navigate("/account")}
+              className="w-full h-[52px] rounded-[14px] border-slate-200 font-bold text-[16px] text-slate-700 hover:bg-slate-50 hover:text-slate-900 transition-colors cursor-pointer"
+            >
+              View My Account
             </Button>
           </div>
         </div>

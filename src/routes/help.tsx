@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
+import { ShopLayout } from "@/components/ShopLayout";
 import { ArrowLeft, ChevronDown, ChevronUp, LifeBuoy, HelpCircle, FileText, BookOpen, Truck, CreditCard, ShoppingBag, RotateCcw, User, MapPin, Printer } from "lucide-react";
 
 
@@ -19,23 +20,10 @@ function FAQItem({ question, answer }: { question: string; answer: string }) {
   );
 }
 
-import { useAppBack } from "@/lib/useAppBack";
-
 export default function HelpPage() {
-  const goBack = useAppBack();
-
   return (
-    <div className="section-shell py-10">
-      <div className="mb-6">
-        <button
-          onClick={() => goBack("/")}
-          className="inline-flex items-center gap-2 text-sm font-semibold text-primary hover:underline cursor-pointer"
-        >
-          <ArrowLeft className="size-4" />
-          Back to Home
-        </button>
-      </div>
-
+    <ShopLayout>
+      <div className="section-shell pt-6 pb-10">
       <div className="mb-10 max-w-2xl">
         <h1 className="font-display text-3xl font-extrabold sm:text-4xl text-foreground">How Can We Help?</h1>
         <p className="mt-3 text-lg text-muted-foreground">
@@ -101,10 +89,6 @@ export default function HelpPage() {
                 answer="You can check other available products or contact us to ask about availability."
               />
               <FAQItem 
-                question="Can I return a product?"
-                answer="Returns are subject to the store's return policy and product eligibility. Contact support for assistance."
-              />
-              <FAQItem 
                 question="How long does delivery take?"
                 answer="Delivery time depends on your location, product availability, and the selected delivery option."
               />
@@ -148,14 +132,7 @@ export default function HelpPage() {
                 <p className="text-xs text-muted-foreground pl-7">Find information about stationery products, stock availability, and product details.</p>
               </div>
               
-              <div className="group cursor-pointer">
-                <div className="flex items-center gap-3 mb-1">
-                  <RotateCcw className="size-4 text-primary" />
-                  <h3 className="text-sm font-semibold text-foreground group-hover:text-primary transition-colors">Returns & Refunds</h3>
-                </div>
-                <p className="text-xs text-muted-foreground pl-7">Learn about eligible returns, refunds, and return requests.</p>
-              </div>
-              
+
               <div className="group cursor-pointer">
                 <div className="flex items-center gap-3 mb-1">
                   <User className="size-4 text-primary" />
@@ -213,10 +190,6 @@ export default function HelpPage() {
                 <p className="text-xs leading-relaxed">Delivery timelines may vary depending on location, product availability, and operational conditions.</p>
               </div>
               <div>
-                <h4 className="font-semibold text-foreground text-xs uppercase tracking-wider mb-1">Returns</h4>
-                <p className="text-xs leading-relaxed">Returns and refunds are subject to the applicable Clip N Copy return policy.</p>
-              </div>
-              <div>
                 <h4 className="font-semibold text-foreground text-xs uppercase tracking-wider mb-1">Account</h4>
                 <p className="text-xs leading-relaxed">Customers are responsible for maintaining the security of their account credentials.</p>
               </div>
@@ -246,5 +219,6 @@ export default function HelpPage() {
         </Link>
       </div>
     </div>
+    </ShopLayout>
   );
 }

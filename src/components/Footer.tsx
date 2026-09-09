@@ -19,8 +19,7 @@ const SERVICES = [
 
 const SUPPORT = [
   { label: "Contact Us", to: "/contact" },
-  { label: "Track Order", to: "/store" },
-  { label: "Returns", to: "/store" },
+  { label: "Track Order", to: "/track-order" },
   { label: "Help", to: "/help" },
 ];
 
@@ -30,11 +29,13 @@ export function Footer() {
       <div className="section-shell grid gap-10 py-14 sm:grid-cols-2 lg:grid-cols-4">
         <div className="space-y-4">
           <div className="flex items-center gap-2.5">
-            <img
-              src="/logo.webp"
-              alt="Clip N Copy"
-              className="h-14 w-auto object-contain sm:h-16"
-            />
+            <div className="bg-white px-4 py-2 rounded-2xl inline-flex shadow-sm">
+              <img
+                src="/logo.webp"
+                alt="Clip N Copy"
+                className="h-10 w-auto object-contain sm:h-12"
+              />
+            </div>
           </div>
           <p className="text-sm text-ink-foreground/70">
             Total solutions in stationery &amp; xerox — school and office stationery, house keeping

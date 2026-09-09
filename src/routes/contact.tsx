@@ -1,13 +1,11 @@
 import { useState } from "react";
-import { ArrowLeft, Phone, Mail, MessageCircle, Send, CheckCircle2, Loader2, AlertCircle } from "lucide-react";
 import { Link } from "react-router-dom";
-import { useAppBack } from "@/lib/useAppBack";
+import { Phone, MessageCircle, Send, CheckCircle2, Loader2, AlertCircle } from "lucide-react";
 import { STORE } from "@/lib/data";
 import { ShopLayout } from "@/components/ShopLayout";
 import { Button } from "@/components/ui/button";
 
 export default function ContactPage() {
-  const goBack = useAppBack();
   
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
@@ -36,16 +34,9 @@ export default function ContactPage() {
 
   return (
     <ShopLayout>
-      <div className="section-shell py-10 md:py-16 max-w-5xl mx-auto">
+      <div className="section-shell pt-6 pb-10 md:pt-10 md:pb-16 max-w-5xl mx-auto">
         {/* Top Section */}
         <div className="mb-8">
-          <button
-            onClick={() => goBack("/")}
-            className="inline-flex items-center gap-2 text-sm font-semibold text-primary hover:underline cursor-pointer mb-6"
-          >
-            <ArrowLeft className="size-4" />
-            Back to Home
-          </button>
           
           <h1 className="font-display text-4xl font-extrabold sm:text-5xl text-foreground">Contact Us</h1>
           <p className="mt-4 text-lg text-muted-foreground max-w-2xl">
@@ -204,20 +195,7 @@ export default function ContactPage() {
                   <p className="text-xs text-muted-foreground mt-1">Quickest response time</p>
                 </div>
               </a>
-              
-              <a 
-                href="mailto:support@clipncopy.in"
-                className="group flex items-start gap-4 surface-card p-5 transition-all hover:border-primary/30 hover:bg-secondary/50"
-              >
-                <div className="grid size-12 shrink-0 place-items-center rounded-full bg-primary/10 text-primary">
-                  <Mail className="size-5" />
-                </div>
-                <div>
-                  <h3 className="font-bold text-foreground group-hover:text-primary transition-colors">Email Us</h3>
-                  <p className="mt-1 text-sm font-medium text-foreground">support@clipncopy.in</p>
-                  <p className="text-xs text-muted-foreground mt-1">We usually reply within 24 hours</p>
-                </div>
-              </a>
+
             </div>
 
             {/* Support Info */}

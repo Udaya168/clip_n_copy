@@ -4,16 +4,14 @@ import { StoreSection } from "@/components/StoreSection";
 import { MyOrdersList } from "@/components/orders/MyOrdersList";
 import { useAuth } from "@/lib/auth-store";
 import { STORE } from "@/lib/data";
-import { User, ShoppingBag, Shield, LogOut, Loader2, MapPin, ArrowLeft } from "lucide-react";
+import { User, ShoppingBag, Shield, LogOut, Loader2, MapPin } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ShopLayout } from "@/components/ShopLayout";
-import { useAppBack } from "@/lib/useAppBack";
 
 
 export default function StorePage() {
   const { user, profile, role, loading, signOut } = useAuth();
   const navigate = useNavigate();
-  const goBack = useAppBack();
   const [activeTab, setActiveTab] = useState<"orders" | "profile" | "location">("orders");
 
   const fullName = profile?.full_name || (user?.user_metadata?.["full_name"] as string) || "Customer";
@@ -61,19 +59,9 @@ export default function StorePage() {
   // Logged-in user Account & My Orders Dashboard
   return (
     <ShopLayout>
-      <div className="section-shell py-8 sm:py-12">
+      <div className="section-shell pt-6 sm:pt-8 pb-8 sm:pb-12">
         <div className="max-w-4xl mx-auto space-y-8">
           
-          {/* Back Link */}
-          <div>
-            <button
-              onClick={() => goBack("/")}
-              className="inline-flex items-center gap-2 text-xs font-semibold text-muted-foreground transition-colors hover:text-foreground cursor-pointer"
-            >
-              <ArrowLeft className="size-4" /> Back to Home
-            </button>
-          </div>
-
           {/* Header Profile Banner */}
           <div className="card-lift rounded-3xl border border-primary/20 bg-gradient-to-r from-primary/10 via-primary/5 to-background p-6 shadow-soft sm:p-8 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div className="flex items-center gap-4">

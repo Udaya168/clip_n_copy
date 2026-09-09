@@ -7,7 +7,7 @@ export function StoreSection() {
   )}`;
 
   return (
-    <section className="section-shell py-14">
+    <section className="section-shell py-6 md:py-8">
       <div className="grid gap-6 lg:grid-cols-2">
         <div className="surface-card overflow-hidden">
           <img

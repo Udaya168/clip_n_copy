@@ -33,18 +33,21 @@ export function AuthLayout({ children }: { children: ReactNode }) {
       </div>
 
       {/* DESKTOP UI (>= 768px) */}
-      <div className="hidden md:flex h-[100dvh] overflow-hidden w-full relative font-sans flex-row bg-[#0647E8] box-border">
+      <div className="hidden md:flex h-[100dvh] overflow-hidden w-full relative font-sans flex-row bg-gradient-to-br from-[#081021] via-[#0B1A3F] to-[#122A63] box-border">
         
-        {/* Background Cutout */}
+        {/* Background Cutout for the right side */}
         <div className="absolute top-0 right-0 h-full w-[50%] bg-[#F8FAFC] z-0" />
         
-        {/* Soft overlay patterns */}
+        {/* Soft overlay patterns & depth effects */}
         <div className="absolute inset-0 pointer-events-none z-0 overflow-hidden w-[50%]">
+          {/* Subtle dots texture */}
           <div 
-            className="absolute inset-0 opacity-[0.1]" 
+            className="absolute inset-0 opacity-[0.02]" 
             style={{ backgroundImage: "radial-gradient(circle at 2px 2px, #ffffff 2px, transparent 0)", backgroundSize: "32px 32px" }} 
           />
-          <div className="absolute -top-[10%] -left-[5%] w-[80%] h-[40%] rounded-full bg-white/10 blur-[100px]" />
+          {/* Soft radial glow behind the content */}
+          <div className="absolute -top-[10%] -left-[10%] w-[70%] h-[50%] rounded-full bg-[#3B82F6]/10 blur-[120px]" />
+          <div className="absolute bottom-0 left-[20%] w-[60%] h-[40%] rounded-full bg-[#1E3A8A]/20 blur-[100px]" />
         </div>
 
         {/* Left Side: Promotional Panel */}
@@ -52,44 +55,46 @@ export function AuthLayout({ children }: { children: ReactNode }) {
           <div className="flex-none mb-[40px]">
             <button 
               onClick={(e) => { e.preventDefault(); goBack("/"); }}
-              className="inline-flex items-center gap-2 text-blue-100 hover:text-white transition-colors text-[14px] font-medium z-30 animate-fade-scale w-fit"
+              className="inline-flex items-center gap-2 text-slate-300 hover:text-white transition-colors text-[14px] font-medium z-30 animate-fade-scale w-fit"
             >
               <ArrowLeft className="w-[18px] h-[18px]" /> Back to Home
             </button>
           </div>
           <div className="flex-1 flex flex-col justify-center max-w-[500px] w-full mx-auto lg:mx-0 animate-slide-right">
-            <div className="mb-[16px] animate-fade-scale">
-              <img src="/logo.webp" alt="Clip N Copy" className="h-[44px] md:h-[50px] w-auto object-contain" />
-              <div className="mt-1 text-[10px] font-bold text-blue-200 tracking-[0.2em]">
+            <div className="mb-[24px] animate-fade-scale flex flex-col items-start lg:items-start mx-auto lg:mx-0 items-center">
+              <div className="bg-white px-5 py-2.5 rounded-2xl shadow-lg inline-flex mb-1">
+                <img src="/logo.webp" alt="Clip N Copy" className="h-[40px] md:h-[46px] w-auto object-contain" />
+              </div>
+              <div className="mt-2 text-[10px] font-bold text-blue-200/70 tracking-[0.25em] text-center lg:text-left">
                 BOOK, STATIONERY & PRINTING
               </div>
             </div>
             
-            <h1 className="text-[52px] font-black text-white leading-[0.95] mb-[12px] tracking-tight">
+            <h1 className="text-[52px] font-black text-white/90 leading-[0.95] mb-[16px] tracking-tight drop-shadow-sm">
               <div className="animate-slide-right" style={{ animationDelay: '0.1s', opacity: 0, animationFillMode: 'forwards' }}>Create.</div>
-              <div className="text-blue-200 animate-slide-right" style={{ animationDelay: '0.2s', opacity: 0, animationFillMode: 'forwards' }}>Edit.</div>
+              <div className="text-blue-300/80 animate-slide-right" style={{ animationDelay: '0.2s', opacity: 0, animationFillMode: 'forwards' }}>Edit.</div>
               <div className="animate-slide-right" style={{ animationDelay: '0.3s', opacity: 0, animationFillMode: 'forwards' }}>Copy.</div>
             </h1>
             
-            <p className="text-blue-100 text-[18px] max-w-[500px] leading-[1.4] mb-[16px] font-medium stagger-1">
+            <p className="text-slate-300 text-[17px] max-w-[480px] leading-[1.5] mb-[24px] font-medium stagger-1">
               Your creative workspace starts here. Clip N Copy helps you create, edit, organize, and manage your content with ease.
             </p>
             
-            <div className="flex flex-col gap-[10px]">
+            <div className="flex flex-col gap-[12px]">
               {[
-                { icon: Zap, title: "FAST CONTENT CREATION", desc: "Streamline your workflow." },
-                { icon: Edit3, title: "SMART EDITING TOOLS", desc: "Everything you need to polish your work." },
-                { icon: Layers, title: "EASY PROJECT MANAGEMENT", desc: "Organize your projects efficiently." },
-                { icon: Cloud, title: "SECURE CLOUD STORAGE", desc: "Keep your data safe and accessible." },
+                { icon: Zap, title: "Fast Content Creation", desc: "Streamline your workflow." },
+                { icon: Edit3, title: "Smart Editing Tools", desc: "Everything you need to polish your work." },
+                { icon: Layers, title: "Easy Project Management", desc: "Organize your projects efficiently." },
+                { icon: Cloud, title: "Secure Cloud Storage", desc: "Keep your data safe and accessible." },
               ].map((f, i) => (
                 <div key={i} className={`stagger-${i+1}`}>
-                  <div className="flex items-center gap-[16px] px-[16px] py-[8px] rounded-2xl bg-white/5 border border-white/10 hover:bg-white/10 hover:border-white/20 transition-all duration-300 hover:-translate-y-1 hover:shadow-sm group cursor-default h-[62px] box-border">
-                    <div className="w-[48px] h-[48px] bg-white rounded-full flex items-center justify-center shadow-sm shrink-0 group-hover:scale-105 transition-transform">
-                      <f.icon className="w-[20px] h-[20px] text-[#0647E8] transition-transform duration-300" />
+                  <div className="flex items-center gap-[16px] px-[20px] py-[12px] rounded-2xl bg-white/[0.03] border border-white/[0.05] hover:bg-white/[0.06] hover:border-white/[0.1] transition-all duration-300 hover:-translate-y-1 hover:shadow-lg group cursor-default h-[70px] box-border backdrop-blur-sm">
+                    <div className="w-[42px] h-[42px] bg-white/[0.08] rounded-xl flex items-center justify-center border border-white/[0.05] shrink-0 group-hover:scale-105 group-hover:bg-white/[0.12] transition-all duration-300">
+                      <f.icon className="w-[18px] h-[18px] text-blue-200/90 group-hover:text-white transition-colors duration-300" />
                     </div>
                     <div className="flex flex-col justify-center">
-                      <h3 className="text-white font-bold text-[16px] tracking-wide leading-tight">{f.title}</h3>
-                      <p className="text-blue-200 text-[14px] mt-0.5 leading-tight">{f.desc}</p>
+                      <h3 className="text-white/80 font-semibold text-[15px] tracking-wide leading-tight group-hover:text-white transition-colors">{f.title}</h3>
+                      <p className="text-slate-400 text-[13px] mt-1 leading-tight">{f.desc}</p>
                     </div>
                   </div>
                 </div>

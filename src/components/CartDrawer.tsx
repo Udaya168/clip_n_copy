@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Minus, Plus, ShoppingBag, Trash2, X, Tag, CheckCircle2 } from "lucide-react";
 import { inr, useShop } from "@/lib/shop-store";
@@ -26,6 +26,27 @@ export function CartDrawer() {
   const navigate = useNavigate();
   const [couponInput, setCouponInput] = useState("");
   const [isApplying, setIsApplying] = useState(false);
+
+
+  
+  useEffect(() => {
+    if (cartOpen) {
+      const scrollbarWidth = window.innerWidth - document.documentElement.clientWidth;
+      document.body.style.overflow = "hidden";
+      document.body.style.paddingRight = `${scrollbarWidth}px`;
+      document.documentElement.style.overflow = "hidden";
+    } else {
+      document.body.style.overflow = "";
+      document.body.style.paddingRight = "";
+      document.documentElement.style.overflow = "";
+    }
+    
+    return () => {
+      document.body.style.overflow = "";
+      document.body.style.paddingRight = "";
+      document.documentElement.style.overflow = "";
+    };
+  }, [cartOpen]);
 
   if (!cartOpen) return null;
 

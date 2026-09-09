@@ -1,4 +1,4 @@
-import React, { useEffect } from "react";
+import React, { useEffect, Suspense, lazy } from "react";
 import { Routes, Route, useLocation } from "react-router-dom";
 
 import "./styles.css";
@@ -9,24 +9,23 @@ import { AuthProvider } from "@/lib/auth-store";
 import { Toaster } from "@/components/ui/sonner";
 import { ScrollToTop } from "@/components/ScrollToTop";
 
-// Page Imports
+// Page Imports (Lazy Loaded)
 import IndexPage from "@/routes/index";
-import AdminPage from "@/routes/admin";
-import CheckoutPage from "@/routes/checkout";
-import LoginPage from "@/routes/login";
-import SignupPage from "@/routes/signup";
-import ShopPage from "@/routes/shop";
-import ProductDetailsPage from "@/routes/product.$id";
-import AccountPage from "@/routes/account";
-import StorePage from "@/routes/store";
-import ContactPage from "@/routes/contact";
-import HelpPage from "@/routes/help";
-import OffersPage from "@/routes/offers";
-import ServicesPage from "@/routes/services";
-import WishlistPage from "@/routes/wishlist";
-import OrdersPage from "@/routes/orders";
-import TrackOrderPage from "@/routes/track-order";
-import ReturnsPage from "@/routes/returns";
+const AdminPage = lazy(() => import("@/routes/admin"));
+const CheckoutPage = lazy(() => import("@/routes/checkout"));
+const LoginPage = lazy(() => import("@/routes/login"));
+const SignupPage = lazy(() => import("@/routes/signup"));
+const ShopPage = lazy(() => import("@/routes/shop"));
+const ProductDetailsPage = lazy(() => import("@/routes/product.$id"));
+const AccountPage = lazy(() => import("@/routes/account"));
+const StorePage = lazy(() => import("@/routes/store"));
+const ContactPage = lazy(() => import("@/routes/contact"));
+const HelpPage = lazy(() => import("@/routes/help"));
+const OffersPage = lazy(() => import("@/routes/offers"));
+const ServicesPage = lazy(() => import("@/routes/services"));
+const WishlistPage = lazy(() => import("@/routes/wishlist"));
+const OrdersPage = lazy(() => import("@/routes/orders"));
+const TrackOrderPage = lazy(() => import("@/routes/track-order"));
 
 function NotFoundComponent() {
   return (
@@ -72,26 +71,27 @@ export default function App() {
         <ScrollToTop />
         <div className="flex flex-col min-h-[100dvh]">
           <main className="flex-1 flex flex-col min-h-0">
-            <Routes>
-              <Route path="/" element={<IndexPage />} />
-              <Route path="/admin/*" element={<AdminPage />} />
-              <Route path="/checkout" element={<CheckoutPage />} />
-              <Route path="/login" element={<LoginPage />} />
-              <Route path="/signup" element={<SignupPage />} />
-              <Route path="/shop" element={<ShopPage />} />
-              <Route path="/product/:id" element={<ProductDetailsPage />} />
-              <Route path="/account" element={<AccountPage />} />
-              <Route path="/store" element={<StorePage />} />
-              <Route path="/contact" element={<ContactPage />} />
-              <Route path="/help" element={<HelpPage />} />
-              <Route path="/offers" element={<OffersPage />} />
-              <Route path="/services" element={<ServicesPage />} />
-              <Route path="/wishlist" element={<WishlistPage />} />
-              <Route path="/orders" element={<OrdersPage />} />
-              <Route path="/track-order" element={<TrackOrderPage />} />
-              <Route path="/returns" element={<ReturnsPage />} />
-              <Route path="*" element={<NotFoundComponent />} />
-            </Routes>
+            <Suspense fallback={<div className="flex h-[100dvh] items-center justify-center"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div></div>}>
+              <Routes>
+                <Route path="/" element={<IndexPage />} />
+                <Route path="/admin/*" element={<AdminPage />} />
+                <Route path="/checkout" element={<CheckoutPage />} />
+                <Route path="/login" element={<LoginPage />} />
+                <Route path="/signup" element={<SignupPage />} />
+                <Route path="/shop" element={<ShopPage />} />
+                <Route path="/product/:id" element={<ProductDetailsPage />} />
+                <Route path="/account" element={<AccountPage />} />
+                <Route path="/store" element={<StorePage />} />
+                <Route path="/contact" element={<ContactPage />} />
+                <Route path="/help" element={<HelpPage />} />
+                <Route path="/offers" element={<OffersPage />} />
+                <Route path="/services" element={<ServicesPage />} />
+                <Route path="/wishlist" element={<WishlistPage />} />
+                <Route path="/orders" element={<OrdersPage />} />
+                <Route path="/track-order" element={<TrackOrderPage />} />
+                <Route path="*" element={<NotFoundComponent />} />
+              </Routes>
+            </Suspense>
           </main>
         </div>
         {!hideStorefrontNavigation && <CartDrawer />}

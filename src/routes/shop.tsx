@@ -49,29 +49,9 @@ export default function ShopPage() {
   const [maxPrice, setMaxPrice] = useState<number | null>(null);
   const currentMaxPrice = maxPrice !== null ? Math.min(maxPrice, catalogMaxPrice) : catalogMaxPrice;
 
-  const [brands, setBrands] = useState<string[]>([]);
-  const [minRating, setMinRating] = useState(0);
   const [inStockOnly, setInStockOnly] = useState(false);
   const [sort, setSort] = useState<(typeof SORTS)[number]>("Popularity");
   const [filtersOpen, setFiltersOpen] = useState(false);
-
-  const availableBrands = useMemo(() => {
-    if (!products || !Array.isArray(products)) return [];
-    const term = q?.trim().toLowerCase();
-    
-    const brandSet = new Set<string>();
-    for (const p of products) {
-      if (category && p.category !== category) continue;
-      if (tag && !p.tags?.includes(tag)) continue;
-      if (term && !isProductMatch(p, term)) continue;
-      
-      if (p.brand && typeof p.brand === 'string') {
-        const b = p.brand.trim();
-        if (b) brandSet.add(b);
-      }
-    }
-    return Array.from(brandSet).sort((a, b) => a.localeCompare(b));
-  }, [products, category, q, tag]);
 
   // Sync maxPrice if catalogMaxPrice changes and no custom maxPrice is set
   useEffect(() => {
@@ -79,16 +59,6 @@ export default function ShopPage() {
       setMaxPrice(catalogMaxPrice);
     }
   }, [catalogMaxPrice, maxPrice]);
-
-  // Clear invalid brands when category or search changes
-  useEffect(() => {
-    setBrands((prev) => {
-      if (prev.length === 0) return prev;
-      const valid = prev.filter((b) => availableBrands.includes(b));
-      if (valid.length !== prev.length) return valid;
-      return prev;
-    });
-  }, [availableBrands]);
 
   const categoriesWithCounts = useMemo(() => {
     return RAW_CATEGORIES.map((c) => ({
@@ -104,8 +74,6 @@ export default function ShopPage() {
       if (tag && !p.tags?.includes(tag)) return false;
       if (term && !isProductMatch(p, term)) return false;
       if (p.price > currentMaxPrice) return false;
-      if (brands.length && !brands.includes(p.brand)) return false;
-      if (p.rating < minRating) return false;
       if (inStockOnly && !p.stock) return false;
       return true;
     });
@@ -115,7 +83,7 @@ export default function ShopPage() {
     if (sort === "Highest Rated") list.sort((a, b) => b.rating - a.rating);
     if (sort === "Popularity") list.sort((a, b) => b.reviews - a.reviews);
     return list;
-  }, [products, category, q, tag, currentMaxPrice, brands, minRating, inStockOnly, sort]);
+  }, [products, category, q, tag, currentMaxPrice, inStockOnly, sort]);
 
   const title = category ? CATEGORY_NAME[category] : q ? `Results for “${q}”` : "All Products";
 
@@ -162,43 +130,6 @@ export default function ShopPage() {
           <span className="font-semibold text-foreground">
             up to {inr(currentMaxPrice)}
           </span>
-        </div>
-      </FilterBlock>
-
-      <FilterBlock title="Brand">
-        <div className="max-h-44 space-y-1.5 overflow-y-auto pr-1">
-          {availableBrands.map((b) => (
-            <label key={b} className="flex items-center gap-2 text-sm">
-              <input
-                type="checkbox"
-                checked={brands.includes(b)}
-                onChange={() =>
-                  setBrands((prev) =>
-                    prev.includes(b) ? prev.filter((x) => x !== b) : [...prev, b],
-                  )
-                }
-                className="size-4 accent-[var(--primary)]"
-              />
-              {b}
-            </label>
-          ))}
-        </div>
-      </FilterBlock>
-
-      <FilterBlock title="Rating">
-        <div className="space-y-1.5">
-          {[0, 4, 4.3, 4.5].map((r) => (
-            <label key={r} className="flex items-center gap-2 text-sm">
-              <input
-                type="radio"
-                name="rating"
-                checked={minRating === r}
-                onChange={() => setMinRating(r)}
-                className="size-4 accent-[var(--primary)]"
-              />
-              {r === 0 ? "Any rating" : `${r} ★ & above`}
-            </label>
-          ))}
         </div>
       </FilterBlock>
 
@@ -281,12 +212,10 @@ export default function ShopPage() {
               </div>
               <p className="font-display text-xl font-bold text-[#0B2455]">No matching products</p>
               <p className="mt-2 text-[#0B2455]/60 max-w-sm">Try adjusting your filters, searching for a different term, or browsing another category.</p>
-              {(brands.length > 0 || inStockOnly || minRating > 0 || currentMaxPrice !== catalogMaxPrice) && (
+              {(inStockOnly || currentMaxPrice !== catalogMaxPrice) && (
                 <button
                   onClick={() => {
-                    setBrands([]);
                     setInStockOnly(false);
-                    setMinRating(0);
                     setMaxPrice(null);
                   }}
                   className="mt-6 font-semibold text-[#075BFF] hover:underline"

@@ -28,7 +28,7 @@ import { useAppBack } from "@/lib/useAppBack";
 const MERCHANT_UPI_ID = "9380657027-2@axl";
 
 const DELIVERY = [
-  { id: "standard", label: "Standard Delivery", note: "2–3 days · Free above ₹79", icon: Truck },
+  { id: "standard", label: "Standard Delivery", note: "2–3 days · Free above ₹400", icon: Truck },
   { id: "express", label: "Express Delivery", note: "Same day before 7 PM · ₹150", icon: Zap },
   { id: "pickup", label: "Store Pickup", note: "Ready in 30 min at Kundalahalli", icon: Store },
 ];
@@ -57,7 +57,6 @@ export default function CheckoutPage() {
   } = useShop();
   const { user, profile, loading } = useAuth();
   const navigate = useNavigate();
-  const goBack = useAppBack();
   const newAddressRef = useRef<HTMLDivElement>(null);
 
   const [delivery, setDelivery] = useState("standard");
@@ -160,7 +159,7 @@ export default function CheckoutPage() {
   }
 
   const shipping =
-    delivery === "express" ? 150 : delivery === "standard" ? (subtotal >= 79 ? 0 : 79) : 0;
+    delivery === "express" ? 150 : delivery === "standard" ? (subtotal >= 400 ? 0 : 79) : 0;
   const finalAmount = total + shipping;
   const upiUri = `upi://pay?pa=${MERCHANT_UPI_ID}&pn=Clip%20n%20Copy&am=${finalAmount}&cu=INR`;
 
@@ -337,16 +336,7 @@ export default function CheckoutPage() {
 
   return (
     <ShopLayout>
-      <div className="section-shell py-10">
-        <div className="mb-6">
-          <button
-            onClick={() => goBack("/")}
-            className="inline-flex items-center gap-2 text-sm font-semibold text-primary hover:underline cursor-pointer"
-          >
-            <ArrowLeft className="size-4" />
-            Back to Home
-          </button>
-        </div>
+      <div className="section-shell pt-6 pb-10">
         <h1 className="font-display text-2xl font-extrabold sm:text-3xl">Checkout</h1>
         <p className="text-sm text-muted-foreground">
           Signed in as <span className="font-semibold text-foreground">{userFullName || user.email}</span>.

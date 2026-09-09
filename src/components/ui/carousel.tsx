@@ -180,6 +180,7 @@ const CarouselPrevious = React.forwardRef<HTMLButtonElement, React.ComponentProp
 
     return (
       <Button
+        type="button"
         ref={ref}
         variant={variant}
         size={size}
@@ -192,7 +193,11 @@ const CarouselPrevious = React.forwardRef<HTMLButtonElement, React.ComponentProp
           className,
         )}
         disabled={!canScrollPrev}
-        onClick={scrollPrev}
+        onClick={(e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          scrollPrev();
+        }}
         {...props}
       >
         <ChevronLeft className="size-6" />
@@ -209,6 +214,7 @@ const CarouselNext = React.forwardRef<HTMLButtonElement, React.ComponentProps<ty
 
     return (
       <Button
+        type="button"
         ref={ref}
         variant={variant}
         size={size}
@@ -221,7 +227,11 @@ const CarouselNext = React.forwardRef<HTMLButtonElement, React.ComponentProps<ty
           className,
         )}
         disabled={!canScrollNext}
-        onClick={scrollNext}
+        onClick={(e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          scrollNext();
+        }}
         {...props}
       >
         <ChevronRight className="size-6" />
