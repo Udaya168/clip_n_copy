@@ -474,4 +474,39 @@ ON CONFLICT (id) DO UPDATE SET
   is_online = EXCLUDED.is_online,
   opening_time = EXCLUDED.opening_time;
 
+-- ----------------------------------------------------------------------------
+-- H. PRINT REQUESTS TABLE
+-- ----------------------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS public.print_requests (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id UUID REFERENCES auth.users(id) ON DELETE SET NULL,
+  customer_name TEXT,
+  customer_email TEXT,
+  customer_phone TEXT,
+  file_name TEXT NOT NULL,
+  file_path TEXT NOT NULL,
+  file_url TEXT,
+  print_type TEXT NOT NULL,
+  copies INTEGER NOT NULL DEFAULT 1,
+  paper TEXT NOT NULL,
+  finishing TEXT DEFAULT 'None',
+  total_amount NUMERIC(10, 2) NOT NULL DEFAULT 0,
+  status TEXT NOT NULL DEFAULT 'pending',
+  email_sent BOOLEAN NOT NULL DEFAULT false,
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+ALTER TABLE public.print_requests ENABLE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS "print_requests_select_policy" ON public.print_requests;
+CREATE POLICY "print_requests_select_policy" ON public.print_requests FOR SELECT USING (true);
+
+DROP POLICY IF EXISTS "print_requests_insert_policy" ON public.print_requests;
+CREATE POLICY "print_requests_insert_policy" ON public.print_requests FOR INSERT WITH CHECK (true);
+
+DROP POLICY IF EXISTS "print_requests_update_policy" ON public.print_requests;
+CREATE POLICY "print_requests_update_policy" ON public.print_requests FOR UPDATE USING (true);
+
+
 

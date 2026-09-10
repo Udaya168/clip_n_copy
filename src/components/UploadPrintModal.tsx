@@ -12,6 +12,8 @@ import {
 import { cn } from "@/lib/utils";
 import { supabase } from "@/lib/supabase";
 
+import { submitPrintRequest } from "@/lib/print-request-service";
+
 export function UploadPrintModal({ onClose, serviceName }: { onClose: () => void; serviceName?: string | null }) {
   const allowedPrintTypes = (() => {
     if (serviceName === "B&W Printing") return ["B&W"];
@@ -41,7 +43,6 @@ export function UploadPrintModal({ onClose, serviceName }: { onClose: () => void
   const [done, setDone] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [uploadedFileUrl, setUploadedFileUrl] = useState<string | null>(null);
-  const [generatedMailtoUrl, setGeneratedMailtoUrl] = useState<string | null>(null);
   const input = useRef<HTMLInputElement>(null);
 
   // Form State
@@ -123,82 +124,37 @@ export function UploadPrintModal({ onClose, serviceName }: { onClose: () => void
     if (!copies || copies < 1) setCopies(1);
   };
 
-  const createMailtoLink = (fileUrl?: string | null) => {
-    const recipient = "clipncopy1@gmail.com";
-    const subject = "Print Order Request – Clip N Copy";
-
-    const bodyLines = [
-      "Print Order Request",
-      "",
-      `Print Type: ${printTypeLabel}`,
-      `Copies: ${copies}`,
-      `Paper: ${paper}`,
-      `Finishing: ${finishing}`,
-      "",
-      `Total Estimate: ₹${total}`,
-      "",
-      `Uploaded File: ${fileName || "Document"}`,
-    ];
-
-    if (fileUrl) {
-      bodyLines.push(`File Download Link: ${fileUrl}`);
-    } else {
-      bodyLines.push("(Note: Please attach the file manually if the link is not generated)");
-    }
-
-    bodyLines.push("");
-    bodyLines.push("Please process this printing request.");
-
-    const bodyText = bodyLines.join("\n");
-    return `mailto:${recipient}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(bodyText)}`;
-  };
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!selectedFile) {
       setFileError("Please upload a file before submitting.");
       return;
     }
+    if (isSubmitting) return;
 
     setIsSubmitting(true);
-    let filePublicUrl: string | null = null;
+    setFileError(null);
 
-    try {
-      // 1. Upload file to Supabase Storage if available
-      const cleanFileName = selectedFile.name.replace(/[^a-zA-Z0-9_.-]/g, "_");
-      const filePath = `print_requests/${Date.now()}_${cleanFileName}`;
-
-      const { data: uploadData, error: uploadError } = await supabase.storage
-        .from("print-files")
-        .upload(filePath, selectedFile, {
-          cacheControl: "3600",
-          upsert: true,
-        });
-
-      if (!uploadError && uploadData) {
-        const { data: urlData } = supabase.storage
-          .from("print-files")
-          .getPublicUrl(filePath);
-        filePublicUrl = urlData?.publicUrl || null;
-      }
-    } catch (err) {
-      console.warn("Storage upload notice (falling back to direct mailto):", err);
-    }
-
-    setUploadedFileUrl(filePublicUrl);
-
-    // 2. Generate mailto URL with pre-filled order specs
-    const mailtoUrl = createMailtoLink(filePublicUrl);
-    setGeneratedMailtoUrl(mailtoUrl);
+    const result = await submitPrintRequest({
+      selectedFile,
+      printType: printTypeLabel,
+      copies,
+      paper,
+      finishing: finishing || "None",
+      totalAmount: total,
+    });
 
     setIsSubmitting(false);
-    setDone(true);
-    toast.success("Opening your mail app with print details pre-filled...");
 
-    // 3. Auto-open default Mail app
-    setTimeout(() => {
-      window.location.href = mailtoUrl;
-    }, 400);
+    if (result.success) {
+      setUploadedFileUrl(result.fileUrl || null);
+      setDone(true);
+      toast.success("Print request submitted & emailed to store staff successfully! 📄✨");
+    } else {
+      console.error("[UploadPrintModal] Submit error:", result.error);
+      setFileError(result.error || "Failed to submit print request.");
+      toast.error(result.error || "Failed to submit print request. Please try again.");
+    }
   };
 
   return (
@@ -220,13 +176,17 @@ export function UploadPrintModal({ onClose, serviceName }: { onClose: () => void
               <div className="rounded-full bg-emerald-500/10 p-4">
                 <CheckCircle2 className="size-12 text-emerald-600 animate-bounce" />
               </div>
-              <h3 className="font-display text-2xl font-bold">Opening Email App... ✉️</h3>
+              <h3 className="font-display text-2xl font-bold">Print Request Sent! 📄✉️</h3>
               <p className="text-sm text-muted-foreground max-w-sm mx-auto leading-relaxed">
-                Your print details are pre-filled to <strong className="text-foreground font-semibold">clipncopy1@gmail.com</strong>.
+                Your document and print specifications have been emailed directly to store staff at <strong className="text-foreground font-semibold">udayakatika@gmail.com</strong>.
               </p>
 
               <div className="w-full max-w-sm rounded-2xl border border-border/60 bg-secondary/20 p-4 text-left space-y-2 text-xs">
                 <p className="font-bold text-foreground">Print Order Summary</p>
+                <div className="flex justify-between text-muted-foreground">
+                  <span>File:</span>
+                  <span className="font-semibold text-foreground truncate max-w-[180px]">{fileName}</span>
+                </div>
                 <div className="flex justify-between text-muted-foreground">
                   <span>Type:</span>
                   <span className="font-semibold text-foreground">{printTypeLabel}</span>
@@ -246,17 +206,6 @@ export function UploadPrintModal({ onClose, serviceName }: { onClose: () => void
               </div>
 
               <div className="w-full max-w-sm space-y-3 pt-2">
-                {generatedMailtoUrl && (
-                  <Button
-                    onClick={() => {
-                      window.location.href = generatedMailtoUrl;
-                    }}
-                    className="w-full h-12 rounded-full font-bold text-sm flex items-center justify-center gap-2"
-                  >
-                    <Mail className="size-4" /> Open Email Client Again
-                  </Button>
-                )}
-
                 {uploadedFileUrl && (
                   <a
                     href={uploadedFileUrl}
@@ -269,9 +218,8 @@ export function UploadPrintModal({ onClose, serviceName }: { onClose: () => void
                 )}
 
                 <Button
-                  variant="outline"
                   onClick={onClose}
-                  className="w-full h-11 rounded-full font-semibold text-sm border-border"
+                  className="w-full h-11 rounded-full font-semibold text-sm"
                 >
                   Done
                 </Button>
