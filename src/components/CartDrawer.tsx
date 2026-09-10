@@ -1,8 +1,10 @@
 import { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { Minus, Plus, ShoppingBag, Trash2, X, AlertCircle } from "lucide-react";
+import { Minus, Plus, ShoppingBag, Trash2, X } from "lucide-react";
 import { inr, useShop } from "@/lib/shop-store";
 import { useAuth, isEmailConfirmed } from "@/lib/auth-store";
+import { useStoreStatus } from "@/lib/store-status";
+import { StoreClosedNotice } from "./StoreClosedNotice";
 import { toast } from "sonner";
 
 export function CartDrawer() {
@@ -17,11 +19,10 @@ export function CartDrawer() {
     savings,
     total,
   } = useShop();
+  const { isOnline } = useStoreStatus();
   const { user } = useAuth();
   const navigate = useNavigate();
 
-
-  
   useEffect(() => {
     if (cartOpen) {
       const scrollbarWidth = window.innerWidth - document.documentElement.clientWidth;
@@ -45,6 +46,10 @@ export function CartDrawer() {
 
   const handleCheckoutClick = (e: React.MouseEvent) => {
     e.preventDefault();
+    if (!isOnline) {
+      toast.error("Store is currently closed for new orders.");
+      return;
+    }
     setCartOpen(false);
     // Requirement 6: Check auth & email confirmation status
     if (!user || !isEmailConfirmed(user)) {
@@ -153,6 +158,8 @@ export function CartDrawer() {
 
             {/* SUMMARY FOOTER */}
             <footer className="space-y-4 border-t border-border p-4">
+              <StoreClosedNotice compact />
+
               {/* PRICE SUMMARY */}
               <div className="space-y-1.5 text-sm">
                 <Row label="Total MRP" value={inr(totalMrp)} />
@@ -169,9 +176,10 @@ export function CartDrawer() {
 
               <button
                 onClick={handleCheckoutClick}
+                disabled={!isOnline}
                 className="inline-flex h-12 w-full items-center justify-center rounded-full bg-primary font-semibold text-primary-foreground shadow-glow transition-transform active:scale-98 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed disabled:shadow-none"
               >
-                Proceed to Checkout
+                {isOnline ? "Proceed to Checkout" : "Store is Closed"}
               </button>
             </footer>
           </>

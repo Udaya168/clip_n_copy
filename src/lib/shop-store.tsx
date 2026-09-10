@@ -15,6 +15,7 @@ import {
   mapSupabaseProduct,
   type SupabaseProduct,
 } from "./supabase-products";
+import { evaluateStoreStatus, getStoredStoreSettings } from "./store-status";
 
 type CartLine = { id: string; qty: number; variant?: string };
 
@@ -70,6 +71,22 @@ export function ShopProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const addToCart = useCallback((id: string, qty = 1, variant?: string, openCart = true) => {
+    const status = evaluateStoreStatus(getStoredStoreSettings());
+    if (!status.isOnline) {
+      if (status.storeStatus === "temporarily_closed") {
+        toast.error("Store Temporarily Closed", {
+          description: status.reopenAtFormatted
+            ? `We're not accepting new orders. Reopens on ${status.reopenAtFormatted}.`
+            : "We're currently not accepting new orders.",
+        });
+      } else {
+        toast.error("Store Currently Closed", {
+          description: "We're not accepting new orders at the moment. Please check back later.",
+        });
+      }
+      return;
+    }
+
     const product = byId(id);
     const availableStock = product ? product.stock : 0;
 

@@ -38,6 +38,7 @@ const PAYMENTS = [
 
 import { useStoreStatus, fetchStoreSettings, evaluateStoreStatus } from "@/lib/store-status";
 import { StoreStatusBadge } from "@/components/StoreStatusBadge";
+import { StoreClosedNotice } from "@/components/StoreClosedNotice";
 
 export default function CheckoutPage() {
   const { isOnline } = useStoreStatus();
@@ -629,15 +630,7 @@ export default function CheckoutPage() {
                 </div>
               </div>
 
-              {!isOnline && (
-                <div className="mt-4 rounded-xl border border-destructive/30 bg-destructive/10 p-3.5 text-xs text-destructive flex items-start gap-2.5">
-                  <AlertCircle className="size-4 shrink-0 mt-0.5 text-destructive" />
-                  <div>
-                    <p className="font-bold">Store is currently closed</p>
-                    <p className="opacity-90 mt-0.5">Orders will be available when the store opens.</p>
-                  </div>
-                </div>
-              )}              <button
+              <StoreClosedNotice className="mt-4" compact />              <button
                 type="submit"
                 disabled={isSubmitting || lines.length === 0 || !isOnline}
                 className="mt-6 flex h-12 w-full items-center justify-center gap-2 rounded-full bg-primary font-bold text-primary-foreground shadow-glow hover:bg-primary/90 transition-all cursor-pointer text-sm px-4 disabled:opacity-50 disabled:cursor-not-allowed"

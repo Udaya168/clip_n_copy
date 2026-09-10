@@ -11,10 +11,13 @@ import { setProductsCache } from "@/lib/data";
 import { supabase } from "@/lib/supabase";
 import { acceptOrderInDb, rejectOrderInDb } from "@/lib/orders-store";
 import { triggerOrderAcceptanceEmail, triggerOrderRejectionEmail } from "@/lib/order-email-service";
+import { AdminSettingsStoreStatusCard } from "./AdminSettingsStoreStatusCard";
 import { Sliders, ShieldCheck, BellRing, VolumeX, Eye, X, CheckCircle2, XCircle, Loader2 } from "lucide-react";
 import { AdminNotificationProvider, useAdminNotifications } from "@/lib/admin-notification-context";
 import { inr } from "@/lib/shop-store";
 import { toast } from "sonner";
+
+import { NewOrderAlertModal } from "./NewOrderAlertModal";
 
 export function AdminLayout() {
   return (
@@ -87,7 +90,27 @@ function AdminLayoutInner() {
       }
 
       if (data && data.length > 0) {
-        const rawItems = data as SupabaseProduct[];
+        const rawItems = (data as SupabaseProduct[]).filter((p) => {
+          const n = (p.name || "").toLowerCase().trim();
+          const c = (p.category || "").toLowerCase();
+          const id = (p.id || "").toLowerCase();
+          return !(
+            c === "books" ||
+            n.includes("python") ||
+            n.includes("data structure") ||
+            n.includes("data sturcture") ||
+            n.includes("engineering math") ||
+            n.includes("engineering mathematics") ||
+            n.includes("exam guide") ||
+            n.includes("competitive") ||
+            n.includes("robotics") ||
+            n.includes("mini stapler") ||
+            id.includes("mini-stapler") ||
+            n.includes("oil pastel set") ||
+            (n.includes("oil pastel") && n.includes("24")) ||
+            id.includes("oil-pastel")
+          );
+        });
         setProducts(rawItems);
         const mapped = rawItems.map(mapSupabaseProduct);
         setProductsCache(mapped);
@@ -149,85 +172,16 @@ function AdminLayoutInner() {
       <div className="flex flex-1 flex-col min-w-0">
         <AdminHeader title={titles[activeTab]} onSelectOrder={handleSelectOrderFromHeader} />
 
-        {/* PROMINENT REAL-TIME NEW ORDER FLOATING NOTIFICATION (CENTERED & STICKY) */}
-        {latestNotification && (!latestNotification.acknowledged || activeAlarm) && (
-          <div className="fixed top-[40%] left-1/2 -translate-x-1/2 -translate-y-1/2 z-[100] w-[92vw] max-w-2xl rounded-3xl border-2 border-primary/40 bg-card/95 backdrop-blur-md p-5 shadow-2xl ring-2 ring-primary/20 animate-in zoom-in-95 fade-in duration-300">
-            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-              <div className="flex items-start gap-3">
-                <div className="grid size-11 place-items-center rounded-2xl bg-primary text-primary-foreground shrink-0 shadow-lg animate-bounce">
-                  <BellRing className="size-6" />
-                </div>
-                <div>
-                  <div className="flex items-center gap-2">
-                    <span className="font-display text-sm font-extrabold uppercase tracking-wider text-primary">
-                      🔔 New Order Received!
-                    </span>
-                    <span className="inline-flex items-center px-2.5 py-0.5 rounded-full bg-emerald-500/15 text-emerald-700 dark:text-emerald-400 font-extrabold text-[10px] tracking-wide">
-                      JUST NOW
-                    </span>
-                  </div>
-                  <p className="mt-0.5 text-xs text-foreground font-bold">
-                    Order #{latestNotification.orderNumber} — {latestNotification.customerName} {latestNotification.customerPhone ? `(${latestNotification.customerPhone})` : ""}
-                  </p>
-                  <p className="text-xs text-muted-foreground font-semibold mt-0.5">
-                    Total: <span className="text-primary font-black">{inr(latestNotification.totalAmount)}</span> ({latestNotification.itemsCount} {latestNotification.itemsCount === 1 ? "item" : "items"})
-                  </p>
-                </div>
-              </div>
-
-              <div className="flex flex-wrap items-center gap-2 self-start md:self-center">
-                <button
-                  type="button"
-                  disabled={isAccepting}
-                  onClick={handleAcceptOrder}
-                  className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold text-xs shadow-md transition-all cursor-pointer disabled:opacity-50"
-                >
-                  {isAccepting ? <Loader2 className="size-3.5 animate-spin" /> : <CheckCircle2 className="size-3.5" />}
-                  Accept Order
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() => setRejectModalOpen(true)}
-                  className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-destructive/10 text-destructive hover:bg-destructive/20 border border-destructive/30 font-extrabold text-xs transition-all cursor-pointer"
-                >
-                  <XCircle className="size-3.5" />
-                  Reject Order
-                </button>
-
-                {activeAlarm && (
-                  <button
-                    type="button"
-                    onClick={stopAlarm}
-                    className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl bg-secondary text-secondary-foreground hover:bg-secondary/80 text-xs font-bold transition-all cursor-pointer border border-border"
-                  >
-                    <VolumeX className="size-3.5" /> Stop Alarm
-                  </button>
-                )}
-
-                <button
-                  type="button"
-                  onClick={() => {
-                    acknowledgeNotification(latestNotification.id);
-                    setActiveTab("orders");
-                  }}
-                  className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl bg-primary text-primary-foreground hover:bg-primary/90 text-xs font-bold shadow-md transition-all cursor-pointer"
-                >
-                  <Eye className="size-3.5" /> View Order Details
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() => acknowledgeNotification(latestNotification.id)}
-                  className="p-1.5 text-muted-foreground hover:text-foreground rounded-lg transition-colors"
-                  title="Dismiss notification"
-                >
-                  <X className="size-4" />
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
+        {/* PROMINENT REAL-TIME NEW ORDER MODAL */}
+        <NewOrderAlertModal
+          notification={latestNotification && (!latestNotification.acknowledged || activeAlarm) ? latestNotification : null}
+          activeAlarm={activeAlarm}
+          isAccepting={isAccepting}
+          onAcceptOrder={handleAcceptOrder}
+          onRejectOrder={() => setRejectModalOpen(true)}
+          onStopAlarm={stopAlarm}
+          onDismiss={() => latestNotification && acknowledgeNotification(latestNotification.id)}
+        />
 
         <RejectOrderModal
           orderId={latestNotification?.orderId ?? null}
@@ -266,7 +220,9 @@ function AdminLayoutInner() {
           {activeTab === "orders" && <OrderManagement />}
 
           {activeTab === "settings" && (
-            <div className="space-y-6">
+            <div className="space-y-6 max-w-4xl">
+              <AdminSettingsStoreStatusCard />
+
               <div className="rounded-3xl border border-border bg-background p-6 shadow-soft">
                 <h2 className="font-display text-xl font-bold flex items-center gap-2">
                   <Sliders className="size-5 text-primary" /> Admin Settings & Configuration

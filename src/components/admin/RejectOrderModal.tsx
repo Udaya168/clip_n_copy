@@ -55,7 +55,7 @@ export function RejectOrderModal({
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && !isSubmitting && onClose()}>
-      <DialogContent className="max-w-md w-full rounded-3xl p-6 border border-border bg-background shadow-2xl space-y-5">
+      <DialogContent className="max-w-md w-full rounded-3xl p-6 border border-border bg-background shadow-2xl space-y-5 z-[160]">
         <div>
           <div className="flex items-center gap-2 text-destructive font-display text-lg font-black">
             <AlertTriangle className="size-5 shrink-0" />

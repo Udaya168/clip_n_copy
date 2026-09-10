@@ -89,6 +89,7 @@ export function HeroSection() {
   );
 
   const onSelect = useCallback((api: CarouselApi) => {
+    if (!api) return;
     setActiveIndex(api.selectedScrollSnap());
   }, []);
 

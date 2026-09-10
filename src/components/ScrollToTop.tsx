@@ -69,6 +69,7 @@ export function ScrollToTop() {
       });
       // Ensure we clear out old saved position if it happens to exist
       sessionStorage.setItem(`scroll-pos-${location.key}`, "0");
+      return undefined;
     }
   }, [location.key, navigationType]);
 

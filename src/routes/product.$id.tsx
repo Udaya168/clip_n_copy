@@ -16,6 +16,8 @@ import {
   type SupabaseProduct,
 } from "@/lib/supabase-products";
 import { inr, useShop } from "@/lib/shop-store";
+import { useStoreStatus } from "@/lib/store-status";
+import { StoreClosedNotice } from "@/components/StoreClosedNotice";
 import { cn } from "@/lib/utils";
 
 const getGradient = (name: string) => {
@@ -30,6 +32,7 @@ export default function ProductDetailsPage() {
   const { data: products = [], isLoading } = useSupabaseProducts();
   const product = products.find((p) => String(p.id) === id || String(p.id).toLowerCase() === id?.toLowerCase());
   const { addToCart, toggleWishlist, inWishlist, setCartOpen } = useShop();
+  const { isOnline } = useStoreStatus();
   const [qty, setQty] = useState(1);
   const [active, setActive] = useState(0);
   const [api, setApi] = useState<CarouselApi>();
@@ -51,7 +54,9 @@ export default function ProductDetailsPage() {
 
   useEffect(() => {
     if (product?.variants?.length && !selectedVariant) {
-      setSelectedVariant(product.variants[0].name);
+      if (product.variants[0]?.name) {
+        setSelectedVariant(product.variants[0].name);
+      }
     }
   }, [product, selectedVariant]);
 
@@ -206,8 +211,8 @@ export default function ProductDetailsPage() {
                       key={v.name}
                       onClick={() => {
                         setSelectedVariant(v.name);
-                        const firstImg = v.images[0];
-                        const idx = allImages.indexOf(firstImg);
+                        const firstImg = v.images?.[0];
+                        const idx = firstImg ? allImages.indexOf(firstImg) : -1;
                         if (idx !== -1) {
                           setActive(idx);
                           api?.scrollTo(idx);
@@ -261,21 +266,23 @@ export default function ProductDetailsPage() {
               </div>
             </div>
 
+            <StoreClosedNotice className="mt-4" />
+
             <div className="mt-6 grid gap-2 sm:grid-cols-2">
               <button
                 onClick={() => addToCart(product.id, qty, selectedVariant || undefined)}
-                disabled={product.stock <= 0}
+                disabled={product.stock <= 0 || !isOnline}
                 className={cn(
                   "inline-flex h-12 items-center justify-center gap-2 rounded-full font-semibold transition-colors",
-                  product.stock <= 0
+                  product.stock <= 0 || !isOnline
                     ? "cursor-not-allowed bg-muted text-muted-foreground opacity-60"
                     : "bg-ink text-ink-foreground hover:bg-primary",
                 )}
               >
                 <ShoppingBag className="size-4" />{" "}
-                {product.stock <= 0 ? "Out of Stock" : "Add to Cart"}
+                {!isOnline ? "Store is Closed" : product.stock <= 0 ? "Out of Stock" : "Add to Cart"}
               </button>
-              {product.stock > 0 ? (
+              {product.stock > 0 && isOnline ? (
                 <Link
                   to="/checkout"
                   onClick={() => {
@@ -291,7 +298,7 @@ export default function ProductDetailsPage() {
                   disabled
                   className="inline-flex h-12 items-center justify-center rounded-full bg-muted font-bold text-muted-foreground cursor-not-allowed opacity-60"
                 >
-                  Out of Stock
+                  {!isOnline ? "Store is Closed" : "Out of Stock"}
                 </button>
               )}
             </div>

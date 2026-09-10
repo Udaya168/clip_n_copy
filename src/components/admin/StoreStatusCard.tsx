@@ -59,7 +59,7 @@ export function StoreStatusCard() {
                     )}
                   />
                 </span>
-                {isOnline ? "🟢 Online" : "🔴 Offline"}
+                {isOnline ? "ONLINE" : "OFFLINE"}
               </span>
             </div>
             <p className="text-xs text-muted-foreground mt-0.5">

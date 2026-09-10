@@ -15,6 +15,11 @@ export interface AdminOrderNotification {
   orderNumber: string;
   customerName: string;
   customerPhone?: string;
+  customerEmail?: string;
+  address?: string;
+  paymentMethod?: string;
+  fulfillmentType?: string;
+  deliveryMethod?: string;
   totalAmount: number;
   itemsCount: number;
   createdAt: string;
@@ -160,6 +165,11 @@ export function AdminNotificationProvider({ children }: { children: React.ReactN
       const itemsCount = Number(orderPayload.items_count || orderPayload.itemsCount || 1);
       const customerName = String(orderPayload.customer_name || orderPayload.customerName || "Customer");
       const customerPhone = orderPayload.customer_phone || orderPayload.customerPhone;
+      const customerEmail = orderPayload.customer_email || orderPayload.customerEmail;
+      const address = orderPayload.address || orderPayload.shipping_address;
+      const paymentMethod = orderPayload.payment_method || orderPayload.paymentMethod;
+      const fulfillmentType = orderPayload.fulfillment_type || orderPayload.fulfillmentType;
+      const deliveryMethod = orderPayload.delivery_method || orderPayload.deliveryMethod;
 
       const newNotif: AdminOrderNotification = {
         id: `notif-${orderId}-${Date.now()}`,
@@ -167,6 +177,11 @@ export function AdminNotificationProvider({ children }: { children: React.ReactN
         orderNumber: orderNumber,
         customerName: customerName,
         customerPhone: customerPhone,
+        customerEmail: customerEmail,
+        address: address,
+        paymentMethod: paymentMethod,
+        fulfillmentType: fulfillmentType,
+        deliveryMethod: deliveryMethod,
         totalAmount: totalAmount,
         itemsCount: itemsCount,
         createdAt: orderPayload.created_at || new Date().toISOString(),
@@ -177,25 +192,20 @@ export function AdminNotificationProvider({ children }: { children: React.ReactN
       // Add to notifications list
       setNotifications((prev) => [newNotif, ...prev.filter((n) => n.orderId !== orderId)]);
 
-      // 3. Start 10-SECOND AUDIO ALARM SOUND
+      // 3. Start CONTINUOUS LOUD AUDIO ALARM SOUND
       orderAlarm.unlock();
       setActiveAlarm(true);
 
-      // Clear any previous sound timer
+      // Clear any previous backup sound timer
       if (soundTimerRef.current) {
         clearTimeout(soundTimerRef.current);
+        soundTimerRef.current = null;
       }
 
-      // Start alarm sound for maximum 10 seconds
-      orderAlarm.start(10000, () => {
+      // Start alarm sound continuously (0 = loop indefinitely until owner acknowledges)
+      orderAlarm.start(0, () => {
         setActiveAlarm(false);
       });
-
-      // Backup 10-second timer to ensure activeAlarm state resets
-      soundTimerRef.current = setTimeout(() => {
-        orderAlarm.stop();
-        setActiveAlarm(false);
-      }, 10000);
 
       // 4. Trigger In-App Toast Popup with full order details
       toast.custom(
@@ -318,16 +328,7 @@ export function AdminNotificationProvider({ children }: { children: React.ReactN
       setNotifications((prev) =>
         prev.map((n) => (n.id === id || n.orderId === id ? { ...n, acknowledged: true, read: true } : n))
       );
-      // If no unacknowledged notifications remain, stop alarm
-      setTimeout(() => {
-        setNotifications((current) => {
-          const hasUnacknowledged = current.some((n) => !n.acknowledged);
-          if (!hasUnacknowledged) {
-            stopAlarm();
-          }
-          return current;
-        });
-      }, 0);
+      stopAlarm();
     },
     [stopAlarm]
   );

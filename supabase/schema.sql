@@ -448,9 +448,16 @@ ON CONFLICT (code) DO UPDATE SET
 CREATE TABLE IF NOT EXISTS public.store_settings (
   id TEXT PRIMARY KEY DEFAULT 'global',
   is_online BOOLEAN DEFAULT true,
+  store_status TEXT DEFAULT 'open',
+  closure_type TEXT DEFAULT NULL,
+  reopen_at TIMESTAMPTZ DEFAULT NULL,
+  closure_message TEXT DEFAULT NULL,
+  auto_reopen BOOLEAN DEFAULT true,
   opening_time TEXT DEFAULT '09:00:00',
   manual_mode TEXT DEFAULT 'auto',
-  updated_at TIMESTAMPTZ DEFAULT NOW()
+  auto_closed_at TIMESTAMPTZ DEFAULT NULL,
+  updated_at TIMESTAMPTZ DEFAULT NOW(),
+  updated_by TEXT DEFAULT NULL
 );
 
 ALTER TABLE public.store_settings ENABLE ROW LEVEL SECURITY;
@@ -461,8 +468,8 @@ CREATE POLICY "store_settings_select_policy" ON public.store_settings FOR SELECT
 DROP POLICY IF EXISTS "store_settings_admin_policy" ON public.store_settings;
 CREATE POLICY "store_settings_admin_policy" ON public.store_settings FOR ALL USING (public.is_admin() OR auth.role() = 'authenticated');
 
-INSERT INTO public.store_settings (id, is_online, opening_time, manual_mode)
-VALUES ('global', true, '09:00:00', 'auto')
+INSERT INTO public.store_settings (id, is_online, store_status, opening_time, manual_mode)
+VALUES ('global', true, 'open', '09:00:00', 'auto')
 ON CONFLICT (id) DO UPDATE SET
   is_online = EXCLUDED.is_online,
   opening_time = EXCLUDED.opening_time;

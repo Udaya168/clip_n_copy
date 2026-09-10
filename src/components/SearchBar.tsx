@@ -59,7 +59,7 @@ export function isProductMatch(p: Product, searchTerm: string): boolean {
 
 export function SearchBar({ className, autoFocus }: { className?: string; autoFocus?: boolean }) {
   const navigate = useNavigate();
-  const routeSearch = useSearchParams({ strict: false }) as { q?: string; category?: string };
+  const routeSearch = (useSearchParams as any)({ strict: false }) as { q?: string; category?: string };
 
   const [q, setQ] = useState("");
   const [open, setOpen] = useState(false);
