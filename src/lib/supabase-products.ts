@@ -49,14 +49,78 @@ export function normalizeCategorySlug(category: string): string {
   return lower.replace(/\s+/g, "-");
 }
 
+export function getCategoryFallbackImage(category?: string | null): string {
+  const normalizedCategory = normalizeCategorySlug(category || "");
+  return CATEGORY_FALLBACK_IMAGES[normalizedCategory] || imgNotebooks;
+}
+
+export function resolveProductImageUrl(p?: {
+  image_url?: string | null | undefined;
+  image?: string | null | undefined;
+  category?: string | null | undefined;
+} | null): string {
+  if (!p) return imgNotebooks;
+  const fallbackImage = getCategoryFallbackImage(p.category);
+
+  let rawUrl = (p.image_url && p.image_url.trim() !== "")
+    ? p.image_url.trim()
+    : (p.image && p.image.trim() !== "")
+      ? p.image.trim()
+      : null;
+
+  if (!rawUrl) {
+    return fallbackImage;
+  }
+
+  // If full URL (http://, https://, or data:), return as is
+  if (rawUrl.startsWith("http://") || rawUrl.startsWith("https://") || rawUrl.startsWith("data:")) {
+    return rawUrl;
+  }
+
+  // If absolute path starting with `/`
+  if (rawUrl.startsWith("/")) {
+    if (rawUrl.startsWith("/products/")) {
+      return rawUrl.replace(/\.(jpg|jpeg|png)$/i, ".webp");
+    }
+    return rawUrl;
+  }
+
+  // If relative path starting with `products/`
+  if (rawUrl.startsWith("products/")) {
+    return "/" + rawUrl.replace(/\.(jpg|jpeg|png)$/i, ".webp");
+  }
+
+  // If relative path from Supabase storage (e.g. `product-images/filename.jpg` or `product_images/filename.jpg`)
+  if (rawUrl.includes("/")) {
+    const parts = rawUrl.split("/");
+    const bucket = parts[0];
+    const path = parts.slice(1).join("/");
+    try {
+      const { data } = supabase.storage.from(bucket).getPublicUrl(path);
+      if (data?.publicUrl) {
+        return data.publicUrl;
+      }
+    } catch {
+      // ignore storage error fallback
+    }
+  } else {
+    // Single filename stored in Supabase storage default bucket `product-images`
+    try {
+      const { data } = supabase.storage.from("product-images").getPublicUrl(rawUrl);
+      if (data?.publicUrl) {
+        return data.publicUrl;
+      }
+    } catch {
+      // ignore storage error fallback
+    }
+  }
+
+  return "/" + rawUrl;
+}
+
 export function mapSupabaseProduct(p: SupabaseProduct): Product {
   const normalizedCategory = normalizeCategorySlug(p.category);
-  const fallbackImage = CATEGORY_FALLBACK_IMAGES[normalizedCategory] || imgNotebooks;
-  let rawUrl = p.image_url && p.image_url.trim() !== "" ? p.image_url : null;
-  if (rawUrl && rawUrl.startsWith('/products/')) {
-    rawUrl = rawUrl.replace(/\.(jpg|jpeg|png)$/i, '.webp');
-  }
-  let image = rawUrl || fallbackImage;
+  let image = resolveProductImageUrl(p);
   const price = Number(p.price) || 0;
   const rawMrp = Number(p.original_price ?? p.price) || price;
   const mrp = rawMrp < price ? price : rawMrp;

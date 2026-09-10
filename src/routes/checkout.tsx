@@ -15,6 +15,7 @@ import {
 import { inr, useShop } from "@/lib/shop-store";
 import { useAuth, isEmailConfirmed } from "@/lib/auth-store";
 import { saveOrderViaRpc, saveOrder, OrderRecord } from "@/lib/orders-store";
+import { triggerOrderConfirmationEmail } from "@/lib/order-email-service";
 import { UserAddress, fetchUserAddresses, addUserAddress } from "@/lib/address-store";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
@@ -24,7 +25,7 @@ import { useAppBack } from "@/lib/useAppBack";
 
 
 const DELIVERY = [
-  { id: "standard", label: "Standard Delivery", note: "2–3 days · Free above ₹400", icon: Truck },
+  { id: "standard", label: "Standard Delivery", note: "2–3 days · Standard delivery", icon: Truck },
   { id: "express", label: "Express Delivery", note: "Same day before 7 PM · ₹150", icon: Zap },
   { id: "pickup", label: "Store Pickup", note: "Ready in 30 min at Kundalahalli", icon: Store },
 ];
@@ -146,7 +147,6 @@ export default function CheckoutPage() {
   const finalAmount = total + shipping;
 
   if (placed && createdOrder) {
-    const isPendingPayment = createdOrder.paymentStatus === "Payment Pending";
     return (
       <ShopLayout>
         <div className="section-shell flex min-h-[60vh] items-center justify-center py-16">
@@ -173,19 +173,6 @@ export default function CheckoutPage() {
               <p><span className="font-bold text-foreground">Customer:</span> {createdOrder.customerName} ({createdOrder.customerPhone || "N/A"})</p>
               <p><span className="font-bold text-foreground">Delivery:</span> {createdOrder.deliveryMethod} — {createdOrder.address}</p>
               <p><span className="font-bold text-foreground">Payment Method:</span> {createdOrder.paymentMethod}</p>
-              {isPendingPayment && (
-                <div className="mt-2 pt-2 border-t border-primary/20 flex flex-col gap-1.5">
-                  <div className="flex items-center justify-between gap-2 flex-wrap">
-                    <span className="font-bold text-foreground">Payment Status:</span>
-                    <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-amber-500/15 text-amber-700 dark:text-amber-400 font-extrabold text-[10px] uppercase tracking-wider">
-                      Payment Pending (Awaiting Verification)
-                    </span>
-                  </div>
-                  <p className="text-[11px] text-muted-foreground italic mt-1 leading-normal">
-                    Your order is registered with Payment Pending status and will be verified by our merchant team shortly.
-                  </p>
-                </div>
-              )}
             </div>
 
             <Link
@@ -310,6 +297,10 @@ export default function CheckoutPage() {
       setCreatedOrder(saved);
       setPlaced(true);
       clearCart();
+
+      // Trigger automatic order confirmation email
+      triggerOrderConfirmationEmail(saved.id, saved.orderNumber);
+
       window.dispatchEvent(new Event("cnc-order-placed"));
       toast.success(`Order ${saved.orderNumber} placed successfully!`);
     }
@@ -646,21 +637,9 @@ export default function CheckoutPage() {
                     <p className="opacity-90 mt-0.5">Orders will be available when the store opens.</p>
                   </div>
                 </div>
-              )}
-
-              {subtotal < 400 && (
-                <div className="mt-4 rounded-xl border border-amber-500/30 bg-amber-500/10 p-3.5 text-xs text-amber-700 dark:text-amber-400 flex items-start gap-2.5">
-                  <AlertCircle className="size-4 shrink-0 mt-0.5 text-amber-600 dark:text-amber-400" />
-                  <div>
-                    <p className="font-bold">Minimum order value is ₹400</p>
-                    <p className="opacity-90 mt-0.5 font-medium">Add {inr(400 - subtotal)} more to proceed.</p>
-                  </div>
-                </div>
-              )}
-
-              <button
+              )}              <button
                 type="submit"
-                disabled={isSubmitting || lines.length === 0 || !isOnline || subtotal < 400}
+                disabled={isSubmitting || lines.length === 0 || !isOnline}
                 className="mt-6 flex h-12 w-full items-center justify-center gap-2 rounded-full bg-primary font-bold text-primary-foreground shadow-glow hover:bg-primary/90 transition-all cursor-pointer text-sm px-4 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {isSubmitting ? (
@@ -669,8 +648,6 @@ export default function CheckoutPage() {
                   </>
                 ) : !isOnline ? (
                   "Store is Closed"
-                ) : subtotal < 400 ? (
-                  "Minimum Order ₹400"
                 ) : (
                   `Place Order (${inr(finalAmount)})`
                 )}

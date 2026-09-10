@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { Dialog, DialogContent, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { OrderRecord, OrderItemRecord, fetchOrderItems, updateOrderStatus, updateOrderPaymentStatus } from "@/lib/orders-store";
+import { resolveProductImageUrl, getCategoryFallbackImage } from "@/lib/supabase-products";
 import { inr } from "@/lib/shop-store";
 import { byId } from "@/lib/data";
 import {
@@ -32,7 +33,6 @@ interface AdminOrderDetailsModalProps {
   isOpen: boolean;
   onClose: () => void;
   onStatusUpdated?: (orderId: string, newStatus: OrderStatusType) => void;
-  onPaymentStatusUpdated?: (orderId: string, newPaymentStatus: string) => void;
 }
 
 export function AdminOrderDetailsModal({
@@ -40,21 +40,16 @@ export function AdminOrderDetailsModal({
   isOpen,
   onClose,
   onStatusUpdated,
-  onPaymentStatusUpdated,
 }: AdminOrderDetailsModalProps) {
   const [items, setItems] = useState<OrderItemRecord[]>([]);
   const [loadingItems, setLoadingItems] = useState<boolean>(true);
   const [itemsError, setItemsError] = useState<string | null>(null);
   const [currentStatus, setCurrentStatus] = useState<OrderStatusType>("Processing");
-  const [currentPaymentStatus, setCurrentPaymentStatus] = useState<string>("Payment Pending");
   const [isUpdatingStatus, setIsUpdatingStatus] = useState<boolean>(false);
-  const [isUpdatingPaymentStatus, setIsUpdatingPaymentStatus] = useState<boolean>(false);
 
   useEffect(() => {
     if (order) {
       setCurrentStatus(order.status as OrderStatusType);
-      const defaultPayStatus = order.paymentStatus || (order.paymentMethod === "COD" ? "COD / Pending" : "Payment Pending");
-      setCurrentPaymentStatus(defaultPayStatus);
       loadItems(order.id);
     }
   }, [order]);
@@ -87,23 +82,6 @@ export function AdminOrderDetailsModal({
       toast.error("Failed to update order status");
     } finally {
       setIsUpdatingStatus(false);
-    }
-  };
-
-  const handlePaymentStatusChange = async (newPaymentStatus: string) => {
-    if (!order || isUpdatingPaymentStatus) return;
-    setIsUpdatingPaymentStatus(true);
-    try {
-      await updateOrderPaymentStatus(order.id, newPaymentStatus);
-      setCurrentPaymentStatus(newPaymentStatus);
-      toast.success(`Order #${order.orderNumber} payment status updated to ${newPaymentStatus}`);
-      if (onPaymentStatusUpdated) {
-        onPaymentStatusUpdated(order.id, newPaymentStatus);
-      }
-    } catch (err) {
-      toast.error("Failed to update payment status");
-    } finally {
-      setIsUpdatingPaymentStatus(false);
     }
   };
 
@@ -219,7 +197,7 @@ export function AdminOrderDetailsModal({
               <ul className="divide-y divide-border">
                 {items.map((item) => {
                   const catalogProd = item.product_id ? byId(item.product_id) : null;
-                  const itemImg = item.image_url || catalogProd?.image || "/products/reynolds-trimax.webp";
+                  const itemImg = resolveProductImageUrl({ image_url: item.image_url, image: catalogProd?.image, category: catalogProd?.category });
                   const itemSubtotal = item.price * item.quantity;
 
                   return (
@@ -229,7 +207,7 @@ export function AdminOrderDetailsModal({
                         alt={item.product_name}
                         className="size-12 rounded-xl object-cover border border-border shrink-0 bg-secondary"
                         onError={(e) => {
-                          (e.target as HTMLElement).setAttribute("src", "/products/reynolds-trimax.webp");
+                          (e.target as HTMLImageElement).src = getCategoryFallbackImage(catalogProd?.category);
                         }}
                       />
                       <div className="flex-1 min-w-0">
@@ -266,25 +244,10 @@ export function AdminOrderDetailsModal({
               <CreditCard className="size-3.5 text-primary" /> Payment Details
             </h3>
             
-            <div className="grid grid-cols-3 gap-3 border-b border-border pb-3">
+            <div className="grid grid-cols-2 gap-3 border-b border-border pb-3">
               <div>
                 <p className="text-muted-foreground text-[11px]">Payment Method</p>
                 <p className="font-bold text-foreground mt-0.5">{displayPaymentMethod}</p>
-              </div>
-              <div>
-                <p className="text-muted-foreground text-[11px]">Current Payment Status</p>
-                <span
-                  className={cn(
-                    "inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-extrabold uppercase mt-0.5",
-                    currentPaymentStatus === "Paid"
-                      ? "bg-emerald-500/10 text-emerald-600"
-                      : currentPaymentStatus === "Failed"
-                      ? "bg-destructive/10 text-destructive"
-                      : "bg-amber-500/10 text-amber-600"
-                  )}
-                >
-                  {currentPaymentStatus}
-                </span>
               </div>
               <div>
                 <p className="text-muted-foreground text-[11px]">Order Total</p>
@@ -318,32 +281,6 @@ export function AdminOrderDetailsModal({
                 <span>Final Total</span>
                 <span className="text-primary">{inr(finalTotal)}</span>
               </div>
-            </div>
-          </div>
-
-          {/* Section 4: Payment Status Control */}
-          <div className="rounded-2xl border border-border p-4 bg-card flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-            <div>
-              <p className="text-xs font-bold text-foreground flex items-center gap-1.5">
-                <ShieldCheck className="size-3.5 text-primary" /> Update Payment Status
-              </p>
-              <p className="text-[11px] text-muted-foreground mt-0.5">
-                Manually verify UPI/QR Payment before marking as Paid.
-              </p>
-            </div>
-
-            <div className="flex items-center gap-3">
-              <select
-                value={currentPaymentStatus}
-                disabled={isUpdatingPaymentStatus}
-                onChange={(e) => handlePaymentStatusChange(e.target.value)}
-                className="rounded-xl border border-border bg-background px-3 py-2 text-xs font-bold text-foreground focus:ring-2 focus:ring-primary focus:outline-none cursor-pointer disabled:opacity-50"
-              >
-                <option value="Payment Pending">Payment Pending</option>
-                <option value="Paid">Paid</option>
-                <option value="Failed">Failed</option>
-                <option value="Pending / COD">Pending / COD</option>
-              </select>
             </div>
           </div>
 

@@ -1,5 +1,5 @@
 import { useState, useMemo } from "react";
-import { SupabaseProduct } from "@/lib/supabase-products";
+import { SupabaseProduct, resolveProductImageUrl, getCategoryFallbackImage } from "@/lib/supabase-products";
 import { inr } from "@/lib/shop-store";
 import { StockManager, StockActionType } from "./StockManager";
 import { Search, Plus, Minus, Edit3, Trash2, Boxes, RefreshCw } from "lucide-react";
@@ -136,9 +136,12 @@ export function InventoryManagement({
                       <td className="py-3 px-4">
                         <div className="flex items-center gap-3">
                           <img
-                            src={p.image_url || "/placeholder.png"}
+                            src={resolveProductImageUrl(p)}
                             alt={p.name}
                             className="size-10 rounded-xl border border-border object-cover shrink-0"
+                            onError={(e) => {
+                              (e.target as HTMLImageElement).src = getCategoryFallbackImage(p.category);
+                            }}
                           />
                           <div className="min-w-0">
                             <p className="font-bold text-foreground truncate max-w-48 sm:max-w-64">

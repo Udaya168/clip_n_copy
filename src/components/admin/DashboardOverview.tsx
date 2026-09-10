@@ -1,5 +1,5 @@
 import { useMemo, useState, useEffect } from "react";
-import { SupabaseProduct } from "@/lib/supabase-products";
+import { SupabaseProduct, resolveProductImageUrl, getCategoryFallbackImage } from "@/lib/supabase-products";
 import { fetchAllOrders, OrderRecord } from "@/lib/orders-store";
 import { inr } from "@/lib/shop-store";
 import {
@@ -509,11 +509,14 @@ export function DashboardOverview({
                         <td className="px-6 py-3">
                           <div className="flex items-center gap-3">
                             <div className="size-8 rounded-lg bg-secondary border border-border overflow-hidden shrink-0 flex items-center justify-center">
-                              {p.image_url ? (
-                                <img src={p.image_url} alt={p.name} className="size-full object-cover" />
-                              ) : (
-                                <Package className="size-4 text-muted-foreground" />
-                              )}
+                              <img
+                                src={resolveProductImageUrl(p)}
+                                alt={p.name}
+                                className="size-full object-cover"
+                                onError={(e) => {
+                                  (e.target as HTMLImageElement).src = getCategoryFallbackImage(p.category);
+                                }}
+                              />
                             </div>
                             <span className="font-medium line-clamp-1">{p.name}</span>
                           </div>

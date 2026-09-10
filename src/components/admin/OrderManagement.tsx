@@ -131,7 +131,7 @@ export function OrderManagement() {
                 <th className="px-5 py-3.5">Date</th>
                 <th className="px-5 py-3.5">Fulfillment</th>
                 <th className="px-5 py-3.5">Total</th>
-                <th className="px-5 py-3.5">Payment</th>
+                <th className="px-5 py-3.5">Payment Method</th>
                 <th className="px-5 py-3.5">Order Status</th>
                 <th className="px-5 py-3.5 text-right">Update Status</th>
               </tr>
@@ -175,22 +175,8 @@ export function OrderManagement() {
                         {o.itemsCount} {o.itemsCount === 1 ? "item" : "items"}
                       </span>
                     </td>
-                    <td className="px-5 py-4">
-                      <span
-                        className={cn(
-                          "inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-extrabold uppercase",
-                          o.paymentStatus === "Paid"
-                            ? "bg-emerald-500/10 text-emerald-600"
-                            : o.paymentStatus === "Failed"
-                            ? "bg-destructive/10 text-destructive"
-                            : "bg-amber-500/10 text-amber-600"
-                        )}
-                      >
-                        {o.paymentStatus || (o.paymentMethod === "COD" ? "COD / Pending" : "Payment Pending")}
-                      </span>
-                      <span className="block text-[10px] text-muted-foreground font-medium mt-0.5">
-                        {o.paymentMethod || "UPI"}
-                      </span>
+                    <td className="px-5 py-4 font-semibold text-foreground">
+                      {o.paymentMethod || "UPI"}
                     </td>
                     <td className="px-5 py-4">
                       <StatusBadge status={o.status} />
@@ -228,12 +214,6 @@ export function OrderManagement() {
           setOrders((prev) => prev.map((o) => (o.id === orderId ? { ...o, status: newStatus } : o)));
           if (selectedOrder && selectedOrder.id === orderId) {
             setSelectedOrder((prev) => (prev ? { ...prev, status: newStatus } : null));
-          }
-        }}
-        onPaymentStatusUpdated={(orderId, newPaymentStatus) => {
-          setOrders((prev) => prev.map((o) => (o.id === orderId ? { ...o, paymentStatus: newPaymentStatus } : o)));
-          if (selectedOrder && selectedOrder.id === orderId) {
-            setSelectedOrder((prev) => (prev ? { ...prev, paymentStatus: newPaymentStatus } : null));
           }
         }}
       />

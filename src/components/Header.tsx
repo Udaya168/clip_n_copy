@@ -132,7 +132,7 @@ export function Header() {
           className="bg-ink py-1.5 text-xs text-ink-foreground marquee-container"
         >
           <div className="animate-marquee md:text-center">
-            Free delivery up to 5 km on orders ₹400 and above &middot; Printing &amp; binding ready in minutes
+            Free delivery up to 5 km &middot; Printing &amp; binding ready in minutes
           </div>
         </motion.div>
 
