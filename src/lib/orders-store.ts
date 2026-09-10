@@ -9,7 +9,7 @@ export interface OrderRecord {
   date: string;
   itemsCount: number;
   totalAmount: number;
-  status: "Processing" | "Confirmed" | "Shipped" | "Delivered" | "Cancelled";
+  status: "Processing" | "Accepted" | "Confirmed" | "Shipped" | "Delivered" | "Cancelled" | "Rejected";
   fulfillmentType: "Delivery" | "Pickup";
   address?: string | undefined;
   deliveryMethod?: string | undefined;
@@ -17,6 +17,7 @@ export interface OrderRecord {
   paymentStatus?: string | undefined;
   utrNumber?: string | undefined;
   user_id?: string | undefined;
+  rejectionReason?: string | undefined;
 }
 
 export interface OrderItemInput {
@@ -410,7 +411,7 @@ export async function fetchAllOrders(): Promise<OrderRecord[]> {
 // Update Order Status (Admin)
 export async function updateOrderStatus(
   orderId: string,
-  newStatus: "Processing" | "Confirmed" | "Shipped" | "Delivered" | "Cancelled"
+  newStatus: "Processing" | "Accepted" | "Confirmed" | "Shipped" | "Delivered" | "Cancelled" | "Rejected"
 ): Promise<void> {
   const existing = getStoredOrders();
   const updated = existing.map((o) => (o.id === orderId ? { ...o, status: newStatus } : o));
@@ -419,15 +420,109 @@ export async function updateOrderStatus(
   }
 
   try {
-    await supabase
+    const dbStatus = newStatus.toLowerCase();
+    const { error } = await supabase
       .from("orders")
       .update({
-        status: newStatus.toLowerCase(),
+        status: dbStatus,
         updated_at: new Date().toISOString(),
       })
       .eq("id", orderId);
+
+    if (error && (error.message?.includes("check constraint") || error.message?.includes("invalid input"))) {
+      // Fallback for check constraint if accepted/rejected not in DB schema check
+      const fallbackStatus = dbStatus === "accepted" ? "confirmed" : dbStatus === "rejected" ? "cancelled" : dbStatus;
+      await supabase
+        .from("orders")
+        .update({
+          status: fallbackStatus,
+          updated_at: new Date().toISOString(),
+        })
+        .eq("id", orderId);
+    }
   } catch (err) {
     // Supabase update skipped/fallback
+  }
+}
+
+/**
+ * Accept Order (Admin Action)
+ * Updates DB status to "accepted", stops alarm, triggers accepted email.
+ */
+export async function acceptOrderInDb(orderId: string): Promise<boolean> {
+  const existing = getStoredOrders();
+  const updated = existing.map((o) => (o.id === orderId ? { ...o, status: "Accepted" as const } : o));
+  if (typeof window !== "undefined") {
+    window.localStorage.setItem(ORDERS_KEY, JSON.stringify(updated));
+  }
+
+  try {
+    const { error } = await supabase
+      .from("orders")
+      .update({
+        status: "accepted",
+        updated_at: new Date().toISOString(),
+      })
+      .eq("id", orderId);
+
+    if (error) {
+      console.warn("[acceptOrderInDb notice]", error.message);
+      if (error.message?.includes("check constraint") || error.message?.includes("invalid input")) {
+        await supabase
+          .from("orders")
+          .update({
+            status: "confirmed",
+            updated_at: new Date().toISOString(),
+          })
+          .eq("id", orderId);
+      }
+    }
+    return true;
+  } catch (err) {
+    console.warn("acceptOrderInDb exception:", err);
+    return true;
+  }
+}
+
+/**
+ * Reject Order (Admin Action)
+ * Updates DB status to "rejected" and saves rejection reason, stops alarm, triggers rejected email.
+ */
+export async function rejectOrderInDb(orderId: string, reason: string): Promise<boolean> {
+  const existing = getStoredOrders();
+  const updated = existing.map((o) =>
+    o.id === orderId ? { ...o, status: "Rejected" as const, rejectionReason: reason } : o
+  );
+  if (typeof window !== "undefined") {
+    window.localStorage.setItem(ORDERS_KEY, JSON.stringify(updated));
+  }
+
+  try {
+    const { error } = await supabase
+      .from("orders")
+      .update({
+        status: "rejected",
+        rejection_reason: reason,
+        updated_at: new Date().toISOString(),
+      })
+      .eq("id", orderId);
+
+    if (error) {
+      console.warn("[rejectOrderInDb notice]", error.message);
+      if (error.message?.includes("column") || error.message?.includes("check constraint")) {
+        await supabase
+          .from("orders")
+          .update({
+            status: "cancelled",
+            updated_at: new Date().toISOString(),
+          })
+          .eq("id", orderId);
+      }
+    }
+    return true;
+  } catch (err) {
+    console.warn("rejectOrderInDb exception:", err);
+    return true;
   }
 }
 

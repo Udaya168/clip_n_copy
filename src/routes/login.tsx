@@ -80,7 +80,7 @@ function SignInPage({ initialSuccessMessage }: { initialSuccessMessage: string |
 }
 
 function LoginForm({ initialSuccessMessage }: { initialSuccessMessage: string | null }) {
-  const { signIn, signInWithPhoneOtp, verifyPhoneOtp, signInWithGoogle, resetPassword, resendConfirmation } = useAuth();
+  const { signIn, signInWithGoogle, resetPassword, resendConfirmation } = useAuth();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const redirect = searchParams.get('redirect');
@@ -92,14 +92,13 @@ function LoginForm({ initialSuccessMessage }: { initialSuccessMessage: string | 
   // Email state
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [rememberMe, setRememberMe] = useState(false);
 
   // Mobile state
   const [phone, setPhone] = useState("");
   const [countryCode, setCountryCode] = useState("+91");
-  const [otpSent, setOtpSent] = useState(false);
-  const [otp, setOtp] = useState("");
-  const [cooldown, setCooldown] = useState(0);
+  const [mobilePassword, setMobilePassword] = useState("");
+
+  const [rememberMe, setRememberMe] = useState(false);
 
   // UI state
   const [loading, setLoading] = useState(false);
@@ -109,18 +108,6 @@ function LoginForm({ initialSuccessMessage }: { initialSuccessMessage: string | 
   const [successMessage, setSuccessMessage] = useState<string | null>(initialSuccessMessage);
   const [showResend, setShowResend] = useState(false);
   const [resetMode, setResetMode] = useState(false);
-
-  useEffect(() => {
-    let timer: any = null;
-    if (cooldown > 0) {
-      timer = setInterval(() => {
-        setCooldown((prev) => prev - 1);
-      }, 1000);
-    }
-    return () => {
-      if (timer) clearInterval(timer);
-    };
-  }, [cooldown]);
 
   const handleGoogleLogin = async () => {
     setErrorMessage(null);
@@ -138,10 +125,11 @@ function LoginForm({ initialSuccessMessage }: { initialSuccessMessage: string | 
     }
   };
 
-  const handleSendOtp = async (e: React.FormEvent) => {
+  const handlePhoneLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setErrorMessage(null);
     setSuccessMessage(null);
+    setShowResend(false);
 
     const cleanPhone = phone.replace(/\D/g, "");
     if (cleanPhone.length !== 10) {
@@ -149,96 +137,50 @@ function LoginForm({ initialSuccessMessage }: { initialSuccessMessage: string | 
       return;
     }
 
-    const fullPhone = `${countryCode}${cleanPhone}`;
-    setLoading(true);
-
-    try {
-      const res = await signInWithPhoneOtp(fullPhone);
-      if (res.error) {
-        let msg = res.error.message || "Failed to send OTP.";
-        if (
-          msg.toLowerCase().includes("unsupported") ||
-          msg.toLowerCase().includes("disabled") ||
-          msg.toLowerCase().includes("not enabled")
-        ) {
-          msg = "Phone OTP authentication is not enabled in your Supabase Auth settings. Please enable the Phone provider in Supabase Dashboard -> Authentication -> Providers -> Phone.";
-        }
-        setErrorMessage(msg);
-      } else {
-        setOtpSent(true);
-        setCooldown(60);
-        setSuccessMessage(`OTP sent successfully to ${fullPhone}.`);
-      }
-    } catch (err: any) {
-      setErrorMessage(err.message || "Failed to send OTP.");
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleVerifyOtp = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setErrorMessage(null);
-    setSuccessMessage(null);
-
-    const cleanOtp = otp.trim();
-    if (cleanOtp.length !== 6) {
-      setErrorMessage("Please enter the 6-digit OTP code.");
+    if (!mobilePassword) {
+      setErrorMessage("Please enter your password.");
       return;
     }
 
-    const cleanPhone = phone.replace(/\D/g, "");
     const fullPhone = `${countryCode}${cleanPhone}`;
     setLoading(true);
 
     try {
-      const res = await verifyPhoneOtp(fullPhone, cleanOtp);
+      const res = await signIn(fullPhone, mobilePassword);
       if (res.error) {
-        setErrorMessage(res.error.message || "Invalid or expired OTP code.");
+        let msg = res.error.message || "Invalid mobile number or password.";
+        if (msg.toLowerCase().includes("failed to fetch")) {
+          msg = "Unable to connect to Supabase server. Please check your network connection.";
+        }
+        setErrorMessage(msg);
       } else {
-        setSuccessMessage("OTP verified! Redirecting...");
+        const {
+          data: { session },
+        } = await supabase.auth.getSession();
         let target = redirectTarget === "/admin" ? "/" : redirectTarget;
-        if (res.user?.id) {
+        if (session?.user?.id) {
           const { data: prof } = await supabase
             .from("profiles")
             .select("role")
-            .eq("id", res.user.id)
+            .eq("id", session.user.id)
             .maybeSingle();
           if (prof?.role === "admin") {
             target = "/admin";
+          } else {
+            if (redirectTarget === "/admin") {
+              target = "/";
+            }
           }
         }
+        setSuccessMessage("Successfully logged in! Redirecting...");
         setTimeout(() => {
           navigate(target);
-        }, 600);
+        }, 800);
       }
     } catch (err: any) {
-      setErrorMessage(err.message || "Failed to verify OTP.");
+      setErrorMessage(err.message || "Invalid mobile number or password.");
     } finally {
       setLoading(false);
-    }
-  };
-
-  const handleResendOtp = async () => {
-    if (cooldown > 0 || resending) return;
-    setErrorMessage(null);
-    setSuccessMessage(null);
-    const cleanPhone = phone.replace(/\D/g, "");
-    const fullPhone = `${countryCode}${cleanPhone}`;
-
-    setResending(true);
-    try {
-      const res = await signInWithPhoneOtp(fullPhone);
-      if (res.error) {
-        setErrorMessage(res.error.message || "Failed to resend OTP.");
-      } else {
-        setCooldown(60);
-        setSuccessMessage(`New OTP sent to ${fullPhone}.`);
-      }
-    } catch (err: any) {
-      setErrorMessage(err.message || "Failed to resend OTP.");
-    } finally {
-      setResending(false);
     }
   };
 
@@ -481,128 +423,92 @@ function LoginForm({ initialSuccessMessage }: { initialSuccessMessage: string | 
             </button>
           </div>
 
-          {/* MOBILE OTP FORM */}
+          {/* MOBILE NUMBER + PASSWORD FORM */}
           {authMethod === "mobile" ? (
-            !otpSent ? (
-              <form onSubmit={handleSendOtp} className="space-y-[12px] pt-1">
-                <div className="space-y-[6px]">
-                  <Label htmlFor="phone" className="text-[11px] font-bold uppercase tracking-wider text-slate-500 ml-1">
-                    MOBILE NUMBER
-                  </Label>
-                  <div className="flex gap-2">
-                    <select
-                      value={countryCode}
-                      onChange={(e) => setCountryCode(e.target.value)}
-                      className="h-[48px] rounded-[14px] border border-slate-200 bg-slate-50/50 px-3 text-[14px] font-bold text-slate-700 focus:outline-none focus:border-[#0647E8] focus:bg-white cursor-pointer shrink-0"
-                    >
-                      <option value="+91">🇮🇳 +91</option>
-                    </select>
-                    <div className="relative flex-1 group">
-                      <Phone className="absolute left-4 top-1/2 w-[18px] h-[18px] -translate-y-1/2 text-slate-400 transition-colors group-focus-within:text-[#0647E8]" />
-                      <Input
-                        id="phone"
-                        type="tel"
-                        inputMode="numeric"
-                        placeholder="98765 43210"
-                        value={phone}
-                        onChange={(e) => setPhone(e.target.value)}
-                        maxLength={10}
-                        required
-                        className="h-[48px] rounded-[14px] pl-[44px] text-[15px] font-mono border-slate-200 bg-slate-50/50 focus-visible:ring-[#0647E8] focus-visible:border-[#0647E8] transition-all duration-300 hover:border-slate-300 focus:bg-white focus:shadow-sm"
-                      />
-                    </div>
-                  </div>
-                </div>
-
-                <Button
-                  type="submit"
-                  disabled={loading || phone.replace(/\D/g, "").length !== 10}
-                  className="mt-[16px] h-[48px] w-full rounded-[14px] border-0 text-white font-bold text-[16px] shadow-[0_8px_20px_-8px_rgba(6,71,232,0.5)] transition-all duration-300 hover:-translate-y-[2px] hover:shadow-[0_12px_24px_-8px_rgba(6,71,232,0.6)] active:translate-y-[0px] cursor-pointer bg-[#0647E8] disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
-                >
-                  {loading ? (
-                    <span className="flex items-center gap-2">
-                      <Loader2 className="w-5 h-5 animate-spin" /> Sending OTP...
-                    </span>
-                  ) : (
-                    "Send OTP"
-                  )}
-                </Button>
-              </form>
-            ) : (
-              <form onSubmit={handleVerifyOtp} className="space-y-[14px] pt-1">
-                <div className="flex items-center justify-between bg-blue-50/80 border border-blue-100 rounded-xl p-3 text-xs">
-                  <div>
-                    <span className="text-slate-500 font-medium">OTP sent to </span>
-                    <span className="font-bold text-slate-900">{countryCode} {phone}</span>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setOtpSent(false);
-                      setOtp("");
-                      setErrorMessage(null);
-                    }}
-                    className="text-[#0647E8] font-bold hover:underline cursor-pointer"
+            <form onSubmit={handlePhoneLogin} className="space-y-[12px] pt-1">
+              <div className="space-y-[6px]">
+                <Label htmlFor="phone" className="text-[11px] font-bold uppercase tracking-wider text-slate-500 ml-1">
+                  MOBILE NUMBER
+                </Label>
+                <div className="flex gap-2">
+                  <select
+                    value={countryCode}
+                    onChange={(e) => setCountryCode(e.target.value)}
+                    className="h-[48px] rounded-[14px] border border-slate-200 bg-slate-50/50 px-3 text-[14px] font-bold text-slate-700 focus:outline-none focus:border-[#0647E8] focus:bg-white cursor-pointer shrink-0"
                   >
-                    Edit
-                  </button>
+                    <option value="+91">🇮🇳 +91</option>
+                  </select>
+                  <div className="relative flex-1 group">
+                    <Phone className="absolute left-4 top-1/2 w-[18px] h-[18px] -translate-y-1/2 text-slate-400 transition-colors group-focus-within:text-[#0647E8]" />
+                    <Input
+                      id="phone"
+                      type="tel"
+                      inputMode="numeric"
+                      placeholder="98765 43210"
+                      value={phone}
+                      onChange={(e) => setPhone(e.target.value.replace(/\D/g, ""))}
+                      maxLength={10}
+                      required
+                      className="h-[48px] rounded-[14px] pl-[44px] text-[15px] font-mono border-slate-200 bg-slate-50/50 focus-visible:ring-[#0647E8] focus-visible:border-[#0647E8] transition-all duration-300 hover:border-slate-300 focus:bg-white focus:shadow-sm"
+                    />
+                  </div>
                 </div>
+              </div>
 
-                <div className="space-y-[6px]">
-                  <Label htmlFor="otp" className="text-[11px] font-bold uppercase tracking-wider text-slate-500 ml-1">
-                    ENTER 6-DIGIT OTP
+              <div className="space-y-[6px]">
+                <div className="flex items-center justify-between ml-1">
+                  <Label htmlFor="mobile-password" className="text-[11px] font-bold uppercase tracking-wider text-slate-500">
+                    PASSWORD
                   </Label>
+                  <Link
+                    to="/forgot-password"
+                    className="text-[12px] font-semibold text-[#0647E8] hover:text-[#062BCB] hover:underline transition-all duration-300 cursor-pointer"
+                  >
+                    Forgot Password?
+                  </Link>
+                </div>
+                <div className="relative group">
+                  <Lock className="absolute left-4 top-1/2 w-[18px] h-[18px] -translate-y-1/2 text-slate-400 transition-colors group-focus-within:text-[#0647E8]" />
                   <Input
-                    id="otp"
-                    type="text"
-                    inputMode="numeric"
-                    autoComplete="one-time-code"
-                    placeholder="123456"
-                    value={otp}
-                    onChange={(e) => setOtp(e.target.value)}
-                    maxLength={6}
+                    id="mobile-password"
+                    type="password"
+                    autoComplete="current-password"
+                    placeholder="••••••••"
+                    value={mobilePassword}
+                    onChange={(e) => setMobilePassword(e.target.value)}
                     required
-                    className="h-[48px] rounded-[14px] text-center font-mono text-[20px] font-extrabold tracking-[0.3em] border-slate-200 bg-slate-50/50 focus-visible:ring-[#0647E8] focus-visible:border-[#0647E8] transition-all focus:bg-white"
+                    className="h-[48px] rounded-[14px] pl-[44px] text-[15px] border-slate-200 bg-slate-50/50 focus-visible:ring-[#0647E8] focus-visible:border-[#0647E8] transition-all duration-300 hover:border-slate-300 focus:bg-white focus:shadow-sm"
                   />
                 </div>
+              </div>
 
-                <Button
-                  type="submit"
-                  disabled={loading || otp.trim().length !== 6}
-                  className="h-[48px] w-full rounded-[14px] border-0 text-white font-bold text-[16px] shadow-[0_8px_20px_-8px_rgba(6,71,232,0.5)] transition-all duration-300 hover:-translate-y-[2px] hover:shadow-[0_12px_24px_-8px_rgba(6,71,232,0.6)] active:translate-y-[0px] cursor-pointer bg-[#0647E8] disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
-                >
-                  {loading ? (
-                    <span className="flex items-center gap-2">
-                      <Loader2 className="w-5 h-5 animate-spin" /> Verifying OTP...
-                    </span>
-                  ) : (
-                    "Verify OTP & Sign In"
-                  )}
-                </Button>
+              <div className="flex items-center gap-2 mt-2 ml-1">
+                <input
+                  type="checkbox"
+                  id="remember-mobile"
+                  checked={rememberMe}
+                  onChange={(e) => setRememberMe(e.target.checked)}
+                  className="rounded text-[#0647E8] focus:ring-[#0647E8] w-[16px] h-[16px] border-slate-300 cursor-pointer"
+                />
+                <Label htmlFor="remember-mobile" className="text-[14px] text-slate-600 font-medium cursor-pointer">
+                  Remember me
+                </Label>
+              </div>
 
-                <div className="flex items-center justify-between text-xs pt-1">
-                  <span className="text-slate-500 font-medium">Didn't receive OTP?</span>
-                  <button
-                    type="button"
-                    onClick={handleResendOtp}
-                    disabled={cooldown > 0 || resending}
-                    className="font-bold text-[#0647E8] hover:underline disabled:text-slate-400 disabled:no-underline cursor-pointer disabled:cursor-not-allowed flex items-center gap-1"
-                  >
-                    {resending ? (
-                      <>
-                        <Loader2 className="w-3 h-3 animate-spin" /> Sending...
-                      </>
-                    ) : cooldown > 0 ? (
-                      `Resend OTP in ${cooldown}s`
-                    ) : (
-                      <>
-                        <RefreshCw className="w-3 h-3" /> Resend OTP
-                      </>
-                    )}
-                  </button>
-                </div>
-              </form>
-            )
+              <Button
+                type="submit"
+                disabled={loading || phone.replace(/\D/g, "").length !== 10 || !mobilePassword}
+                className="mt-[20px] h-[48px] w-full rounded-[14px] border-0 text-white font-bold text-[16px] shadow-[0_8px_20px_-8px_rgba(6,71,232,0.5)] transition-all duration-300 hover:-translate-y-[2px] hover:shadow-[0_12px_24px_-8px_rgba(6,71,232,0.6)] active:translate-y-[0px] cursor-pointer bg-[#0647E8] disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
+              >
+                {loading ? (
+                  <span className="flex items-center gap-2">
+                    <Loader2 className="w-5 h-5 animate-spin" /> Signing in...
+                  </span>
+                ) : (
+                  "Sign In"
+                )}
+              </Button>
+            </form>
           ) : (
             /* EMAIL & PASSWORD FORM */
             <form onSubmit={handleLogin} className="space-y-[12px] pt-1">
@@ -630,17 +536,12 @@ function LoginForm({ initialSuccessMessage }: { initialSuccessMessage: string | 
                   <Label htmlFor="password" className="text-[11px] font-bold uppercase tracking-wider text-slate-500">
                     PASSWORD
                   </Label>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setResetMode(true);
-                      setErrorMessage(null);
-                      setSuccessMessage(null);
-                    }}
+                  <Link
+                    to="/forgot-password"
                     className="text-[12px] font-semibold text-[#0647E8] hover:text-[#062BCB] hover:underline transition-all duration-300 cursor-pointer"
                   >
                     Forgot Password?
-                  </button>
+                  </Link>
                 </div>
                 <div className="relative group">
                   <Lock className="absolute left-4 top-1/2 w-[18px] h-[18px] -translate-y-1/2 text-slate-400 transition-colors group-focus-within:text-[#0647E8]" />
@@ -748,4 +649,5 @@ function LoginForm({ initialSuccessMessage }: { initialSuccessMessage: string | 
     </>
   );
 }
+
 

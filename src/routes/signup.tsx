@@ -1,7 +1,7 @@
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { useState } from "react";
 import { useAuth } from "@/lib/auth-store";
-import { AlertCircle, CheckCircle2, Loader2, Lock, Mail, User, MailCheck } from "lucide-react";
+import { AlertCircle, CheckCircle2, Loader2, Lock, Mail, User, MailCheck, Phone } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
@@ -18,6 +18,8 @@ export default function SignupPage() {
 
   const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");
+  const [phone, setPhone] = useState("");
+  const [countryCode, setCountryCode] = useState("+91");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [loading, setLoading] = useState(false);
@@ -94,6 +96,12 @@ export default function SignupPage() {
       return;
     }
 
+    const cleanPhone = phone.replace(/\D/g, "");
+    if (cleanPhone.length !== 10) {
+      setErrorMessage("Please enter a valid 10-digit mobile number.");
+      return;
+    }
+
     if (password.length < 6) {
       setErrorMessage("Password must be at least 6 characters long.");
       return;
@@ -107,8 +115,8 @@ export default function SignupPage() {
     setLoading(true);
 
     try {
-      // Requirement 1 & 5: Save Full Name in profiles.full_name with role='user'
-      const { error, confirmed } = await signUp(fullName.trim(), email, password);
+      const fullPhone = `${countryCode}${cleanPhone}`;
+      const { error, confirmed } = await signUp(fullName.trim(), email.trim(), fullPhone, password);
 
       if (error) {
         let msg = error.message || "Failed to create account. Please try again.";
@@ -119,13 +127,11 @@ export default function SignupPage() {
         }
         setErrorMessage(msg);
       } else if (confirmed) {
-        // If email confirmation is disabled in Supabase, directly log in & redirect
         setSuccessMessage("Account created successfully! Redirecting...");
         setTimeout(() => {
           navigate(redirectTarget );
         }, 1000);
       } else {
-        // Show post-signup confirmation message
         setSignupSuccess(true);
       }
     } catch (err: any) {
@@ -207,20 +213,12 @@ export default function SignupPage() {
         )}
       </Button>
 
-      {/* Direct link for Mobile OTP */}
-      <Link
-        to={redirect ? `/login?redirect=${redirect}` : "/login"}
-        className="h-[44px] w-full rounded-[14px] border border-blue-100 bg-blue-50/70 hover:bg-blue-100/80 text-[#0647E8] font-bold text-[14px] flex items-center justify-center gap-2 transition-all cursor-pointer mb-3"
-      >
-        <span>📱 Continue with Mobile Number (OTP)</span>
-      </Link>
-
       <div className="relative flex items-center justify-center my-3">
         <div className="absolute inset-0 flex items-center">
           <div className="w-full border-t border-slate-200" />
         </div>
         <div className="relative bg-white px-3 text-[11px] font-bold uppercase tracking-widest text-slate-400">
-          OR SIGN UP WITH EMAIL
+          OR SIGN UP WITH EMAIL & PHONE
         </div>
       </div>
 
@@ -246,7 +244,7 @@ export default function SignupPage() {
 
         <div className="space-y-[6px]">
           <Label htmlFor="email" className="text-[11px] font-bold uppercase tracking-wider text-slate-500 ml-1">
-            Email
+            Email Address
           </Label>
           <div className="relative group">
             <Mail className="absolute left-4 top-1/2 w-[18px] h-[18px] -translate-y-1/2 text-slate-400 transition-colors group-focus-within:text-[#0647E8]" />
@@ -260,6 +258,35 @@ export default function SignupPage() {
               required
               className="h-[48px] rounded-[14px] pl-[44px] text-[15px] border-slate-200 bg-slate-50/50 focus-visible:ring-[#0647E8] focus-visible:border-[#0647E8] transition-all duration-300 hover:border-slate-300 focus:bg-white focus:shadow-sm"
             />
+          </div>
+        </div>
+
+        <div className="space-y-[6px]">
+          <Label htmlFor="phone" className="text-[11px] font-bold uppercase tracking-wider text-slate-500 ml-1">
+            Mobile Number
+          </Label>
+          <div className="flex gap-2">
+            <select
+              value={countryCode}
+              onChange={(e) => setCountryCode(e.target.value)}
+              className="h-[48px] rounded-[14px] border border-slate-200 bg-slate-50/50 px-3 text-[14px] font-bold text-slate-700 focus:outline-none focus:border-[#0647E8] focus:bg-white cursor-pointer shrink-0"
+            >
+              <option value="+91">🇮🇳 +91</option>
+            </select>
+            <div className="relative flex-1 group">
+              <Phone className="absolute left-4 top-1/2 w-[18px] h-[18px] -translate-y-1/2 text-slate-400 transition-colors group-focus-within:text-[#0647E8]" />
+              <Input
+                id="phone"
+                type="tel"
+                inputMode="numeric"
+                placeholder="98765 43210"
+                value={phone}
+                onChange={(e) => setPhone(e.target.value.replace(/\D/g, ""))}
+                maxLength={10}
+                required
+                className="h-[48px] rounded-[14px] pl-[44px] text-[15px] font-mono border-slate-200 bg-slate-50/50 focus-visible:ring-[#0647E8] focus-visible:border-[#0647E8] transition-all duration-300 hover:border-slate-300 focus:bg-white focus:shadow-sm"
+              />
+            </div>
           </div>
         </div>
 

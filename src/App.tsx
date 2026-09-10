@@ -15,6 +15,8 @@ const AdminPage = lazy(() => import("@/routes/admin"));
 const CheckoutPage = lazy(() => import("@/routes/checkout"));
 const LoginPage = lazy(() => import("@/routes/login"));
 const SignupPage = lazy(() => import("@/routes/signup"));
+const ForgotPasswordPage = lazy(() => import("@/routes/forgot-password"));
+const UpdatePasswordPage = lazy(() => import("@/routes/update-password"));
 const ShopPage = lazy(() => import("@/routes/shop"));
 const ProductDetailsPage = lazy(() => import("@/routes/product.$id"));
 const AccountPage = lazy(() => import("@/routes/account"));
@@ -58,7 +60,8 @@ export default function App() {
   const isLogin = pathname === "/login";
   const isCheckout = pathname === "/checkout";
   const isStore = pathname === "/store";
-  const hideStorefrontNavigation = isAdmin || isLogin || isCheckout || isStore;
+  const isAuthPage = isLogin || pathname === "/signup" || pathname === "/forgot-password" || pathname === "/update-password";
+  const hideStorefrontNavigation = isAdmin || isAuthPage || isCheckout || isStore;
 
   // Add global head elements
   useEffect(() => {
@@ -78,6 +81,8 @@ export default function App() {
                 <Route path="/checkout" element={<CheckoutPage />} />
                 <Route path="/login" element={<LoginPage />} />
                 <Route path="/signup" element={<SignupPage />} />
+                <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+                <Route path="/update-password" element={<UpdatePasswordPage />} />
                 <Route path="/shop" element={<ShopPage />} />
                 <Route path="/product/:id" element={<ProductDetailsPage />} />
                 <Route path="/account" element={<AccountPage />} />

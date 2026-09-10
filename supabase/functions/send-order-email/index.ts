@@ -4,7 +4,8 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2.7.1";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-user-token",
+  "Access-Control-Allow-Methods": "POST, OPTIONS",
 };
 
 serve(async (req: Request) => {
@@ -18,58 +19,151 @@ serve(async (req: Request) => {
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
     // 1. Authenticate user from Bearer Token (never trust frontend-supplied email)
-    const authHeader = req.headers.get("Authorization");
+    const authHeader = req.headers.get("Authorization") || req.headers.get("authorization");
     if (!authHeader) {
+      console.warn("[send-order-email] Auth failed: Missing Authorization header");
       return new Response(
-        JSON.stringify({ error: "Missing authorization token" }),
+        JSON.stringify({ error: "Unauthorized", message: "Missing Authorization header in request" }),
         { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 401 }
       );
     }
 
-    const token = authHeader.replace("Bearer ", "");
+    const token = authHeader.replace(/^Bearer\s+/i, "").trim();
+    if (!token) {
+      console.warn("[send-order-email] Auth failed: Empty token string");
+      return new Response(
+        JSON.stringify({ error: "Unauthorized", message: "Empty Bearer token in Authorization header" }),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 401 }
+      );
+    }
+
     const { data: { user }, error: authError } = await supabase.auth.getUser(token);
 
-    if (authError || !user || !user.email) {
+    if (authError || !user) {
+      console.error("[send-order-email] Auth verification error:", authError?.message || "No user found for token");
       return new Response(
-        JSON.stringify({ error: "Unauthorized user or missing email in Auth" }),
+        JSON.stringify({
+          error: "Unauthorized",
+          message: `Authentication failed: ${authError?.message || "Invalid or expired session token"}`,
+        }),
         { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 401 }
       );
     }
 
-    const recipientEmail = user.email;
+    const recipientEmail = user.email || user.user_metadata?.email;
+    if (!recipientEmail) {
+      console.error("[send-order-email] User missing email address:", user.id);
+      return new Response(
+        JSON.stringify({
+          error: "Forbidden",
+          message: "Authenticated user does not have a verified email address associated with their account",
+        }),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 403 }
+      );
+    }
+
+    console.log(`[send-order-email] Authenticated user: ${user.id} (${recipientEmail})`);
 
     // 2. Read request body
     const body = await req.json();
-    const orderId = body.orderId || body.id;
-    const orderNumber = body.orderNumber || orderId;
+    const rawId = body.orderId || body.id;
+    const rawOrderNumber = body.orderNumber;
 
-    if (!orderId && !orderNumber) {
+    if (!rawId && !rawOrderNumber) {
       return new Response(
         JSON.stringify({ error: "Order ID or Order Number is required" }),
         { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 400 }
       );
     }
 
-    // 3. Fetch order record from Supabase database
-    let query = supabase.from("orders").select("*");
-    if (orderId) {
-      query = query.eq("id", orderId);
-    } else {
-      query = query.eq("order_number", orderNumber);
+    const isUuid = (val: any): boolean =>
+      typeof val === "string" &&
+      /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(val.trim());
+
+    let order = null;
+
+    // Method 1: If rawId is a valid UUID, search by id
+    if (rawId && isUuid(rawId)) {
+      console.log(`[send-order-email] Attempting lookup by UUID (orders.id): ${rawId}`);
+      const { data, error } = await supabase.from("orders").select("*").eq("id", rawId.trim());
+      if (!error && data && data.length > 0) {
+        order = data[0];
+        console.log(`[send-order-email] Order found by UUID (orders.id)`);
+      }
     }
 
-    const { data: orders, error: orderErr } = await query;
-    if (orderErr || !orders || orders.length === 0) {
+    // Method 2: If no order yet and rawId is present, try matching against order_number
+    if (!order && rawId) {
+      console.log(`[send-order-email] Attempting lookup by order_number (rawId): ${rawId}`);
+      const { data, error } = await supabase.from("orders").select("*").eq("order_number", String(rawId).trim());
+      if (!error && data && data.length > 0) {
+        order = data[0];
+        console.log(`[send-order-email] Order found by order_number (rawId)`);
+      }
+    }
+
+    // Method 3: If no order yet and rawOrderNumber is present, try matching against order_number
+    if (!order && rawOrderNumber) {
+      console.log(`[send-order-email] Attempting lookup by order_number (rawOrderNumber): ${rawOrderNumber}`);
+      const { data, error } = await supabase.from("orders").select("*").eq("order_number", String(rawOrderNumber).trim());
+      if (!error && data && data.length > 0) {
+        order = data[0];
+        console.log(`[send-order-email] Order found by order_number (rawOrderNumber)`);
+      }
+    }
+
+    if (!order) {
+      console.log(`[send-order-email] Order not found for rawId: "${rawId}", rawOrderNumber: "${rawOrderNumber}"`);
       return new Response(
         JSON.stringify({ error: "Order not found" }),
-        { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 444 }
+        { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 404 }
       );
     }
 
-    const order = orders[0];
+    // 4. Action & Recipient Email Resolution
+    const action = String(body.action || body.type || "confirmation").toLowerCase();
+    const rejectionReason = String(body.rejectionReason || body.reason || order.rejection_reason || "Store unable to fulfill order").trim();
 
-    // 4. Duplicate Check: Ensure email is sent exactly ONCE per order
-    if (order.confirmation_email_sent_at) {
+    // Priority 1: Customer email stored on order record in database
+    // Priority 2: Email of auth user linked via user_id
+    // Priority 3: Email of authenticated user calling the endpoint
+    let targetCustomerEmail = order.customer_email || order.customerEmail;
+    if (!targetCustomerEmail && order.user_id) {
+      try {
+        const { data: userData } = await supabase.auth.admin.getUserById(order.user_id);
+        if (userData?.user?.email) {
+          targetCustomerEmail = userData.user.email;
+        }
+      } catch (_e) {
+        // ignore
+      }
+    }
+    if (!targetCustomerEmail) {
+      targetCustomerEmail = recipientEmail;
+    }
+
+    // 5. Duplicate Check: Ensure email type is sent ONCE per order
+    if (action === "accepted" && order.accepted_email_sent_at) {
+      return new Response(
+        JSON.stringify({
+          success: true,
+          duplicate: true,
+          message: `Acceptance email already sent for order ${order.order_number}`,
+        }),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 200 }
+      );
+    }
+    if (action === "rejected" && order.rejected_email_sent_at) {
+      return new Response(
+        JSON.stringify({
+          success: true,
+          duplicate: true,
+          message: `Rejection email already sent for order ${order.order_number}`,
+        }),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 200 }
+      );
+    }
+    if (action === "confirmation" && order.confirmation_email_sent_at) {
       return new Response(
         JSON.stringify({
           success: true,
@@ -80,7 +174,7 @@ serve(async (req: Request) => {
       );
     }
 
-    // 5. Fetch order items
+    // 6. Fetch order items
     const { data: items } = await supabase
       .from("order_items")
       .select("*")
@@ -125,28 +219,55 @@ serve(async (req: Request) => {
       ? `₹${totalAmountNum - subtotalCalculated}`
       : "FREE";
 
-    // 6. Build Professional HTML Email Body
+    // 7. Build Professional HTML Email Body based on Action
+    let subjectTitle = `Order Confirmation - Clip N Copy #${order.order_number}`;
+    let badgeText = "ORDER CONFIRMED";
+    let badgeColor = "#0647e8";
+    let introGreeting = `Hi ${order.customer_name || "Valued Customer"},`;
+    let introParagraph = `Thank you for shopping with <strong>Clip N Copy</strong>! Your order <strong>#${order.order_number}</strong> has been successfully placed and is now being processed by our store.`;
+    let extraBannerHtml = "";
+
+    if (action === "accepted") {
+      subjectTitle = `Order Accepted! - Clip N Copy #${order.order_number}`;
+      badgeText = "ORDER ACCEPTED";
+      badgeColor = "#16a34a";
+      introParagraph = `Great news! Your order <strong>#${order.order_number}</strong> has been <strong>ACCEPTED</strong> by Clip N Copy store. Our team is now preparing your items for delivery / pickup.`;
+    } else if (action === "rejected") {
+      subjectTitle = `Order Update - Clip N Copy #${order.order_number}`;
+      badgeText = "ORDER CANCELLED / REJECTED";
+      badgeColor = "#dc2626";
+      introParagraph = `We regret to inform you that your order <strong>#${order.order_number}</strong> could not be accepted at this time.`;
+      extraBannerHtml = `
+        <div style="background-color: #fef2f2; border: 1px solid #fecaca; border-radius: 12px; padding: 16px; margin-bottom: 24px; font-size: 13px; color: #991b1b; line-height: 1.5;">
+          <strong style="color: #7f1d1d; display: block; margin-bottom: 4px; font-size: 14px;">Reason for Rejection:</strong>
+          ${rejectionReason}
+        </div>
+      `;
+    }
+
     const emailHtml = `
 <!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Order Confirmation - Clip N Copy</title>
+  <title>${subjectTitle}</title>
 </head>
 <body style="margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background-color: #f8fafc; color: #1e293b;">
   <div style="max-width: 600px; margin: 20px auto; background: #ffffff; border-radius: 16px; overflow: hidden; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05); border: 1px solid #e2e8f0;">
     <div style="background-color: #0f172a; padding: 32px 24px; text-align: center;">
       <h1 style="color: #ffffff; margin: 0; font-size: 24px; font-weight: 800; letter-spacing: -0.5px;">Clip N Copy</h1>
       <p style="color: #94a3b8; margin: 6px 0 0 0; font-size: 14px;">Total solutions in stationery & xerox</p>
-      <div style="display: inline-block; background-color: #0647e8; color: #ffffff; padding: 4px 12px; border-radius: 20px; font-size: 11px; font-weight: 700; margin-top: 12px; text-transform: uppercase; tracking-wider;">Order Confirmed</div>
+      <div style="display: inline-block; background-color: ${badgeColor}; color: #ffffff; padding: 4px 14px; border-radius: 20px; font-size: 11px; font-weight: 700; margin-top: 12px; text-transform: uppercase; letter-spacing: 0.5px;">${badgeText}</div>
     </div>
     
     <div style="padding: 32px 24px;">
-      <div style="font-size: 16px; font-weight: 700; color: #0f172a; margin-bottom: 12px;">Hi ${order.customer_name || "Valued Customer"},</div>
+      <div style="font-size: 16px; font-weight: 700; color: #0f172a; margin-bottom: 12px;">${introGreeting}</div>
       <p style="font-size: 14px; color: #475569; margin-top: 0; margin-bottom: 20px; line-height: 1.5;">
-        Thank you for shopping with <strong>Clip N Copy</strong>! Your order <strong>#${order.order_number}</strong> has been successfully placed and is now being processed by our store.
+        ${introParagraph}
       </p>
+
+      ${extraBannerHtml}
 
       <div style="background-color: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; padding: 16px; margin-bottom: 24px; font-size: 13px; line-height: 1.6;">
         <table style="width: 100%; border-collapse: collapse;">
@@ -210,13 +331,13 @@ serve(async (req: Request) => {
 </html>
     `;
 
-    // 7. Send email via Resend API (or SendGrid API) if configured
+    // 8. Send email via Resend API (or SendGrid API) if configured
     const resendApiKey = Deno.env.get("RESEND_API_KEY");
     const resendFromEmail = Deno.env.get("RESEND_FROM_EMAIL") || "Clip N Copy <onboarding@resend.dev>";
     const sendgridApiKey = Deno.env.get("SENDGRID_API_KEY");
-    let emailSentSuccessfully = false;
 
     if (resendApiKey) {
+      console.log(`[send-order-email] Sending [${action}] email via Resend API to ${targetCustomerEmail} from ${resendFromEmail}`);
       const resendRes = await fetch("https://api.resend.com/emails", {
         method: "POST",
         headers: {
@@ -225,14 +346,27 @@ serve(async (req: Request) => {
         },
         body: JSON.stringify({
           from: resendFromEmail,
-          to: [recipientEmail],
-          subject: `Order Confirmation - Clip N Copy #${order.order_number}`,
+          to: [targetCustomerEmail],
+          subject: subjectTitle,
           html: emailHtml,
         }),
       });
-      emailSentSuccessfully = resendRes.ok;
-      console.log(`[Resend Email Response] Status: ${resendRes.status}`);
+
+      console.log(`[send-order-email] Resend API HTTP status: ${resendRes.status}`);
+
+      if (!resendRes.ok) {
+        const errorDetails = await resendRes.json().catch(() => ({ message: "Failed to parse Resend error body" }));
+        console.error("[send-order-email] Resend API error response:", errorDetails);
+        return new Response(
+          JSON.stringify({
+            error: "Failed to send email via Resend",
+            details: errorDetails,
+          }),
+          { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: resendRes.status || 500 }
+        );
+      }
     } else if (sendgridApiKey) {
+      console.log(`[send-order-email] Sending [${action}] email via SendGrid API to ${targetCustomerEmail}`);
       const sgRes = await fetch("https://api.sendgrid.com/v3/mail/send", {
         method: "POST",
         headers: {
@@ -240,23 +374,43 @@ serve(async (req: Request) => {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          personalizations: [{ to: [{ email: recipientEmail }] }],
+          personalizations: [{ to: [{ email: targetCustomerEmail }] }],
           from: { email: "clipncopy1@gmail.com", name: "Clip N Copy" },
-          subject: `Order Confirmation - Clip N Copy #${order.order_number}`,
+          subject: subjectTitle,
           content: [{ type: "text/html", value: emailHtml }],
         }),
       });
-      emailSentSuccessfully = sgRes.ok;
-      console.log(`[SendGrid Email Response] Status: ${sgRes.status}`);
+
+      console.log(`[send-order-email] SendGrid API HTTP status: ${sgRes.status}`);
+
+      if (!sgRes.ok) {
+        const errorDetails = await sgRes.json().catch(() => ({ message: "Failed to parse SendGrid error body" }));
+        console.error("[send-order-email] SendGrid API error response:", errorDetails);
+        return new Response(
+          JSON.stringify({
+            error: "Failed to send email via SendGrid",
+            details: errorDetails,
+          }),
+          { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: sgRes.status || 500 }
+        );
+      }
     } else {
-      console.log(`[Email Simulation] Formatted Order Email for #${order.order_number} to ${recipientEmail}`);
-      emailSentSuccessfully = true;
+      console.log(`[send-order-email] [Email Simulation] Formatted [${action}] Email for #${order.order_number} to ${targetCustomerEmail}`);
     }
 
-    // 8. Update DB order record with confirmation_email_sent_at timestamp for duplicate prevention
+    // 9. Update DB order record with timestamp timestamp ONLY after verified success
+    const updatePayload: Record<string, string> = {};
+    if (action === "accepted") {
+      updatePayload.accepted_email_sent_at = new Date().toISOString();
+    } else if (action === "rejected") {
+      updatePayload.rejected_email_sent_at = new Date().toISOString();
+    } else {
+      updatePayload.confirmation_email_sent_at = new Date().toISOString();
+    }
+
     await supabase
       .from("orders")
-      .update({ confirmation_email_sent_at: new Date().toISOString() })
+      .update(updatePayload)
       .eq("id", order.id);
 
     return new Response(
@@ -264,7 +418,7 @@ serve(async (req: Request) => {
         success: true,
         orderNumber: order.order_number,
         recipientEmail: recipientEmail,
-        sent: emailSentSuccessfully,
+        sent: true,
       }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 200 }
     );

@@ -140,17 +140,20 @@ export function DashboardOverview({
   }, [orders]);
 
   const orderStats = useMemo(() => {
-    const stats = {
+    const stats: Record<string, number> = {
       Processing: 0,
+      Accepted: 0,
       Confirmed: 0,
       Shipped: 0,
       Delivered: 0,
-      Cancelled: 0
+      Rejected: 0,
+      Cancelled: 0,
     };
     
-    orders.forEach(o => {
-      if (stats[o.status] !== undefined) {
-        stats[o.status]++;
+    orders.forEach((o) => {
+      const current = stats[o.status];
+      if (typeof current === "number") {
+        stats[o.status] = current + 1;
       }
     });
 

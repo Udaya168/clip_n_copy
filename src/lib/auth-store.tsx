@@ -5,6 +5,7 @@ import { supabase } from "./supabase";
 
 export interface UserProfile {
   id: string;
+  email?: string | null;
   full_name: string | null;
   first_name?: string | null;
   last_name?: string | null;
@@ -15,6 +16,22 @@ export interface UserProfile {
   date_of_birth?: string | null;
   gender?: "male" | "female" | "other" | "prefer_not_to_say" | string | null;
   updated_at?: string | null;
+}
+
+export function formatPhoneNumber(phone: string): string {
+  if (!phone) return "";
+  const trimmed = phone.trim();
+  const digitsOnly = trimmed.replace(/\D/g, "");
+  if (trimmed.startsWith("+")) {
+    return `+${digitsOnly}`;
+  }
+  if (digitsOnly.length === 10) {
+    return `+91${digitsOnly}`;
+  }
+  if (digitsOnly.length === 12 && digitsOnly.startsWith("91")) {
+    return `+${digitsOnly}`;
+  }
+  return `+91${digitsOnly.slice(-10)}`;
 }
 
 export interface isEmailConfirmedResult {
@@ -62,13 +79,14 @@ interface AuthContextType {
   loading: boolean;
   isLoggingOut: boolean;
   role: string | null;
-  signIn: (email: string, password: string) => Promise<SignInResult>;
-  signUp: (fullName: string, email: string, password: string) => Promise<SignUpResult>;
+  signIn: (identifier: string, password: string) => Promise<SignInResult>;
+  signUp: (fullName: string, email: string, phone: string, password: string) => Promise<SignUpResult>;
   signInWithPhoneOtp: (phone: string) => Promise<{ error: Error | null }>;
   verifyPhoneOtp: (phone: string, token: string) => Promise<{ error: Error | null; user: User | null }>;
   signInWithGoogle: (redirectTarget?: string) => Promise<{ error: Error | null }>;
   signOut: () => Promise<void>;
   resetPassword: (email: string) => Promise<{ error: Error | null }>;
+  updatePassword: (newPassword: string) => Promise<{ error: Error | null }>;
   resendConfirmation: (email: string) => Promise<{ error: Error | null }>;
   updateProfile: (params: UpdateProfileParams) => Promise<UpdateProfileResult>;
   refreshProfile: () => Promise<void>;
@@ -100,12 +118,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         .maybeSingle();
 
       if (data) {
-        if (currentUser.phone && !data.phone) {
+        const updates: Record<string, any> = {};
+        const profileData = data as Record<string, any>;
+        if (currentUser.email && !profileData["email"]) updates["email"] = currentUser.email;
+        if (currentUser.phone && !profileData["phone"]) updates["phone"] = currentUser.phone;
+
+        if (Object.keys(updates).length > 0) {
           try {
-            await supabase.from("profiles").update({ phone: currentUser.phone }).eq("id", currentUser.id);
-            data.phone = currentUser.phone;
+            await supabase.from("profiles").update(updates).eq("id", currentUser.id);
+            Object.assign(data, updates);
           } catch (e) {
-            console.warn("Could not update profile phone:", e);
+            console.warn("Could not update profile fields:", e);
           }
         }
         setProfile(data as UserProfile);
@@ -113,7 +136,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         if (error) {
           console.error("[AuthStore] Profile fetch error:", error.message);
         }
-        // ONLY insert default profile if error is null and data is truly missing for a new signup
         if (!error) {
           const defaultName =
             currentUser.user_metadata?.["full_name"] ||
@@ -127,6 +149,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             .insert({
               id: currentUser.id,
               full_name: defaultName,
+              email: currentUser.email || null,
               phone: currentUser.phone || null,
               role: "user",
             })
@@ -148,7 +171,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     let isMounted = true;
 
-    // 7. Persist authentication session only if email is confirmed
     const initAuth = async () => {
       try {
         const {
@@ -181,7 +203,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     let subscription: any = null;
 
     try {
-      // 7 & 9. Listen for Supabase auth state changes
       const { data } = supabase.auth.onAuthStateChange(async (_event: any, currentSession: Session | null) => {
         if (!isMounted) return;
 
@@ -212,20 +233,23 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     };
   }, []);
 
-  // 3. Login using supabase.auth.signInWithPassword()
-  const signIn = async (email: string, password: string): Promise<SignInResult> => {
+  // Login using Email OR Phone Number + Password
+  const signIn = async (identifier: string, password: string): Promise<SignInResult> => {
     try {
-      const { data, error } = await supabase.auth.signInWithPassword({
-        email,
-        password,
-      });
+      const trimmed = identifier.trim();
+      const isEmail = trimmed.includes("@");
 
-      if (error) {
-        return { error: new Error("Invalid email or password.") };
-      }
+      if (isEmail) {
+        // Authenticate with Email + Password
+        const { data, error } = await supabase.auth.signInWithPassword({
+          email: trimmed.toLowerCase(),
+          password,
+        });
 
-      if (data.user) {
-        // Requirement 3.3: Check if email is confirmed
+        if (error || !data.user) {
+          return { error: new Error("Invalid email or password.") };
+        }
+
         if (!isEmailConfirmed(data.user)) {
           await supabase.auth.signOut();
           setUser(null);
@@ -241,38 +265,150 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setUser(data.user);
         setSession(data.session);
         await fetchAndSyncProfile(data.user);
-      }
+        return { error: null };
+      } else {
+        // Authenticate with Phone Number + Password
+        const formattedPhone = formatPhoneNumber(trimmed);
 
-      return { error: null };
+        // Try Supabase Auth phone + password
+        let { data, error } = await supabase.auth.signInWithPassword({
+          phone: formattedPhone,
+          password,
+        });
+
+        // If direct phone auth fails, lookup corresponding user email from database
+        if (error || !data.user) {
+          let resolvedEmail: string | null = null;
+          try {
+            const { data: rpcEmail } = await supabase.rpc("get_email_by_phone", { p_phone: formattedPhone });
+            if (rpcEmail) resolvedEmail = rpcEmail;
+          } catch (_e) {
+            // fallback
+          }
+
+          if (!resolvedEmail) {
+            const digits = trimmed.replace(/\D/g, "");
+            const { data: profData } = await supabase
+              .from("profiles")
+              .select("email")
+              .or(`phone.eq.${formattedPhone},phone.eq.${digits}`)
+              .maybeSingle();
+            if (profData?.email) {
+              resolvedEmail = profData.email;
+            }
+          }
+
+          if (resolvedEmail) {
+            const emailRes = await supabase.auth.signInWithPassword({
+              email: resolvedEmail,
+              password,
+            });
+            data = emailRes.data;
+            error = emailRes.error;
+          }
+        }
+
+        if (error || !data.user) {
+          return { error: new Error("Invalid phone number or password.") };
+        }
+
+        if (!isEmailConfirmed(data.user)) {
+          await supabase.auth.signOut();
+          setUser(null);
+          setSession(null);
+          setProfile(null);
+          return {
+            error: new Error("Please confirm your account email before signing in."),
+            requiresConfirmation: true,
+            email: data.user.email ?? "",
+          };
+        }
+
+        setUser(data.user);
+        setSession(data.session);
+        await fetchAndSyncProfile(data.user);
+        return { error: null };
+      }
     } catch (err: any) {
-      return { error: err || new Error("Invalid email or password.") };
+      return { error: err instanceof Error ? err : new Error("Invalid login credentials.") };
     }
   };
 
-  // 1 & 5. Signup using supabase.auth.signUp() with email confirmation requirement
-  const signUp = async (fullName: string, email: string, password: string) => {
+  // Signup using Full Name, Email, Phone Number, and Password
+  const signUp = async (fullName: string, email: string, phone: string, password: string) => {
     try {
-      const { data, error } = await supabase.auth.signUp({
-        email,
+      const cleanEmail = email.trim().toLowerCase();
+      const formattedPhone = formatPhoneNumber(phone);
+
+      // Uniqueness check for Email and Phone Number
+      try {
+        const { data: checkData } = await supabase.rpc("check_user_exists", {
+          p_email: cleanEmail,
+          p_phone: formattedPhone,
+        });
+
+        if (checkData && checkData.length > 0) {
+          if (checkData[0].email_exists) {
+            return { error: new Error("An account with this email address already exists. Please sign in."), user: null, confirmed: false };
+          }
+          if (checkData[0].phone_exists) {
+            return { error: new Error("An account with this phone number already exists. Please sign in."), user: null, confirmed: false };
+          }
+        }
+      } catch (_e) {
+        // Client-side profiles query fallback
+        const { data: pEmail } = await supabase.from("profiles").select("id").eq("email", cleanEmail).maybeSingle();
+        if (pEmail) {
+          return { error: new Error("An account with this email address already exists. Please sign in."), user: null, confirmed: false };
+        }
+        const { data: pPhone } = await supabase.from("profiles").select("id").eq("phone", formattedPhone).maybeSingle();
+        if (pPhone) {
+          return { error: new Error("An account with this phone number already exists. Please sign in."), user: null, confirmed: false };
+        }
+      }
+
+      // Execute Supabase Auth Signup
+      let { data, error } = await supabase.auth.signUp({
+        email: cleanEmail,
         password,
+        phone: formattedPhone,
         options: {
           data: {
-            full_name: fullName,
+            full_name: fullName.trim(),
+            phone: formattedPhone,
           },
           emailRedirectTo: `${window.location.origin}/login?confirmed=true`,
         },
       });
 
+      // Fallback if top-level phone signups are disabled in Supabase Auth settings
+      if (error && (error.message.toLowerCase().includes("phone") || error.message.toLowerCase().includes("provider"))) {
+        const retryRes = await supabase.auth.signUp({
+          email: cleanEmail,
+          password,
+          options: {
+            data: {
+              full_name: fullName.trim(),
+              phone: formattedPhone,
+            },
+            emailRedirectTo: `${window.location.origin}/login?confirmed=true`,
+          },
+        });
+        data = retryRes.data;
+        error = retryRes.error;
+      }
+
       if (error) throw error;
 
       if (data.user) {
-        // 5. Create profile record in existing `profiles` table with role = "user"
-        const { data: profileData, error: profileError } = await supabase
+        const { error: profileError } = await supabase
           .from("profiles")
           .upsert({
             id: data.user.id,
-            full_name: fullName,
-            role: "user", // Never allow admin
+            full_name: fullName.trim(),
+            email: cleanEmail,
+            phone: formattedPhone,
+            role: "user",
           })
           .select()
           .maybeSingle();
@@ -299,7 +435,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
       return { error: null, user: null, confirmed: false };
     } catch (err: any) {
-      return { error: err || new Error("Failed to sign up"), user: null, confirmed: false };
+      return { error: err instanceof Error ? err : new Error(err?.message || "Failed to sign up"), user: null, confirmed: false };
     }
   };
 
@@ -327,12 +463,24 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const resetPassword = async (email: string) => {
     try {
       const { error } = await supabase.auth.resetPasswordForEmail(email, {
-        redirectTo: `${window.location.origin}/login`,
+        redirectTo: `${window.location.origin}/update-password`,
       });
       if (error) throw error;
       return { error: null };
     } catch (err: any) {
       return { error: err || new Error("Failed to reset password") };
+    }
+  };
+
+  const updatePassword = async (newPassword: string) => {
+    try {
+      const { error } = await supabase.auth.updateUser({
+        password: newPassword,
+      });
+      if (error) throw error;
+      return { error: null };
+    } catch (err: any) {
+      return { error: err instanceof Error ? err : new Error(err?.message || "Failed to update password.") };
     }
   };
 
@@ -375,6 +523,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           first_name: trimmedFirstName,
           last_name: trimmedLastName,
           full_name: computedFullName,
+          email: profile?.email || user.email || null,
           phone: trimmedPhone,
           date_of_birth: dob,
           gender: genderVal,
@@ -499,6 +648,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         signInWithGoogle,
         signOut,
         resetPassword,
+        updatePassword,
         resendConfirmation,
         updateProfile,
         refreshProfile,

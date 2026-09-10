@@ -8,7 +8,7 @@ import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { AdminOrderDetailsModal } from "./AdminOrderDetailsModal";
 
-type OrderStatusType = "Processing" | "Confirmed" | "Shipped" | "Delivered" | "Cancelled";
+type OrderStatusType = "Processing" | "Accepted" | "Confirmed" | "Shipped" | "Delivered" | "Cancelled" | "Rejected";
 
 export function OrderManagement() {
   const [orders, setOrders] = useState<OrderRecord[]>([]);
@@ -106,7 +106,7 @@ export function OrderManagement() {
 
         <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar pb-1 md:pb-0">
           <Filter className="size-3.5 text-muted-foreground shrink-0" />
-          {["all", "processing", "confirmed", "shipped", "delivered", "cancelled"].map((st) => (
+          {["all", "processing", "accepted", "confirmed", "shipped", "delivered", "rejected", "cancelled"].map((st) => (
             <Button
               key={st}
               size="sm"
@@ -192,9 +192,11 @@ export function OrderManagement() {
                         className="rounded-xl border border-border bg-background px-2.5 py-1.5 text-xs font-semibold text-foreground focus:ring-2 focus:ring-primary focus:outline-none cursor-pointer"
                       >
                         <option value="Processing">Processing</option>
+                        <option value="Accepted">Accepted</option>
                         <option value="Confirmed">Confirmed</option>
                         <option value="Shipped">Shipped</option>
                         <option value="Delivered">Delivered</option>
+                        <option value="Rejected">Rejected</option>
                         <option value="Cancelled">Cancelled</option>
                       </select>
                     </td>
@@ -229,6 +231,13 @@ function StatusBadge({ status }: { status: OrderStatusType }) {
       </span>
     );
   }
+  if (status === "Accepted") {
+    return (
+      <span className="inline-flex items-center gap-1 rounded-full bg-emerald-500/10 px-2.5 py-1 text-[11px] font-bold text-emerald-600">
+        <CheckCircle2 className="size-3" /> Accepted
+      </span>
+    );
+  }
   if (status === "Confirmed") {
     return (
       <span className="inline-flex items-center gap-1 rounded-full bg-indigo-500/10 px-2.5 py-1 text-[11px] font-bold text-indigo-600">
@@ -247,6 +256,13 @@ function StatusBadge({ status }: { status: OrderStatusType }) {
     return (
       <span className="inline-flex items-center gap-1 rounded-full bg-emerald-500/10 px-2.5 py-1 text-[11px] font-bold text-emerald-600">
         <CheckCircle2 className="size-3" /> Delivered
+      </span>
+    );
+  }
+  if (status === "Rejected") {
+    return (
+      <span className="inline-flex items-center gap-1 rounded-full bg-destructive/10 px-2.5 py-1 text-[11px] font-bold text-destructive">
+        <XCircle className="size-3" /> Rejected
       </span>
     );
   }

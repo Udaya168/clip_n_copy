@@ -26,7 +26,7 @@ import {
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 
-type OrderStatusType = "Processing" | "Confirmed" | "Shipped" | "Delivered" | "Cancelled";
+type OrderStatusType = "Processing" | "Accepted" | "Confirmed" | "Shipped" | "Delivered" | "Cancelled" | "Rejected";
 
 interface AdminOrderDetailsModalProps {
   order: OrderRecord | null;
@@ -167,6 +167,14 @@ export function AdminOrderDetailsModal({
 
           </div>
 
+          {/* Rejection Reason display if present */}
+          {order.rejectionReason && (
+            <div className="rounded-2xl border border-destructive/30 bg-destructive/10 p-4 text-xs text-destructive">
+              <p className="font-extrabold uppercase tracking-wider text-[11px] mb-1">Rejection Reason</p>
+              <p className="font-semibold">{order.rejectionReason}</p>
+            </div>
+          )}
+
           {/* Section 2: Order Items */}
           <div className="rounded-2xl border border-border p-4 bg-card">
             <h3 className="text-xs font-bold uppercase tracking-wider text-muted-foreground mb-3 flex items-center gap-2">
@@ -305,9 +313,11 @@ export function AdminOrderDetailsModal({
                 className="rounded-xl border border-border bg-background px-3 py-2 text-xs font-bold text-foreground focus:ring-2 focus:ring-primary focus:outline-none cursor-pointer disabled:opacity-50"
               >
                 <option value="Processing">Processing</option>
+                <option value="Accepted">Accepted</option>
                 <option value="Confirmed">Confirmed</option>
                 <option value="Shipped">Shipped</option>
                 <option value="Delivered">Delivered</option>
+                <option value="Rejected">Rejected</option>
                 <option value="Cancelled">Cancelled</option>
               </select>
             </div>
@@ -325,6 +335,13 @@ function StatusBadge({ status }: { status: OrderStatusType }) {
     return (
       <span className="inline-flex items-center gap-1 rounded-full bg-amber-500/10 px-2.5 py-1 text-[11px] font-bold text-amber-600">
         <Clock className="size-3" /> Processing
+      </span>
+    );
+  }
+  if (status === "Accepted") {
+    return (
+      <span className="inline-flex items-center gap-1 rounded-full bg-emerald-500/10 px-2.5 py-1 text-[11px] font-bold text-emerald-600">
+        <CheckCircle2 className="size-3" /> Accepted
       </span>
     );
   }
@@ -346,6 +363,13 @@ function StatusBadge({ status }: { status: OrderStatusType }) {
     return (
       <span className="inline-flex items-center gap-1 rounded-full bg-emerald-500/10 px-2.5 py-1 text-[11px] font-bold text-emerald-600">
         <CheckCircle2 className="size-3" /> Delivered
+      </span>
+    );
+  }
+  if (status === "Rejected") {
+    return (
+      <span className="inline-flex items-center gap-1 rounded-full bg-destructive/10 px-2.5 py-1 text-[11px] font-bold text-destructive">
+        <XCircle className="size-3" /> Rejected
       </span>
     );
   }
