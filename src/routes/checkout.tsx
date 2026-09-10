@@ -121,14 +121,9 @@ export default function CheckoutPage() {
       if (!user || !isEmailConfirmed(user)) {
         toast.error("Please confirm your email and sign in to continue with checkout.");
         navigate("/login?redirect=/checkout");
-      } else if (subtotal < 400) {
-        toast.error(`Minimum order value is ₹400. Current cart total is ${inr(subtotal)}.`, {
-          description: `Add ${inr(400 - subtotal)} more to proceed to checkout.`,
-        });
-        navigate("/shop");
       }
     }
-  }, [user, loading, subtotal, navigate]);
+  }, [user, loading, navigate]);
 
   if (loading) {
     return (
@@ -209,12 +204,6 @@ export default function CheckoutPage() {
     e.preventDefault();
     if (isSubmitting) return;
     setIsSubmitting(true);
-
-    if (subtotal < 400) {
-      toast.error(`Minimum order value is ₹400. Add ${inr(400 - subtotal)} more to proceed.`);
-      setIsSubmitting(false);
-      return;
-    }
 
     const freshSettings = await fetchStoreSettings();
     const { isOnline: freshIsOnline } = evaluateStoreStatus(freshSettings);

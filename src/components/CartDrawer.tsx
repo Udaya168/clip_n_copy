@@ -45,10 +45,6 @@ export function CartDrawer() {
 
   const handleCheckoutClick = (e: React.MouseEvent) => {
     e.preventDefault();
-    if (total < 400) {
-      toast.error(`Minimum order value is ₹400. Add ${inr(400 - total)} more to proceed.`);
-      return;
-    }
     setCartOpen(false);
     // Requirement 6: Check auth & email confirmation status
     if (!user || !isEmailConfirmed(user)) {
@@ -171,19 +167,8 @@ export function CartDrawer() {
                 </div>
               </div>
 
-              {total < 400 && (
-                <div className="rounded-xl border border-amber-500/30 bg-amber-500/10 p-3 text-xs text-amber-700 dark:text-amber-400 flex items-start gap-2.5">
-                  <AlertCircle className="size-4 shrink-0 mt-0.5 text-amber-600 dark:text-amber-400" />
-                  <div className="space-y-0.5">
-                    <p className="font-bold">Minimum order value is ₹400</p>
-                    <p className="opacity-90 font-medium">Add {inr(400 - total)} more to proceed</p>
-                  </div>
-                </div>
-              )}
-
               <button
                 onClick={handleCheckoutClick}
-                disabled={total < 400}
                 className="inline-flex h-12 w-full items-center justify-center rounded-full bg-primary font-semibold text-primary-foreground shadow-glow transition-transform active:scale-98 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed disabled:shadow-none"
               >
                 Proceed to Checkout
