@@ -122,7 +122,7 @@ class OrderAlarmSound {
         osc.frequency.setValueAtTime(freq, now + idx * 0.15);
 
         // Envelope: quick attack, exponential decay
-        gain.gain.setValueAtTime(0.3, now + idx * 0.15);
+        gain.gain.setValueAtTime(0.85, now + idx * 0.15);
         gain.gain.exponentialRampToValueAtTime(0.0001, now + idx * 0.15 + 0.7);
 
         osc.connect(gain);

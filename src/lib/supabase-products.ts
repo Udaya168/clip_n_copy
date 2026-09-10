@@ -1442,8 +1442,10 @@ export async function fetchSupabaseProducts(): Promise<Product[]> {
         c === "books" ||
         n.includes("python") ||
         n.includes("data structure") ||
+        n.includes("data sturcture") ||
         n.includes("engineering math") ||
         n.includes("exam guide") ||
+        n.includes("competitive exam") ||
         n.includes("robotics") ||
         n.includes("mini stapler") ||
         id.includes("mini-stapler") ||

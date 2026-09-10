@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import React, { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "@/lib/auth-store";
 import { supabase } from "@/lib/supabase";
@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { AuthLayout } from "@/components/AuthLayout";
+import type { AuthChangeEvent, Session } from "@supabase/supabase-js";
 
 export default function UpdatePasswordPage() {
   const { updatePassword, signOut } = useAuth();
@@ -64,25 +65,25 @@ export default function UpdatePasswordPage() {
 
     verifySession();
 
-    const { data: authListener } = supabase.auth.onAuthStateChange(
-      (event: string, session: any) => {
-        if (!isMounted) return;
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((event: AuthChangeEvent, session: Session | null) => {
+      if (!isMounted) return;
 
-        if (event === "PASSWORD_RECOVERY") {
-          setHasValidSession(true);
-          setErrorMessage(null);
-          setCheckingSession(false);
-        } else if (event === "SIGNED_IN" && session && isRecoveryUrl) {
-          setHasValidSession(true);
-          setErrorMessage(null);
-          setCheckingSession(false);
-        }
+      if (event === "PASSWORD_RECOVERY") {
+        setHasValidSession(true);
+        setErrorMessage(null);
+        setCheckingSession(false);
+      } else if (event === "SIGNED_IN" && session && isRecoveryUrl) {
+        setHasValidSession(true);
+        setErrorMessage(null);
+        setCheckingSession(false);
       }
-    );
+    });
 
     return () => {
       isMounted = false;
-      authListener?.subscription?.unsubscribe();
+      subscription?.unsubscribe();
     };
   }, []);
 

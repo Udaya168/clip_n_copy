@@ -149,20 +149,20 @@ function AdminLayoutInner() {
       <div className="flex flex-1 flex-col min-w-0">
         <AdminHeader title={titles[activeTab]} onSelectOrder={handleSelectOrderFromHeader} />
 
-        {/* PROMINENT REAL-TIME NEW ORDER BANNER */}
+        {/* PROMINENT REAL-TIME NEW ORDER FLOATING NOTIFICATION (CENTERED & STICKY) */}
         {latestNotification && (!latestNotification.acknowledged || activeAlarm) && (
-          <div className="mx-4 mt-4 md:mx-8 rounded-2xl border border-primary/30 bg-gradient-to-r from-primary/15 via-primary/10 to-card p-4 shadow-lg animate-in slide-in-from-top-4 duration-300">
-            <div className="flex flex-col md:flex-row md:items-center justify-between gap-3">
+          <div className="fixed top-[40%] left-1/2 -translate-x-1/2 -translate-y-1/2 z-[100] w-[92vw] max-w-2xl rounded-3xl border-2 border-primary/40 bg-card/95 backdrop-blur-md p-5 shadow-2xl ring-2 ring-primary/20 animate-in zoom-in-95 fade-in duration-300">
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
               <div className="flex items-start gap-3">
-                <div className="grid size-10 place-items-center rounded-xl bg-primary text-primary-foreground shrink-0 shadow-md animate-bounce">
-                  <BellRing className="size-5" />
+                <div className="grid size-11 place-items-center rounded-2xl bg-primary text-primary-foreground shrink-0 shadow-lg animate-bounce">
+                  <BellRing className="size-6" />
                 </div>
                 <div>
                   <div className="flex items-center gap-2">
                     <span className="font-display text-sm font-extrabold uppercase tracking-wider text-primary">
                       🔔 New Order Received!
                     </span>
-                    <span className="inline-flex items-center px-2 py-0.5 rounded-full bg-emerald-500/15 text-emerald-700 dark:text-emerald-400 font-extrabold text-[10px]">
+                    <span className="inline-flex items-center px-2.5 py-0.5 rounded-full bg-emerald-500/15 text-emerald-700 dark:text-emerald-400 font-extrabold text-[10px] tracking-wide">
                       JUST NOW
                     </span>
                   </div>
@@ -219,7 +219,7 @@ function AdminLayoutInner() {
                 <button
                   type="button"
                   onClick={() => acknowledgeNotification(latestNotification.id)}
-                  className="p-1.5 text-muted-foreground hover:text-foreground rounded-lg"
+                  className="p-1.5 text-muted-foreground hover:text-foreground rounded-lg transition-colors"
                   title="Dismiss notification"
                 >
                   <X className="size-4" />
