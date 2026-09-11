@@ -1,6 +1,5 @@
 import { ArrowRight, Book, Briefcase, Clock, Copy, FileCheck2, FileText, Palette, Printer } from "lucide-react";
-import { useState } from "react";
-import { UploadPrintModal } from "@/components/UploadPrintModal";
+import { openPrintModal } from "@/lib/print-modal";
 import { PRINT_SERVICES } from "@/lib/data";
 import slidePrinting from "@/assets/slide-printing.webp";
 import { ShopLayout } from "@/components/ShopLayout";
@@ -26,14 +25,10 @@ function getServiceIcon(name: string) {
 }
 
 export default function ServicesPage() {
-  const [open, setOpen] = useState(false);
-  const [selectedService, setSelectedService] = useState<string | null>(null);
-  
   useScrollRestoration(true);
 
   const handleOrder = (serviceName: string | null = null) => {
-    setSelectedService(serviceName);
-    setOpen(true);
+    openPrintModal(serviceName);
   };
 
   return (
@@ -172,7 +167,6 @@ export default function ServicesPage() {
           </div>
         </section>
 
-        {open && <UploadPrintModal onClose={() => setOpen(false)} serviceName={selectedService} />}
       </div>
     </ShopLayout>
   );

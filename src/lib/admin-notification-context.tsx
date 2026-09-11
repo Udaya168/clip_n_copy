@@ -207,31 +207,7 @@ export function AdminNotificationProvider({ children }: { children: React.ReactN
         setActiveAlarm(false);
       });
 
-      // 4. Trigger In-App Toast Popup with full order details
-      toast.custom(
-        (_t) => (
-          <div className="w-full max-w-sm rounded-2xl border border-primary/40 bg-card p-4 shadow-xl ring-1 ring-primary/20 space-y-2">
-            <div className="flex items-center justify-between">
-              <span className="font-display text-xs font-black uppercase text-primary tracking-wider">
-                🔔 New Order Received!
-              </span>
-              <span className="text-[10px] font-bold text-muted-foreground">Just Now</span>
-            </div>
-            <div>
-              <p className="text-sm font-bold text-foreground">Order #{orderNumber}</p>
-              <p className="text-xs text-muted-foreground mt-0.5">
-                {customerName} {customerPhone ? `(${customerPhone})` : ""}
-              </p>
-              <p className="text-xs font-extrabold text-foreground mt-1">
-                {inr(totalAmount)} · {itemsCount} {itemsCount === 1 ? "item" : "items"}
-              </p>
-            </div>
-          </div>
-        ),
-        { duration: 12000 }
-      );
-
-      // 5. Trigger Native Browser Notification if permission granted
+      // 4. Trigger Native Browser Notification if permission granted
       if (typeof window !== "undefined" && "Notification" in window && Notification.permission === "granted") {
         try {
           const nativeNotif = new Notification("🔔 New Order Received!", {
@@ -251,6 +227,64 @@ export function AdminNotificationProvider({ children }: { children: React.ReactN
     },
     [stopAlarm]
   );
+
+  // Initial fetch for pending orders for persistence
+  useEffect(() => {
+    if (!user || !isAdmin) return;
+
+    let isMounted = true;
+    const loadPendingOrders = async () => {
+      try {
+        const { data, error } = await supabase
+          .from("orders")
+          .select("*")
+          .eq("status", "pending")
+          .order("created_at", { ascending: false })
+          .limit(10);
+        
+        if (!error && data && data.length > 0 && isMounted) {
+          const loadedNotifs: AdminOrderNotification[] = data.map(orderPayload => {
+            const orderId = String(orderPayload.id);
+            notifiedOrderIds.current.add(orderId);
+            return {
+              id: `notif-${orderId}-${Date.now()}`,
+              orderId: orderId,
+              orderNumber: String(orderPayload.order_number || orderId),
+              customerName: String(orderPayload.customer_name || "Customer"),
+              customerPhone: orderPayload.customer_phone,
+              customerEmail: orderPayload.customer_email,
+              address: orderPayload.address || orderPayload.shipping_address,
+              paymentMethod: orderPayload.payment_method,
+              fulfillmentType: orderPayload.fulfillment_type,
+              deliveryMethod: orderPayload.delivery_method,
+              totalAmount: Number(orderPayload.total_amount || 0),
+              itemsCount: Number(orderPayload.items_count || 1),
+              createdAt: orderPayload.created_at || new Date().toISOString(),
+              acknowledged: false,
+              read: false,
+            };
+          });
+
+          setNotifications(prev => {
+            const existingIds = new Set(prev.map(n => n.orderId));
+            const newNotifs = loadedNotifs.filter(n => !existingIds.has(n.orderId));
+            if (newNotifs.length > 0) {
+              orderAlarm.unlock();
+              setActiveAlarm(true);
+              orderAlarm.start(0, () => setActiveAlarm(false));
+              return [...newNotifs, ...prev];
+            }
+            return prev;
+          });
+        }
+      } catch (e) {
+        console.warn("[AdminNotif] Error fetching pending orders", e);
+      }
+    };
+    
+    loadPendingOrders();
+    return () => { isMounted = false; };
+  }, [user, isAdmin]);
 
   // Supabase Realtime channel subscription for `orders` INSERT events
   useEffect(() => {
@@ -325,10 +359,14 @@ export function AdminNotificationProvider({ children }: { children: React.ReactN
 
   const acknowledgeNotification = useCallback(
     (id: string) => {
-      setNotifications((prev) =>
-        prev.map((n) => (n.id === id || n.orderId === id ? { ...n, acknowledged: true, read: true } : n))
-      );
-      stopAlarm();
+      setNotifications((prev) => {
+        const updated = prev.map((n) => (n.id === id || n.orderId === id ? { ...n, acknowledged: true, read: true } : n));
+        const pending = updated.filter(n => !n.acknowledged);
+        if (pending.length === 0) {
+          stopAlarm();
+        }
+        return updated;
+      });
     },
     [stopAlarm]
   );

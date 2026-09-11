@@ -66,6 +66,7 @@ export default function LoginPage() {
 }
 
 import { AuthLayout } from "@/components/AuthLayout";
+import { TermsAndConditionsModal } from "@/components/TermsAndConditionsModal";
 
 // ----------------------------------------------------------------------
 // COMPONENT STRUCTURE
@@ -108,6 +109,7 @@ function LoginForm({ initialSuccessMessage }: { initialSuccessMessage: string | 
   const [successMessage, setSuccessMessage] = useState<string | null>(initialSuccessMessage);
   const [showResend, setShowResend] = useState(false);
   const [resetMode, setResetMode] = useState(false);
+  const [isTermsOpen, setIsTermsOpen] = useState(false);
 
   const handleGoogleLogin = async () => {
     setErrorMessage(null);
@@ -495,6 +497,16 @@ function LoginForm({ initialSuccessMessage }: { initialSuccessMessage: string | 
                 </Label>
               </div>
 
+              <div className="mt-3 ml-1 text-left">
+                <button
+                  type="button"
+                  onClick={() => setIsTermsOpen(true)}
+                  className="text-[12px] font-semibold text-[#0647E8] hover:text-[#062BCB] hover:underline transition-all duration-300 cursor-pointer"
+                >
+                  Terms & Conditions
+                </button>
+              </div>
+
               <Button
                 type="submit"
                 disabled={loading || phone.replace(/\D/g, "").length !== 10 || !mobilePassword}
@@ -569,6 +581,16 @@ function LoginForm({ initialSuccessMessage }: { initialSuccessMessage: string | 
                 <Label htmlFor="remember" className="text-[14px] text-slate-600 font-medium cursor-pointer">
                   Remember me
                 </Label>
+              </div>
+
+              <div className="mt-3 ml-1 text-left">
+                <button
+                  type="button"
+                  onClick={() => setIsTermsOpen(true)}
+                  className="text-[12px] font-semibold text-[#0647E8] hover:text-[#062BCB] hover:underline transition-all duration-300 cursor-pointer"
+                >
+                  Terms & Conditions
+                </button>
               </div>
 
               <Button
@@ -646,6 +668,7 @@ function LoginForm({ initialSuccessMessage }: { initialSuccessMessage: string | 
           </button>
         </form>
       )}
+      <TermsAndConditionsModal isOpen={isTermsOpen} onClose={() => setIsTermsOpen(false)} />
     </>
   );
 }

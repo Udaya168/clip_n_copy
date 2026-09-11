@@ -21,6 +21,8 @@ const SUPPORT = [
   { label: "Contact Us", to: "/contact" },
   { label: "Track Order", to: "/track-order" },
   { label: "Help", to: "/help" },
+  { label: "Terms & Conditions", to: "/terms-and-conditions" },
+  { label: "Privacy Policy", to: "/privacy-policy" },
 ];
 
 export function Footer() {

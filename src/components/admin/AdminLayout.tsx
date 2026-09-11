@@ -9,15 +9,16 @@ import { RejectOrderModal } from "./RejectOrderModal";
 import { fetchSupabaseProducts, SupabaseProduct, mapSupabaseProduct } from "@/lib/supabase-products";
 import { setProductsCache } from "@/lib/data";
 import { supabase } from "@/lib/supabase";
-import { acceptOrderInDb, rejectOrderInDb } from "@/lib/orders-store";
+import { acceptOrderInDb, rejectOrderInDb, OrderRecord } from "@/lib/orders-store";
 import { triggerOrderAcceptanceEmail, triggerOrderRejectionEmail } from "@/lib/order-email-service";
 import { AdminSettingsStoreStatusCard } from "./AdminSettingsStoreStatusCard";
 import { Sliders, ShieldCheck, BellRing, VolumeX, Eye, X, CheckCircle2, XCircle, Loader2 } from "lucide-react";
-import { AdminNotificationProvider, useAdminNotifications } from "@/lib/admin-notification-context";
+import { AdminNotificationProvider, useAdminNotifications, AdminOrderNotification } from "@/lib/admin-notification-context";
 import { inr } from "@/lib/shop-store";
 import { toast } from "sonner";
 
 import { NewOrderAlertModal } from "./NewOrderAlertModal";
+import { AdminOrderDetailsModal } from "./AdminOrderDetailsModal";
 
 export function AdminLayout() {
   return (
@@ -32,27 +33,27 @@ function AdminLayoutInner() {
   const [products, setProducts] = useState<SupabaseProduct[]>([]);
   const [loading, setLoading] = useState(true);
   const [isAccepting, setIsAccepting] = useState<boolean>(false);
-  const [rejectModalOpen, setRejectModalOpen] = useState<boolean>(false);
+  const [rejectingOrder, setRejectingOrder] = useState<AdminOrderNotification | null>(null);
+  const [viewingOrder, setViewingOrder] = useState<OrderRecord | null>(null);
 
   const {
+    notifications,
     activeAlarm,
     stopAlarm,
-    latestNotification,
     acknowledgeNotification,
     permissionStatus,
     requestNotificationPermission,
   } = useAdminNotifications();
 
-  const handleAcceptOrder = async () => {
-    if (!latestNotification || isAccepting) return;
+  const handleAcceptOrder = async (notif: AdminOrderNotification) => {
+    if (!notif || isAccepting) return;
     setIsAccepting(true);
     try {
-      const ok = await acceptOrderInDb(latestNotification.orderId);
+      const ok = await acceptOrderInDb(notif.orderId);
       if (ok) {
-        stopAlarm();
-        triggerOrderAcceptanceEmail(latestNotification.orderId, latestNotification.orderNumber);
-        acknowledgeNotification(latestNotification.id);
-        toast.success(`Order #${latestNotification.orderNumber} accepted successfully!`);
+        triggerOrderAcceptanceEmail(notif.orderId, notif.orderNumber);
+        acknowledgeNotification(notif.id);
+        toast.success(`Order #${notif.orderNumber} accepted successfully!`, { duration: 2000 });
       } else {
         toast.error("Failed to update order status.");
       }
@@ -64,19 +65,20 @@ function AdminLayoutInner() {
   };
 
   const handleConfirmRejectOrder = async (reason: string) => {
-    if (!latestNotification) return;
+    if (!rejectingOrder) return;
     try {
-      const ok = await rejectOrderInDb(latestNotification.orderId, reason);
+      const ok = await rejectOrderInDb(rejectingOrder.orderId, reason);
       if (ok) {
-        stopAlarm();
-        triggerOrderRejectionEmail(latestNotification.orderId, latestNotification.orderNumber, reason);
-        acknowledgeNotification(latestNotification.id);
-        toast.error(`Order #${latestNotification.orderNumber} rejected.`);
+        triggerOrderRejectionEmail(rejectingOrder.orderId, rejectingOrder.orderNumber, reason);
+        acknowledgeNotification(rejectingOrder.id);
+        toast.error(`Order #${rejectingOrder.orderNumber} rejected.`, { duration: 2000 });
       } else {
         toast.error("Failed to update order status.");
       }
     } catch (err) {
       toast.error("Error rejecting order.");
+    } finally {
+      setRejectingOrder(null);
     }
   };
 
@@ -174,20 +176,45 @@ function AdminLayoutInner() {
 
         {/* PROMINENT REAL-TIME NEW ORDER MODAL */}
         <NewOrderAlertModal
-          notification={latestNotification && (!latestNotification.acknowledged || activeAlarm) ? latestNotification : null}
+          notifications={notifications.filter(n => !n.acknowledged)}
           activeAlarm={activeAlarm}
           isAccepting={isAccepting}
           onAcceptOrder={handleAcceptOrder}
-          onRejectOrder={() => setRejectModalOpen(true)}
+          onRejectOrder={(notif) => setRejectingOrder(notif)}
+          onViewOrder={(notif) => {
+            setViewingOrder({
+              id: notif.orderId,
+              orderNumber: notif.orderNumber,
+              customerName: notif.customerName,
+              customerPhone: notif.customerPhone || "",
+              customerEmail: notif.customerEmail,
+              date: notif.createdAt,
+              itemsCount: notif.itemsCount,
+              totalAmount: notif.totalAmount,
+              status: "Processing",
+              fulfillmentType: (notif.fulfillmentType as any) || "Delivery",
+              address: notif.address,
+              deliveryMethod: notif.deliveryMethod,
+              paymentMethod: notif.paymentMethod,
+            });
+          }}
           onStopAlarm={stopAlarm}
-          onDismiss={() => latestNotification && acknowledgeNotification(latestNotification.id)}
+          onDismiss={(notif) => acknowledgeNotification(notif.id)}
         />
 
+        {viewingOrder && (
+          <AdminOrderDetailsModal
+            order={viewingOrder}
+            isOpen={!!viewingOrder}
+            onClose={() => setViewingOrder(null)}
+          />
+        )}
+
         <RejectOrderModal
-          orderId={latestNotification?.orderId ?? null}
-          orderNumber={latestNotification?.orderNumber ?? null}
-          isOpen={rejectModalOpen}
-          onClose={() => setRejectModalOpen(false)}
+          orderId={rejectingOrder?.orderId ?? null}
+          orderNumber={rejectingOrder?.orderNumber ?? null}
+          isOpen={!!rejectingOrder}
+          onClose={() => setRejectingOrder(null)}
           onConfirmReject={handleConfirmRejectOrder}
         />
 

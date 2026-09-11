@@ -6,7 +6,7 @@ import { HeroSection } from "@/components/HeroSection";
 import { ProductCard, ProductSkeleton } from "@/components/ProductCard";
 import { SectionHead } from "@/components/SectionHead";
 import { StoreSection } from "@/components/StoreSection";
-import { UploadPrintModal } from "@/components/UploadPrintModal";
+import { openPrintModal } from "@/lib/print-modal";
 import { RAW_CATEGORIES, PRINT_SERVICES } from "@/lib/data";
 import { useShop } from "@/lib/shop-store";
 import { useSupabaseProducts } from "@/lib/supabase-products";
@@ -31,13 +31,10 @@ function getServiceIcon(name: string) {
 
 export default function IndexPage() {
   const { addToCart } = useShop();
-  const [printOpen, setPrintOpen] = useState(false);
-  const [selectedService, setSelectedService] = useState<string | null>(null);
   const { data: products = [], isLoading, isError, error, refetch } = useSupabaseProducts();
 
   const handleOrder = (serviceName: string | null = null) => {
-    setSelectedService(serviceName);
-    setPrintOpen(true);
+    openPrintModal(serviceName);
   };
 
   useScrollRestoration(!isLoading);
@@ -223,8 +220,6 @@ export default function IndexPage() {
           ))}
         </div>
       </section>
-
-      {printOpen && <UploadPrintModal onClose={() => setPrintOpen(false)} serviceName={selectedService} />}
     </LandingLayout>
   );
 }

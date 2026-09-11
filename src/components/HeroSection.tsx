@@ -85,7 +85,7 @@ export function HeroSection() {
 
   // Set up autoplay plugin
   const plugin = useRef(
-    Autoplay({ delay: 5000, stopOnInteraction: true, stopOnMouseEnter: true })
+    Autoplay({ delay: 3000, stopOnInteraction: false, stopOnMouseEnter: true })
   );
 
   const onSelect = useCallback((api: CarouselApi) => {
@@ -110,6 +110,7 @@ export function HeroSection() {
     (index: number) => {
       if (!api) return;
       api.scrollTo(index);
+      plugin.current.reset();
     },
     [api]
   );

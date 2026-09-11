@@ -8,6 +8,7 @@ import { ShopProvider } from "@/lib/shop-store";
 import { AuthProvider } from "@/lib/auth-store";
 import { Toaster } from "@/components/ui/sonner";
 import { ScrollToTop } from "@/components/ScrollToTop";
+import { PrintModalManager } from "@/components/PrintModalManager";
 
 // Page Imports (Lazy Loaded)
 import IndexPage from "@/routes/index";
@@ -28,6 +29,8 @@ const ServicesPage = lazy(() => import("@/routes/services"));
 const WishlistPage = lazy(() => import("@/routes/wishlist"));
 const OrdersPage = lazy(() => import("@/routes/orders"));
 const TrackOrderPage = lazy(() => import("@/routes/track-order"));
+const TermsAndConditionsPage = lazy(() => import("@/routes/terms-and-conditions"));
+const PrivacyPolicyPage = lazy(() => import("@/routes/privacy-policy"));
 
 function NotFoundComponent() {
   return (
@@ -94,12 +97,15 @@ export default function App() {
                 <Route path="/wishlist" element={<WishlistPage />} />
                 <Route path="/orders" element={<OrdersPage />} />
                 <Route path="/track-order" element={<TrackOrderPage />} />
+                <Route path="/terms-and-conditions" element={<TermsAndConditionsPage />} />
+                <Route path="/privacy-policy" element={<PrivacyPolicyPage />} />
                 <Route path="*" element={<NotFoundComponent />} />
               </Routes>
             </Suspense>
           </main>
         </div>
         {!hideStorefrontNavigation && <CartDrawer />}
+        <PrintModalManager />
         <Toaster position="bottom-right" />
       </ShopProvider>
     </AuthProvider>
