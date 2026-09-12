@@ -9,7 +9,15 @@ if (!fs.existsSync(outputPublicDir)) {
   fs.mkdirSync(outputPublicDir, { recursive: true });
 }
 
-// Copy all root public files into .output/public/ if missing (e.g. sw.js, icons)
+// Ensure favicon copies exist in rootPublicDir and outputPublicDir
+const logoWebpPath = path.join(rootPublicDir, "logo.webp");
+if (fs.existsSync(logoWebpPath)) {
+  fs.copyFileSync(logoWebpPath, path.join(rootPublicDir, "favicon.ico"));
+  fs.copyFileSync(logoWebpPath, path.join(rootPublicDir, "favicon.webp"));
+  fs.copyFileSync(logoWebpPath, path.join(rootPublicDir, "favicon.png"));
+}
+
+// Copy all root public files into .output/public/ (e.g. logo.webp, favicon.ico, sw.js)
 if (fs.existsSync(rootPublicDir)) {
   const publicFiles = fs.readdirSync(rootPublicDir);
   for (const file of publicFiles) {
@@ -32,7 +40,7 @@ if (fs.existsSync(assetsDir)) {
     files.find((f) => f.endsWith(".js")) ||
     "";
   cssFile =
-    files.find((f) => f.startsWith("styles-") && f.endsWith(".css")) ||
+    files.find((f) => f.startsWith("index-") && f.endsWith(".css")) ||
     files.find((f) => f.endsWith(".css")) ||
     "";
 }
@@ -43,7 +51,16 @@ const htmlContent = `<!DOCTYPE html>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Clip N Copy — Stationery, Books & Printing Store</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Sora:wght@400;600;700;800&family=Manrope:wght@400;500;600;700;800&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="icon" type="image/webp" href="/logo.webp" />
     <link rel="icon" type="image/x-icon" href="/favicon.ico" />
+    <link rel="shortcut icon" type="image/webp" href="/logo.webp" />
+    <link rel="apple-touch-icon" href="/logo.webp" />
     ${cssFile ? `<link rel="stylesheet" href="/assets/${cssFile}" />` : ""}
   </head>
   <body>

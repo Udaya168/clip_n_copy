@@ -41,19 +41,27 @@ const PrivacyPolicyPage = lazy(() => import("@/routes/privacy-policy"));
 
 function GlobalSplashScreen() {
   return (
-    <div className="fixed inset-0 z-[9999] flex flex-col items-center justify-center bg-white font-sans">
-      <div className="flex flex-col items-center justify-center p-6 text-center max-w-sm mx-auto">
-        <div className="relative mb-6 flex items-center justify-center">
-          <div className="absolute -inset-4 rounded-full bg-[#0647E8]/10 animate-ping opacity-75"></div>
-          <img
-            src="/logo.webp"
-            alt="Clip N Copy Logo"
-            className="relative h-16 w-auto object-contain drop-shadow-md"
-          />
-        </div>
-        <div className="flex items-center gap-2.5 text-[#0647E8] font-bold text-sm tracking-wide">
-          <Loader2 className="w-4 h-4 animate-spin" />
-          <span>Loading Clip N Copy...</span>
+    <div
+      role="status"
+      aria-live="polite"
+      className="fixed inset-0 z-[9999] flex min-h-screen w-full flex-col items-center justify-center bg-white px-4 font-sans overflow-hidden select-none"
+    >
+      <div className="flex flex-col items-center justify-center text-center">
+        {/* Stable Branded Clip N Copy Logo */}
+        <img
+          src="/logo.webp"
+          alt="Clip N Copy"
+          className="w-[150px] sm:w-[170px] md:w-[180px] h-auto object-contain mb-4"
+        />
+
+        {/* Loading Text */}
+        <p className="text-sm font-semibold text-slate-600 tracking-wide mb-2.5">
+          Loading...
+        </p>
+
+        {/* Subtle Loading Spinner */}
+        <div className="flex items-center justify-center">
+          <Loader2 className="size-4 animate-spin text-[#0647E8]" />
         </div>
       </div>
     </div>
