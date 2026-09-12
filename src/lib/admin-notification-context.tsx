@@ -59,6 +59,32 @@ const AdminNotificationContext = createContext<AdminNotificationContextType | un
 
 function mapPrintRequestToNotif(payload: any): AdminOrderNotification {
   const reqId = String(payload.id);
+  const printTypeStr = String(payload.print_type || "");
+
+  if (printTypeStr.startsWith("Customization:") || printTypeStr.includes("Customization")) {
+    const custType = printTypeStr.replace(/^Customization:\s*/i, "").trim() || payload.customization_type || "Brochure";
+    return {
+      id: `notif-custom-${reqId}`,
+      orderId: reqId,
+      orderNumber: `CUSTOM-${reqId.slice(0, 8).toUpperCase()}`,
+      customerName: String(payload.customer_name || "Customer"),
+      customerPhone: payload.customer_phone,
+      customerEmail: payload.customer_email,
+      totalAmount: 0,
+      itemsCount: Number(payload.copies || payload.quantity || 1),
+      createdAt: payload.created_at || new Date().toISOString(),
+      acknowledged: false,
+      read: false,
+      requestCategory: "customization",
+      customizationType: custType,
+      customizationTitle: payload.paper || payload.title || "Customization Request",
+      quantity: Number(payload.copies || payload.quantity || 1),
+      fileName: payload.file_name,
+      fileUrl: payload.file_url,
+      filePath: payload.file_path,
+    };
+  }
+
   return {
     id: `notif-print-${reqId}`,
     orderId: reqId,
@@ -119,7 +145,6 @@ export function AdminNotificationProvider({ children }: { children: React.ReactN
     return "default";
   });
 
-  const sessionStartTime = useRef<number>(Date.now());
   const notifiedOrderIds = useRef<Set<string>>(new Set());
   const broadcastChannel = useRef<BroadcastChannel | null>(null);
   const soundTimerRef = useRef<any>(null);
@@ -196,26 +221,45 @@ export function AdminNotificationProvider({ children }: { children: React.ReactN
     await enablePushNotifications();
   }, [user, enablePushNotifications]);
 
-  // Handle incoming new normal product order payload
+  const realtimeChannelRef = useRef<any>(null);
+  const reconnectTimerRef = useRef<any>(null);
+
+  const soundPlayedIds = useRef<Set<string>>(new Set());
+
+  // Safe audio alert player helper
+  const playAdminAlertSound = useCallback((id: string) => {
+    console.log(`[ALARM] New notification sound requested: ${id}`);
+
+    if (soundPlayedIds.current.has(id)) {
+      console.log(`[ALARM] Duplicate sound ignored: ${id}`);
+      return;
+    }
+    soundPlayedIds.current.add(id);
+
+    try {
+      orderAlarm.playAlertSound(id);
+    } catch (error) {
+      console.warn(`[ALARM] Playback blocked: ${id}`, error);
+    }
+  }, []);
+
+  // Handle incoming new normal product order payload from Realtime INSERT
   const handleNewOrderReceived = useCallback(
     (orderPayload: any) => {
       const orderId = String(orderPayload.id || orderPayload.order_number || Date.now());
       const orderNumber = String(orderPayload.order_number || orderPayload.orderNumber || orderId);
 
+      console.log(`[ALARM] realtime event received: ${orderId}`);
+      console.log(`[REALTIME] New order received: ${orderId}`);
+
       if (notifiedOrderIds.current.has(orderId)) {
+        console.log(`[REALTIME] Duplicate ignored: ${orderId}`);
         return;
       }
       notifiedOrderIds.current.add(orderId);
 
       if (broadcastChannel.current) {
         broadcastChannel.current.postMessage({ type: "NEW_ORDER_ALERT", orderId });
-      }
-
-      if (orderPayload.created_at) {
-        const orderTime = new Date(orderPayload.created_at).getTime();
-        if (!isNaN(orderTime) && orderTime < sessionStartTime.current - 10000) {
-          return;
-        }
       }
 
       const totalAmount = Number(orderPayload.total_amount || orderPayload.totalAmount || 0);
@@ -229,7 +273,7 @@ export function AdminNotificationProvider({ children }: { children: React.ReactN
       const deliveryMethod = orderPayload.delivery_method || orderPayload.deliveryMethod;
 
       const newNotif: AdminOrderNotification = {
-        id: `notif-${orderId}-${Date.now()}`,
+        id: `notif-${orderId}`,
         orderId: orderId,
         orderNumber: orderNumber,
         customerName: customerName,
@@ -247,46 +291,45 @@ export function AdminNotificationProvider({ children }: { children: React.ReactN
         requestCategory: "product",
       };
 
+      console.log(`[REALTIME] Notification created: ${orderId}`);
       setNotifications((prev) => [newNotif, ...prev.filter((n) => n.orderId !== orderId)]);
 
-      orderAlarm.unlock();
-      setActiveAlarm(true);
+      playAdminAlertSound(orderId);
 
-      if (soundTimerRef.current) {
-        clearTimeout(soundTimerRef.current);
-        soundTimerRef.current = null;
-      }
+      if (typeof window !== "undefined" && "Notification" in window) {
+        console.log(`[ALARM] Notification permission: ${Notification.permission}`);
+        if (Notification.permission === "granted" && document.visibilityState === "hidden") {
+          try {
+            const nativeNotif = new Notification("🔔 New Order Received!", {
+              body: `Order #${orderNumber} from ${customerName} — ${inr(totalAmount)} (${itemsCount} items)`,
+              icon: "/favicon.ico",
+              tag: `order-${orderId}`,
+            });
+            console.log(`[ALARM] Browser notification shown: ${orderId}`);
 
-      orderAlarm.start(0, () => {
-        setActiveAlarm(false);
-      });
-
-      if (typeof window !== "undefined" && "Notification" in window && Notification.permission === "granted") {
-        try {
-          const nativeNotif = new Notification("🔔 New Order Received!", {
-            body: `Order #${orderNumber} from ${customerName} — ${inr(totalAmount)} (${itemsCount} items)`,
-            icon: "/favicon.ico",
-            tag: `order-${orderId}`,
-          });
-
-          nativeNotif.onclick = () => {
-            window.focus();
-            stopAlarm();
-          };
-        } catch (err) {
-          console.warn("[AdminNotif] Native Notification error:", err);
+            nativeNotif.onclick = () => {
+              window.focus();
+              stopAlarm();
+            };
+          } catch (err) {
+            console.warn("[AdminNotif] Native Notification error:", err);
+          }
         }
       }
     },
-    [stopAlarm]
+    [playAdminAlertSound, stopAlarm]
   );
 
-  // Handle incoming printing request payload
+  // Handle incoming printing request payload from Realtime INSERT
   const handleNewPrintRequestReceived = useCallback(
     (payload: any) => {
       const requestId = String(payload.id || Date.now());
 
+      console.log(`[ALARM] realtime event received: ${requestId}`);
+      console.log(`[REALTIME] New printing request received: ${requestId}`);
+
       if (notifiedOrderIds.current.has(requestId)) {
+        console.log(`[REALTIME] Duplicate ignored: ${requestId}`);
         return;
       }
       notifiedOrderIds.current.add(requestId);
@@ -295,54 +338,46 @@ export function AdminNotificationProvider({ children }: { children: React.ReactN
         broadcastChannel.current.postMessage({ type: "NEW_ORDER_ALERT", orderId: requestId });
       }
 
-      if (payload.created_at) {
-        const orderTime = new Date(payload.created_at).getTime();
-        if (!isNaN(orderTime) && orderTime < sessionStartTime.current - 10000) {
-          return;
-        }
-      }
-
       const notif = mapPrintRequestToNotif(payload);
+      console.log(`[REALTIME] Notification created: ${requestId}`);
       setNotifications((prev) => [notif, ...prev.filter((n) => n.orderId !== requestId)]);
 
-      orderAlarm.unlock();
-      setActiveAlarm(true);
+      playAdminAlertSound(requestId);
 
-      if (soundTimerRef.current) {
-        clearTimeout(soundTimerRef.current);
-        soundTimerRef.current = null;
-      }
+      if (typeof window !== "undefined" && "Notification" in window) {
+        console.log(`[ALARM] Notification permission: ${Notification.permission}`);
+        if (Notification.permission === "granted" && document.visibilityState === "hidden") {
+          try {
+            const nativeNotif = new Notification("🔔 New Printing Order!", {
+              body: `Printing Order from ${notif.customerName} — ${notif.paper || "Standard"}`,
+              icon: "/favicon.ico",
+              tag: `print-${requestId}`,
+            });
+            console.log(`[ALARM] Browser notification shown: ${requestId}`);
 
-      orderAlarm.start(0, () => {
-        setActiveAlarm(false);
-      });
-
-      if (typeof window !== "undefined" && "Notification" in window && Notification.permission === "granted") {
-        try {
-          const nativeNotif = new Notification("🔔 New Printing Order!", {
-            body: `Printing Order from ${notif.customerName} — ${notif.paper || "Standard"}`,
-            icon: "/favicon.ico",
-            tag: `print-${requestId}`,
-          });
-
-          nativeNotif.onclick = () => {
-            window.focus();
-            stopAlarm();
-          };
-        } catch (err) {
-          console.warn("[AdminNotif] Native Printing Notification error:", err);
+            nativeNotif.onclick = () => {
+              window.focus();
+              stopAlarm();
+            };
+          } catch (err) {
+            console.warn("[AdminNotif] Native Printing Notification error:", err);
+          }
         }
       }
     },
-    [stopAlarm]
+    [playAdminAlertSound, stopAlarm]
   );
 
-  // Handle incoming customization printing request payload
+  // Handle incoming customization printing request payload from Realtime INSERT
   const handleNewCustomizationRequestReceived = useCallback(
     (payload: any) => {
       const requestId = String(payload.id || Date.now());
 
+      console.log(`[ALARM] realtime event received: ${requestId}`);
+      console.log(`[REALTIME] New customization request received: ${requestId}`);
+
       if (notifiedOrderIds.current.has(requestId)) {
+        console.log(`[REALTIME] Duplicate ignored: ${requestId}`);
         return;
       }
       notifiedOrderIds.current.add(requestId);
@@ -351,59 +386,61 @@ export function AdminNotificationProvider({ children }: { children: React.ReactN
         broadcastChannel.current.postMessage({ type: "NEW_ORDER_ALERT", orderId: requestId });
       }
 
-      if (payload.created_at) {
-        const orderTime = new Date(payload.created_at).getTime();
-        if (!isNaN(orderTime) && orderTime < sessionStartTime.current - 10000) {
-          return;
-        }
-      }
-
       const notif = mapCustomizationRequestToNotif(payload);
+      console.log(`[REALTIME] Notification created: ${requestId}`);
       setNotifications((prev) => [notif, ...prev.filter((n) => n.orderId !== requestId)]);
 
-      orderAlarm.unlock();
-      setActiveAlarm(true);
+      playAdminAlertSound(requestId);
 
-      if (soundTimerRef.current) {
-        clearTimeout(soundTimerRef.current);
-        soundTimerRef.current = null;
-      }
+      if (typeof window !== "undefined" && "Notification" in window) {
+        console.log(`[ALARM] Notification permission: ${Notification.permission}`);
+        if (Notification.permission === "granted" && document.visibilityState === "hidden") {
+          try {
+            const nativeNotif = new Notification("🔔 New Customization Request!", {
+              body: `Customization (${notif.customizationType}) from ${notif.customerName} — Qty: ${notif.quantity}`,
+              icon: "/favicon.ico",
+              tag: `custom-${requestId}`,
+            });
+            console.log(`[ALARM] Browser notification shown: ${requestId}`);
 
-      orderAlarm.start(0, () => {
-        setActiveAlarm(false);
-      });
-
-      if (typeof window !== "undefined" && "Notification" in window && Notification.permission === "granted") {
-        try {
-          const nativeNotif = new Notification("🔔 New Customization Request!", {
-            body: `Customization (${notif.customizationType}) from ${notif.customerName} — Qty: ${notif.quantity}`,
-            icon: "/favicon.ico",
-            tag: `custom-${requestId}`,
-          });
-
-          nativeNotif.onclick = () => {
-            window.focus();
-            stopAlarm();
-          };
-        } catch (err) {
-          console.warn("[AdminNotif] Native Customization Notification error:", err);
+            nativeNotif.onclick = () => {
+              window.focus();
+              stopAlarm();
+            };
+          } catch (err) {
+            console.warn("[AdminNotif] Native Customization Notification error:", err);
+          }
         }
       }
     },
-    [stopAlarm]
+    [playAdminAlertSound, stopAlarm]
   );
 
-  // Initial fetch for pending orders and requests for persistence
+  // Refs for handlers to ensure stable closure inside Realtime listener without tearing down subscription
+  const handlersRef = useRef({
+    handleNewOrderReceived,
+    handleNewPrintRequestReceived,
+    handleNewCustomizationRequestReceived,
+  });
+
+  useEffect(() => {
+    handlersRef.current = {
+      handleNewOrderReceived,
+      handleNewPrintRequestReceived,
+      handleNewCustomizationRequestReceived,
+    };
+  }, [handleNewOrderReceived, handleNewPrintRequestReceived, handleNewCustomizationRequestReceived]);
+
+  // Initial fetch for unhandled pending records on Admin Portal load/refresh
   useEffect(() => {
     if (!user || !isAdmin) return;
 
     let isMounted = true;
     const loadPendingRecords = async () => {
       try {
-        const [ordersRes, printRes, customRes] = await Promise.all([
-          supabase.from("orders").select("*").eq("status", "pending").order("created_at", { ascending: false }).limit(10),
-          supabase.from("print_requests").select("*").eq("status", "pending").order("created_at", { ascending: false }).limit(10),
-          supabase.from("customization_requests").select("*").eq("status", "pending").order("created_at", { ascending: false }).limit(10),
+        const [ordersRes, printRes] = await Promise.all([
+          supabase.from("orders").select("*").in("status", ["pending", "processing"]).order("created_at", { ascending: false }).limit(20),
+          supabase.from("print_requests").select("*").eq("status", "pending").order("created_at", { ascending: false }).limit(20),
         ]);
 
         if (!isMounted) return;
@@ -413,11 +450,16 @@ export function AdminNotificationProvider({ children }: { children: React.ReactN
         if (ordersRes.data) {
           ordersRes.data.forEach((orderPayload: any) => {
             const orderId = String(orderPayload.id);
-            notifiedOrderIds.current.add(orderId);
+            const statusLower = String(orderPayload.status || "").toLowerCase();
+            if (statusLower === "accepted" || statusLower === "confirmed" || statusLower === "shipped" || statusLower === "delivered" || statusLower === "rejected" || statusLower === "cancelled") {
+              console.log(`[ADMIN NOTIFICATION] Already processed - ignored: ${orderId}`);
+              return;
+            }
+
             loadedNotifs.push({
-              id: `notif-${orderId}-${Date.now()}`,
+              id: `notif-${orderId}`,
               orderId: orderId,
-              orderNumber: String(orderPayload.order_number || orderId),
+              orderNumber: String(orderPayload.order_number || orderPayload.orderNumber || orderId),
               customerName: String(orderPayload.customer_name || "Customer"),
               customerPhone: orderPayload.customer_phone,
               customerEmail: orderPayload.customer_email,
@@ -438,30 +480,21 @@ export function AdminNotificationProvider({ children }: { children: React.ReactN
         if (printRes.data) {
           printRes.data.forEach((payload: any) => {
             const reqId = String(payload.id);
-            notifiedOrderIds.current.add(reqId);
+            const statusLower = String(payload.status || "").toLowerCase();
+            if (statusLower === "accepted" || statusLower === "confirmed" || statusLower === "rejected" || statusLower === "dismissed") {
+              console.log(`[ADMIN NOTIFICATION] Already processed - ignored: ${reqId}`);
+              return;
+            }
             loadedNotifs.push(mapPrintRequestToNotif(payload));
           });
         }
 
-        if (customRes.data) {
-          customRes.data.forEach((payload: any) => {
-            const reqId = String(payload.id);
-            notifiedOrderIds.current.add(reqId);
-            loadedNotifs.push(mapCustomizationRequestToNotif(payload));
-          });
-        }
-
         if (loadedNotifs.length > 0 && isMounted) {
+          console.log(`[ADMIN NOTIFICATION] Loaded ${loadedNotifs.length} unhandled pending records on refresh`);
           setNotifications((prev) => {
             const existingIds = new Set(prev.map((n) => n.orderId));
             const newNotifs = loadedNotifs.filter((n) => !existingIds.has(n.orderId));
-            if (newNotifs.length > 0) {
-              orderAlarm.unlock();
-              setActiveAlarm(true);
-              orderAlarm.start(0, () => setActiveAlarm(false));
-              return [...newNotifs, ...prev];
-            }
-            return prev;
+            return [...newNotifs, ...prev];
           });
         }
       } catch (e) {
@@ -475,76 +508,154 @@ export function AdminNotificationProvider({ children }: { children: React.ReactN
     };
   }, [user, isAdmin]);
 
-  // Supabase Realtime channel subscription for `orders`, `print_requests`, & `customization_requests`
+  // Two independent stable Supabase Realtime channel subscriptions created ONCE on mount
   useEffect(() => {
-    if (!user || !isAdmin) return;
+    const userId = user?.id;
+    if (!userId || !isAdmin) return;
 
-    let channel: any = null;
-    sessionStartTime.current = Date.now();
+    let isMounted = true;
+    let ordersRetryCount = 0;
+    let printRetryCount = 0;
+    let ordersReconnectTimer: any = null;
+    let printReconnectTimer: any = null;
 
-    try {
-      channel = supabase
-        .channel("admin-realtime-all-requests-subscription")
-        .on(
-          "postgres_changes",
-          {
-            event: "INSERT",
-            schema: "public",
-            table: "orders",
-          },
-          (payload: any) => {
-            if (payload && payload.new) {
-              handleNewOrderReceived(payload.new);
+    const ordersChannelRef = { current: null as any };
+    const printChannelRef = { current: null as any };
+
+    const setupOrdersChannel = () => {
+      if (ordersChannelRef.current) {
+        try {
+          supabase.removeChannel(ordersChannelRef.current);
+        } catch (_) {}
+        ordersChannelRef.current = null;
+      }
+
+      try {
+        console.log("[REALTIME ORDERS] Connecting...");
+
+        const channel = supabase
+          .channel("admin-orders-realtime")
+          .on(
+            "postgres_changes",
+            {
+              event: "INSERT",
+              schema: "public",
+              table: "orders",
+            },
+            (payload: any) => {
+              if (payload && payload.new) {
+                console.log(`[REALTIME ORDERS] INSERT received: ${payload.new.id}`);
+                handlersRef.current.handleNewOrderReceived(payload.new);
+              }
             }
-          }
-        )
-        .on(
-          "postgres_changes",
-          {
-            event: "INSERT",
-            schema: "public",
-            table: "print_requests",
-          },
-          (payload: any) => {
-            if (payload && payload.new) {
-              handleNewPrintRequestReceived(payload.new);
+          )
+          .subscribe((status: string, err?: any) => {
+            if (!isMounted) return;
+
+            if (status === "SUBSCRIBED") {
+              console.log("[REALTIME ORDERS] SUBSCRIBED");
+              ordersRetryCount = 0;
+            } else if (status === "CHANNEL_ERROR" || status === "TIMED_OUT" || status === "CLOSED") {
+              if (err) {
+                console.warn("[REALTIME ORDERS] Channel error details:", err);
+              }
+              const delays = [1000, 2000, 5000, 10000];
+              const backoffMs = delays[Math.min(ordersRetryCount, delays.length - 1)] ?? 10000;
+              ordersRetryCount++;
+
+              if (!ordersReconnectTimer && isMounted) {
+                console.log(`[REALTIME ORDERS] Scheduling reconnect in ${backoffMs}ms`);
+                ordersReconnectTimer = setTimeout(() => {
+                  ordersReconnectTimer = null;
+                  if (isMounted) {
+                    setupOrdersChannel();
+                  }
+                }, backoffMs);
+              }
             }
-          }
-        )
-        .on(
-          "postgres_changes",
-          {
-            event: "INSERT",
-            schema: "public",
-            table: "customization_requests",
-          },
-          (payload: any) => {
-            if (payload && payload.new) {
-              handleNewCustomizationRequestReceived(payload.new);
+          });
+
+        ordersChannelRef.current = channel;
+      } catch (err) {
+        console.warn("[REALTIME ORDERS] Subscription exception:", err);
+      }
+    };
+
+    const setupPrintChannel = () => {
+      if (printChannelRef.current) {
+        try {
+          supabase.removeChannel(printChannelRef.current);
+        } catch (_) {}
+        printChannelRef.current = null;
+      }
+
+      try {
+        console.log("[REALTIME PRINT] Connecting...");
+
+        const channel = supabase
+          .channel("admin-print-realtime")
+          .on(
+            "postgres_changes",
+            {
+              event: "INSERT",
+              schema: "public",
+              table: "print_requests",
+            },
+            (payload: any) => {
+              if (payload && payload.new) {
+                console.log(`[REALTIME PRINT] INSERT received: ${payload.new.id}`);
+                handlersRef.current.handleNewPrintRequestReceived(payload.new);
+              }
             }
-          }
-        )
-        .subscribe((status: string) => {
-          if (status === "SUBSCRIBED") {
-            console.log("[AdminRealtime] Subscribed to orders, print_requests, & customization_requests");
-          }
-        });
-    } catch (err) {
-      console.warn("[AdminRealtime] Realtime subscription exception:", err);
-    }
+          )
+          .subscribe((status: string, err?: any) => {
+            if (!isMounted) return;
+
+            if (status === "SUBSCRIBED") {
+              console.log("[REALTIME PRINT] SUBSCRIBED");
+              printRetryCount = 0;
+            } else if (status === "CHANNEL_ERROR" || status === "TIMED_OUT" || status === "CLOSED") {
+              if (err) {
+                console.warn("[REALTIME PRINT] Channel error details:", err);
+              }
+              const delays = [1000, 2000, 5000, 10000];
+              const backoffMs = delays[Math.min(printRetryCount, delays.length - 1)] ?? 10000;
+              printRetryCount++;
+
+              if (!printReconnectTimer && isMounted) {
+                console.log(`[REALTIME PRINT] Scheduling reconnect in ${backoffMs}ms`);
+                printReconnectTimer = setTimeout(() => {
+                  printReconnectTimer = null;
+                  if (isMounted) {
+                    setupPrintChannel();
+                  }
+                }, backoffMs);
+              }
+            }
+          });
+
+        printChannelRef.current = channel;
+      } catch (err) {
+        console.warn("[REALTIME PRINT] Subscription exception:", err);
+      }
+    };
+
+    setupOrdersChannel();
+    setupPrintChannel();
 
     const handleStorageChange = (e: StorageEvent) => {
-      if (e.key === "cnc_orders_v1" && e.newValue) {
+      if ((e.key === "cnc-orders-v1" || e.key === "cnc_orders_v1") && e.newValue) {
         try {
           const list = JSON.parse(e.newValue);
           if (Array.isArray(list) && list.length > 0) {
             const latest = list[0];
-            if (latest) {
-              handleNewOrderReceived({
+            if (latest && latest.id) {
+              handlersRef.current.handleNewOrderReceived({
                 id: latest.id,
                 order_number: latest.orderNumber,
                 customer_name: latest.customerName,
                 customer_phone: latest.customerPhone,
+                customer_email: latest.customerEmail,
                 total_amount: latest.totalAmount,
                 items_count: latest.itemsCount,
                 created_at: new Date().toISOString(),
@@ -560,25 +671,38 @@ export function AdminNotificationProvider({ children }: { children: React.ReactN
     window.addEventListener("storage", handleStorageChange);
 
     return () => {
+      isMounted = false;
       window.removeEventListener("storage", handleStorageChange);
-      if (channel) {
-        supabase.removeChannel(channel).catch(() => {});
+      if (ordersReconnectTimer) {
+        clearTimeout(ordersReconnectTimer);
+        ordersReconnectTimer = null;
+      }
+      if (printReconnectTimer) {
+        clearTimeout(printReconnectTimer);
+        printReconnectTimer = null;
+      }
+      if (ordersChannelRef.current) {
+        console.log("[REALTIME ORDERS] Cleaning up channel on unmount");
+        supabase.removeChannel(ordersChannelRef.current).catch(() => {});
+        ordersChannelRef.current = null;
+      }
+      if (printChannelRef.current) {
+        console.log("[REALTIME PRINT] Cleaning up channel on unmount");
+        supabase.removeChannel(printChannelRef.current).catch(() => {});
+        printChannelRef.current = null;
       }
       if (soundTimerRef.current) {
         clearTimeout(soundTimerRef.current);
       }
       orderAlarm.stop();
     };
-  }, [user, isAdmin, handleNewOrderReceived, handleNewPrintRequestReceived, handleNewCustomizationRequestReceived]);
+  }, [user?.id, isAdmin]);
 
   const acknowledgeNotification = useCallback(
     (id: string) => {
+      stopAlarm();
       setNotifications((prev) => {
         const updated = prev.map((n) => (n.id === id || n.orderId === id ? { ...n, acknowledged: true, read: true } : n));
-        const pending = updated.filter((n) => !n.acknowledged);
-        if (pending.length === 0) {
-          stopAlarm();
-        }
         return updated;
       });
     },

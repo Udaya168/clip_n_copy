@@ -3,12 +3,10 @@ import { Link } from "react-router-dom";
 import { Heart, ShoppingBag, Star } from "lucide-react";
 import { type Product } from "@/lib/data";
 import { inr, useShop } from "@/lib/shop-store";
-import { useStoreStatus } from "@/lib/store-status";
 import { cn } from "@/lib/utils";
 
 export const ProductCard = memo(function ProductCard({ product, compact }: { product: Product; compact?: boolean }) {
   const { addToCart, toggleWishlist, inWishlist, cart, setQty } = useShop();
-  const { isOnline } = useStoreStatus();
   const saved = inWishlist(product.id);
   const cartItem = cart.find(item => item.id === product.id);
   const currentQty = cartItem ? cartItem.qty : 0;
@@ -99,16 +97,16 @@ export const ProductCard = memo(function ProductCard({ product, compact }: { pro
         ) : (
           <button
             onClick={(e) => { e.preventDefault(); addToCart(product.id, 1, undefined, false); }}
-            disabled={product.stock <= 0 || !isOnline}
+            disabled={product.stock <= 0}
             className={cn(
               "mt-1 inline-flex h-10 items-center justify-center gap-2 rounded-full px-4 text-sm font-semibold transition-all duration-300 active:scale-95",
-              product.stock <= 0 || !isOnline
+              product.stock <= 0
                 ? "cursor-not-allowed bg-muted text-muted-foreground opacity-60"
                 : "bg-[#075BFF] text-white shadow-sm hover:bg-[#0B5CFF] hover:shadow-[0_4px_12px_-4px_rgba(11,92,255,0.4)]",
             )}
           >
             <ShoppingBag className="size-4" />{" "}
-            {!isOnline ? "Store Closed" : product.stock <= 0 ? "Out of Stock" : "Add to Cart"}
+            {product.stock <= 0 ? "Out of Stock" : "Add to Cart"}
           </button>
         )}
       </div>

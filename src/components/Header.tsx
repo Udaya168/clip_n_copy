@@ -36,7 +36,6 @@ import {
 import { useState } from "react";
 import { motion } from "framer-motion";
 import { SearchBar } from "./SearchBar";
-import { StoreStatusBadge } from "./StoreStatusBadge";
 import { STORE } from "@/lib/data";
 import { useShop } from "@/lib/shop-store";
 import { useAuth } from "@/lib/auth-store";
@@ -162,8 +161,6 @@ export function Header() {
             >
               <Search className="size-5" />
             </button>
-
-            <StoreStatusBadge className="hidden sm:inline-flex" />
 
             <span className="hidden max-w-45 items-center gap-2 rounded-full border border-border px-3 py-2 text-left xl:flex">
               <MapPin className="size-4 shrink-0 text-primary" />

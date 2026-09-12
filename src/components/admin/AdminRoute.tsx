@@ -11,7 +11,7 @@ interface AdminRouteProps {
 }
 
 export function AdminRoute({ children }: AdminRouteProps) {
-  const { isLoggingOut } = useAuth();
+  const { loading: authLoading, isLoggingOut } = useAuth();
   const [authStatus, setAuthStatus] = useState<"loading" | "authorized" | "unauthenticated" | "denied">("loading");
   const navigate = useNavigate();
 
@@ -19,6 +19,12 @@ export function AdminRoute({ children }: AdminRouteProps) {
     let isMounted = true;
 
     async function verifyAdminAccess() {
+      // If auth-store is still bootstrapping, wait for it
+      if (authLoading) {
+        if (isMounted) setAuthStatus("loading");
+        return;
+      }
+
       try {
         // 1. Get current session
         const {
@@ -39,7 +45,7 @@ export function AdminRoute({ children }: AdminRouteProps) {
           .from("profiles")
           .select("id, full_name, role")
           .eq("id", userId)
-          .single();
+          .maybeSingle();
 
         if (profileError || !profile) {
           if (isMounted) setAuthStatus("denied");
@@ -74,7 +80,7 @@ export function AdminRoute({ children }: AdminRouteProps) {
       isMounted = false;
       subscription.unsubscribe();
     };
-  }, []);
+  }, [authLoading]);
 
   useEffect(() => {
     // If the user intentionally triggered a logout, do not intercept the redirect

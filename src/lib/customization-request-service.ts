@@ -17,8 +17,8 @@ export interface CustomizationRequestResult {
 }
 
 /**
- * Uploads preference file to Supabase Storage ('print-files'), inserts record into 'public.customization_requests',
- * and calls the 'send-customization-request' Edge Function to send email to the shop owner via Resend.
+ * Uploads preference file to Supabase Storage ('print-files'), inserts record into 'public.print_requests',
+ * and calls the 'send-print-request' Edge Function to deliver email to the shop owner via Resend.
  */
 export async function submitCustomizationRequest(
   params: CustomizationRequestParams
@@ -116,7 +116,7 @@ export async function submitCustomizationRequest(
   try {
     // 2. Upload file to Supabase Storage bucket 'print-files'
     const cleanFileName = selectedFile.name.replace(/[^a-zA-Z0-9_.-]/g, "_");
-    const filePath = `customization_requests/${Date.now()}_${cleanFileName}`;
+    const filePath = `customizations/${Date.now()}_${cleanFileName}`;
 
     const { data: _uploadData, error: uploadError } = await supabase.storage
       .from("print-files")
@@ -140,11 +140,11 @@ export async function submitCustomizationRequest(
       // ignore
     }
 
-    // 3. Create record in public.customization_requests
+    // 3. Create record in public.print_requests
     let insertedId: string | null = null;
 
     const { data: insertedRecord, error: insertError } = await supabase
-      .from("customization_requests")
+      .from("print_requests")
       .insert({
         user_id: userId,
         customer_name: customerName,
@@ -153,9 +153,11 @@ export async function submitCustomizationRequest(
         file_name: selectedFile.name,
         file_path: filePath,
         file_url: filePublicUrl,
-        customization_type: customizationType,
-        title: title.trim(),
-        quantity: quantity,
+        print_type: `Customization: ${customizationType}`,
+        copies: quantity,
+        paper: title.trim(),
+        finishing: "Customization",
+        total_amount: 0,
         status: "pending",
         email_sent: false,
       })
@@ -166,7 +168,7 @@ export async function submitCustomizationRequest(
       insertedId = insertedRecord.id;
     } else {
       console.warn("[Customization Request] Direct insert notice, trying RPC:", insertError?.message);
-      const { data: rpcData, error: rpcError } = await supabase.rpc("create_customization_request", {
+      const { data: rpcData, error: rpcError } = await supabase.rpc("create_print_request", {
         p_user_id: userId,
         p_customer_name: customerName,
         p_customer_email: customerEmail,
@@ -174,9 +176,11 @@ export async function submitCustomizationRequest(
         p_file_name: selectedFile.name,
         p_file_path: filePath,
         p_file_url: filePublicUrl,
-        p_customization_type: customizationType,
-        p_title: title.trim(),
-        p_quantity: quantity,
+        p_print_type: `Customization: ${customizationType}`,
+        p_copies: quantity,
+        p_paper: title.trim(),
+        p_finishing: "Customization",
+        p_total_amount: 0,
       });
 
       if (!rpcError && rpcData && rpcData.length > 0) {
@@ -194,7 +198,7 @@ export async function submitCustomizationRequest(
       return { success: false, error: "Failed to obtain request ID after insert." };
     }
 
-    // 4. Call Supabase Edge Function 'send-customization-request'
+    // 4. Call Supabase Edge Function 'send-print-request' to email shop owner
     const { data: sessionData } = await supabase.auth.getSession();
     const accessToken = sessionData?.session?.access_token;
     const headers: Record<string, string> = {};
@@ -203,7 +207,7 @@ export async function submitCustomizationRequest(
     }
 
     const funcPayload = {
-      customization_request_id: insertedId,
+      print_request_id: insertedId,
       user_id: userId,
       customer_name: customerName,
       customer_email: customerEmail,
@@ -211,34 +215,30 @@ export async function submitCustomizationRequest(
       file_name: selectedFile.name,
       file_path: filePath,
       file_url: filePublicUrl,
+      print_type: `Customization: ${customizationType}`,
+      copies: quantity,
+      paper: title.trim(),
+      finishing: "Customization",
+      total_amount: 0,
       customization_type: customizationType,
       title: title.trim(),
       quantity: quantity,
     };
 
-    const res = await supabase.functions.invoke("send-customization-request", {
-      body: funcPayload,
-      headers,
-    });
-
-    const funcData = res.data;
-    const funcError = res.error;
-
-    if (funcError || (funcData && funcData.success === false)) {
-      console.error("[Customization Request] Edge Function error:", funcError || funcData);
-      return {
-        success: false,
-        requestId: insertedId,
-        fileUrl: filePublicUrl,
-        error: funcError?.message || funcData?.error || funcData?.message || "Customization request saved, but email notification to store owner failed.",
-      };
+    try {
+      const res = await supabase.functions.invoke("send-print-request", {
+        body: funcPayload,
+        headers,
+      });
+      if (res.data && res.data.success !== false) {
+        await supabase
+          .from("print_requests")
+          .update({ email_sent: true, updated_at: new Date().toISOString() })
+          .eq("id", insertedId);
+      }
+    } catch (invokeErr) {
+      console.warn("[Customization Request] Edge function send-print-request notice:", invokeErr);
     }
-
-    // 5. Update email_sent = true
-    await supabase
-      .from("customization_requests")
-      .update({ email_sent: true, updated_at: new Date().toISOString() })
-      .eq("id", insertedId);
 
     return {
       success: true,

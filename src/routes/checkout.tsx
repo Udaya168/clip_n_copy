@@ -36,12 +36,7 @@ const PAYMENTS = [
   { id: "cod", label: "Cash on Delivery", note: "Pay when it arrives", icon: Banknote },
 ];
 
-import { useStoreStatus, fetchStoreSettings, evaluateStoreStatus } from "@/lib/store-status";
-import { StoreStatusBadge } from "@/components/StoreStatusBadge";
-import { StoreClosedNotice } from "@/components/StoreClosedNotice";
-
 export default function CheckoutPage() {
-  const { isOnline } = useStoreStatus();
   const {
     lines,
     totalMrp,
@@ -192,14 +187,6 @@ export default function CheckoutPage() {
     e.preventDefault();
     if (isSubmitting) return;
     setIsSubmitting(true);
-
-    const freshSettings = await fetchStoreSettings();
-    const { isOnline: freshIsOnline } = evaluateStoreStatus(freshSettings);
-    if (!freshIsOnline) {
-      toast.error("Store is currently closed. Orders will be available when the store opens.");
-      setIsSubmitting(false);
-      return;
-    }
 
     let finalCustomerName = nameInput || userFullName || "Customer";
     let finalCustomerPhone = phoneInput || "+91 99860 55335";
@@ -630,17 +617,15 @@ export default function CheckoutPage() {
                 </div>
               </div>
 
-              <StoreClosedNotice className="mt-4" compact />              <button
+              <button
                 type="submit"
-                disabled={isSubmitting || lines.length === 0 || !isOnline}
+                disabled={isSubmitting || lines.length === 0}
                 className="mt-6 flex h-12 w-full items-center justify-center gap-2 rounded-full bg-primary font-bold text-primary-foreground shadow-glow hover:bg-primary/90 transition-all cursor-pointer text-sm px-4 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {isSubmitting ? (
                   <>
                     <Loader2 className="size-4 animate-spin" /> Processing Order...
                   </>
-                ) : !isOnline ? (
-                  "Store is Closed"
                 ) : (
                   `Place Order (${inr(finalAmount)})`
                 )}

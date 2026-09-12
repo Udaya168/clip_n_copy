@@ -450,37 +450,91 @@ export async function updateOrderStatus(
  * Updates DB status to "accepted", stops alarm, triggers accepted email.
  */
 export async function acceptOrderInDb(orderId: string): Promise<boolean> {
+  if (!orderId) {
+    console.warn("[ORDER ACCEPT] Invalid order ID provided.");
+    return false;
+  }
+
+  // 1. Update local storage for immediate offline/client UI state sync
   const existing = getStoredOrders();
-  const updated = existing.map((o) => (o.id === orderId ? { ...o, status: "Accepted" as const } : o));
+  const updated = existing.map((o) => (o.id === orderId || o.orderNumber === orderId ? { ...o, status: "Accepted" as const } : o));
   if (typeof window !== "undefined") {
     window.localStorage.setItem(ORDERS_KEY, JSON.stringify(updated));
   }
 
   try {
-    const { error } = await supabase
+    console.log(`[ORDER ACCEPT] order ID: ${orderId}`);
+
+    // Fetch current status before update for logging
+    const { data: beforeData } = await supabase
+      .from("orders")
+      .select("id, status, order_number")
+      .or(`id.eq.${orderId},order_number.eq.${orderId}`)
+      .limit(1);
+
+    const statusBefore = beforeData && beforeData.length > 0 ? beforeData[0].status : "unknown";
+    console.log(`[ORDER ACCEPT] status before: ${statusBefore}`);
+
+    // Attempt 1: Update status to "accepted" by id or order_number
+    let updateResult = await supabase
       .from("orders")
       .update({
         status: "accepted",
         updated_at: new Date().toISOString(),
       })
-      .eq("id", orderId);
+      .or(`id.eq.${orderId},order_number.eq.${orderId}`)
+      .select();
 
-    if (error) {
-      console.warn("[acceptOrderInDb notice]", error.message);
-      if (error.message?.includes("check constraint") || error.message?.includes("invalid input")) {
-        await supabase
-          .from("orders")
-          .update({
-            status: "confirmed",
-            updated_at: new Date().toISOString(),
-          })
-          .eq("id", orderId);
-      }
+    // Attempt 2: Fallback to status "confirmed" if schema CHECK constraint rejects "accepted"
+    if (updateResult.error || !updateResult.data || updateResult.data.length === 0) {
+      console.warn("[ORDER ACCEPT] 'accepted' update yielded 0 rows or error. Attempting fallback status 'confirmed':", updateResult.error?.message);
+      updateResult = await supabase
+        .from("orders")
+        .update({
+          status: "confirmed",
+          updated_at: new Date().toISOString(),
+        })
+        .or(`id.eq.${orderId},order_number.eq.${orderId}`)
+        .select();
     }
-    return true;
+
+    if (updateResult.error) {
+      console.error("[ORDER ACCEPT] Database update error:", updateResult.error.message);
+      return false;
+    }
+
+    if (!updateResult.data || updateResult.data.length === 0) {
+      console.error("[ORDER ACCEPT] Zero rows updated in database for order:", orderId);
+      return false;
+    }
+
+    console.log("[ORDER ACCEPT] update successful");
+
+    // Re-fetch to strictly verify status in database after update
+    const { data: verifyData, error: verifyError } = await supabase
+      .from("orders")
+      .select("id, status, order_number")
+      .or(`id.eq.${orderId},order_number.eq.${orderId}`)
+      .limit(1);
+
+    if (verifyError || !verifyData || verifyData.length === 0) {
+      console.error("[ORDER ACCEPT] Re-fetch verification failed:", verifyError?.message);
+      return false;
+    }
+
+    const fetchedStatus = String(verifyData[0].status || "").toLowerCase();
+    console.log(`[ORDER ACCEPT] status after: ${fetchedStatus}`);
+
+    if (fetchedStatus === "accepted" || fetchedStatus === "confirmed") {
+      console.log(`[ORDER ACCEPT] database verification successful`);
+      return true;
+    } else {
+      console.error(`[ORDER ACCEPT] Verification failed: database status is still '${fetchedStatus}' for order: ${orderId}`);
+      return false;
+    }
   } catch (err) {
-    console.warn("acceptOrderInDb exception:", err);
-    return true;
+    console.error("[ORDER ACCEPT] Exception during order acceptance:", err);
+    return false;
   }
 }
 

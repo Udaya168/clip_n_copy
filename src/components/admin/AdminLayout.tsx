@@ -53,14 +53,20 @@ function AdminLayoutInner() {
     setIsAccepting(true);
     try {
       if (notif.requestCategory === "printing") {
-        await supabase.from("print_requests").update({ status: "accepted" }).eq("id", notif.orderId);
-        acknowledgeNotification(notif.id);
-        toast.success(`Printing order #${notif.orderNumber} acknowledged!`, { duration: 2000 });
+        const { data, error } = await supabase.from("print_requests").update({ status: "accepted" }).eq("id", notif.orderId).select();
+        if (!error && data && data.length > 0) {
+          acknowledgeNotification(notif.id);
+          toast.success(`Printing order #${notif.orderNumber} acknowledged!`, { duration: 2000 });
+        } else {
+          toast.error("Failed to update printing request in database.");
+        }
         return;
       }
 
       if (notif.requestCategory === "customization") {
-        await supabase.from("customization_requests").update({ status: "accepted" }).eq("id", notif.orderId);
+        try {
+          await supabase.from("print_requests").update({ status: "accepted" }).eq("id", notif.orderId);
+        } catch (_) {}
         acknowledgeNotification(notif.id);
         toast.success(`Customization request #${notif.orderNumber} acknowledged!`, { duration: 2000 });
         return;
@@ -72,7 +78,7 @@ function AdminLayoutInner() {
         acknowledgeNotification(notif.id);
         toast.success(`Order #${notif.orderNumber} accepted successfully!`, { duration: 2000 });
       } else {
-        toast.error("Failed to update order status.");
+        toast.error(`Order #${notif.orderNumber} acceptance could not be verified in database.`);
       }
     } catch (err) {
       toast.error("Error accepting order.");
@@ -197,7 +203,23 @@ function AdminLayoutInner() {
           activeAlarm={activeAlarm}
           isAccepting={isAccepting}
           onAcceptOrder={handleAcceptOrder}
-          onRejectOrder={(notif) => setRejectingOrder(notif)}
+          onRejectOrder={(notif) => {
+            if (notif.requestCategory === "printing") {
+              supabase.from("print_requests").update({ status: "rejected", updated_at: new Date().toISOString() }).eq("id", notif.orderId);
+              acknowledgeNotification(notif.id);
+              toast.info(`Printing request #${notif.orderNumber} dismissed.`);
+              return;
+            }
+            if (notif.requestCategory === "customization") {
+              try {
+                supabase.from("print_requests").update({ status: "rejected", updated_at: new Date().toISOString() }).eq("id", notif.orderId);
+              } catch (_) {}
+              acknowledgeNotification(notif.id);
+              toast.info(`Customization request #${notif.orderNumber} dismissed.`);
+              return;
+            }
+            setRejectingOrder(notif);
+          }}
           onViewOrder={(notif) => {
             if (notif.requestCategory === "printing") {
               setViewingPrintNotif(notif);

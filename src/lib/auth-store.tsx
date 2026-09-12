@@ -212,8 +212,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
         if (isMounted) {
           const currentUser = initialSession?.user ?? null;
-          if (currentUser && isEmailConfirmed(currentUser)) {
-            console.log("[AUTH] initial session: authenticated");
+          if (currentUser) {
+            console.log("[AUTH] initial session: authenticated", currentUser.id);
             setSession(initialSession);
             setUser(currentUser);
             await fetchAndSyncProfile(currentUser);
@@ -247,7 +247,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     try {
       const { data } = supabase.auth.onAuthStateChange(
-        (event: string, currentSession: Session | null) => {
+        async (event: string, currentSession: Session | null) => {
           if (!isMounted) return;
 
           // Skip INITIAL_SESSION event so it doesn't collide with getSession() bootstrap
@@ -271,12 +271,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
           const currentUser = currentSession?.user ?? null;
 
-          if (currentUser && isEmailConfirmed(currentUser)) {
+          if (currentUser) {
             setSession(currentSession);
             setUser(currentUser);
-            fetchAndSyncProfile(currentUser).catch((err) => {
-              console.warn("[AUTH] Profile sync error on auth state change:", err);
-            });
+            await fetchAndSyncProfile(currentUser);
           } else {
             setSession(null);
             setUser(null);
@@ -316,18 +314,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
         if (error || !data.user) {
           return { error: new Error("Invalid email or password.") };
-        }
-
-        if (!isEmailConfirmed(data.user)) {
-          await supabase.auth.signOut();
-          setUser(null);
-          setSession(null);
-          setProfile(null);
-          return {
-            error: new Error("Please confirm your email address before signing in."),
-            requiresConfirmation: true,
-            email: data.user.email ?? "",
-          };
         }
 
         setUser(data.user);
@@ -378,18 +364,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
         if (error || !data.user) {
           return { error: new Error("Invalid phone number or password.") };
-        }
-
-        if (!isEmailConfirmed(data.user)) {
-          await supabase.auth.signOut();
-          setUser(null);
-          setSession(null);
-          setProfile(null);
-          return {
-            error: new Error("Please confirm your account email before signing in."),
-            requiresConfirmation: true,
-            email: data.user.email ?? "",
-          };
         }
 
         setUser(data.user);
