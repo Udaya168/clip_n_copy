@@ -1,4 +1,4 @@
-import { ArrowRight, Book, Briefcase, Clock, Copy, FileCheck2, FileText, Palette, Printer } from "lucide-react";
+import { ArrowRight, Book, Briefcase, Clock, FileCheck2, FileText, Palette, Printer, Sparkles } from "lucide-react";
 import { openPrintModal } from "@/lib/print-modal";
 import { PRINT_SERVICES } from "@/lib/data";
 import slidePrinting from "@/assets/slide-printing.webp";
@@ -13,12 +13,8 @@ const STEPS = [
 
 function getServiceIcon(name: string) {
   switch (name) {
-    case "Color Printing": return <Palette className="size-5 sm:size-6" />;
-    case "Photocopy": return <Copy className="size-5 sm:size-6" />;
-    case "Spiral Binding": return <Book className="size-5 sm:size-6" />;
-    case "Project Printing": return <FileText className="size-5 sm:size-6" />;
-    case "Resume Printing": return <Briefcase className="size-5 sm:size-6" />;
-    case "B&W Printing":
+    case "Customization Printing": return <Sparkles className="size-5 sm:size-6" />;
+    case "Printing":
     default:
       return <Printer className="size-5 sm:size-6" />;
   }
@@ -55,7 +51,7 @@ export default function ServicesPage() {
                 Thesis binding, jumbo xerox, AutoCAD prints, lamination and laser colour printouts — all under one roof at Clip N Copy.
               </p>
               <button
-                onClick={() => handleOrder(null)}
+                onClick={() => handleOrder("Printing")}
                 className="inline-flex h-[52px] sm:h-[54px] w-fit sm:w-[220px] items-center justify-center gap-2 rounded-full bg-primary px-8 font-bold text-white hover:bg-primary/90 transition-all hover:scale-[1.02] shadow-glow"
               >
                 Upload &amp; Print <ArrowRight className="size-4 sm:size-5" />
@@ -71,24 +67,26 @@ export default function ServicesPage() {
           </h2>
           
           {/* CORE SERVICES GRID */}
-          <div className="grid gap-4 sm:gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
+          <div className="grid gap-6 grid-cols-1 sm:grid-cols-2 max-w-4xl">
             {PRINT_SERVICES.map((s) => (
               <div 
                 key={s.name} 
-                className="group flex flex-col rounded-[20px] sm:rounded-[24px] bg-card p-5 sm:p-6 shadow-[0_2px_12px_-4px_rgba(0,0,0,0.02)] border border-border/40 hover:shadow-[0_8px_24px_-4px_rgba(0,0,0,0.06)] hover:border-primary/20 transition-all hover:-translate-y-1 h-full min-h-[175px] sm:min-h-auto"
+                className="group flex flex-col rounded-[20px] sm:rounded-[24px] bg-card p-6 shadow-[0_2px_12px_-4px_rgba(0,0,0,0.02)] border border-border/40 hover:shadow-[0_8px_24px_-4px_rgba(0,0,0,0.06)] hover:border-primary/20 transition-all hover:-translate-y-1 h-full"
               >
-                <div className="size-10 sm:size-12 shrink-0 rounded-full bg-primary/10 text-primary flex items-center justify-center mb-4 sm:mb-5 group-hover:bg-primary/20 transition-colors">
+                <div className="size-12 shrink-0 rounded-full bg-primary/10 text-primary flex items-center justify-center mb-4 group-hover:bg-primary/20 transition-colors">
                   {getServiceIcon(s.name)}
                 </div>
-                <h3 className="text-[18px] sm:text-xl font-display font-bold text-ink mb-1 sm:mb-2">{s.name}</h3>
-                <p className="text-[13px] sm:text-sm text-muted-foreground mb-4 sm:mb-6 flex-1 leading-relaxed">{s.note}</p>
-                <div className="flex items-center justify-between border-t border-border/40 pt-3 sm:pt-4 mt-auto">
-                  <span className="text-[12px] sm:text-[13px] font-bold text-primary">{s.price}</span>
+                <div className="flex items-center justify-between mb-2">
+                  <h3 className="text-xl font-display font-bold text-ink">{s.name}</h3>
+                </div>
+                <p className="text-sm text-muted-foreground mb-6 flex-1 leading-relaxed">{s.note}</p>
+                <div className="flex items-center justify-between border-t border-border/40 pt-4 mt-auto">
+                  <span className="text-xs font-bold text-primary">{s.price}</span>
                   <button 
                     onClick={() => handleOrder(s.name)} 
-                    className="text-[12px] sm:text-[13px] font-bold text-primary hover:underline inline-flex items-center gap-1"
+                    className="text-xs font-bold text-primary hover:underline inline-flex items-center gap-1"
                   >
-                    Order now <ArrowRight className="size-3" />
+                    {s.name === "Printing" ? "Order now" : "Order now"} <ArrowRight className="size-3" />
                   </button>
                 </div>
               </div>

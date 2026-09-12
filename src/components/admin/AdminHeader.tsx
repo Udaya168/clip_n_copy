@@ -181,17 +181,32 @@ export function AdminHeader({ title, onSelectOrder }: AdminHeaderProps) {
                     >
                       <div className="flex items-start justify-between gap-2">
                         <div>
-                          <p className="font-display text-xs font-bold text-foreground flex items-center gap-1.5">
-                            Order #{n.orderNumber}
+                          <div className="flex items-center gap-1.5 flex-wrap">
+                            <p className="font-display text-xs font-bold text-foreground">
+                              {n.orderNumber}
+                            </p>
+                            {n.requestCategory === "printing" ? (
+                              <span className="px-1.5 py-0.5 text-[9px] font-extrabold uppercase rounded-full bg-blue-500/10 text-blue-600 border border-blue-500/20">
+                                Printing
+                              </span>
+                            ) : n.requestCategory === "customization" ? (
+                              <span className="px-1.5 py-0.5 text-[9px] font-extrabold uppercase rounded-full bg-purple-500/10 text-purple-600 border border-purple-500/20">
+                                Customization
+                              </span>
+                            ) : null}
                             {!n.read && (
                               <span className="size-2 rounded-full bg-primary inline-block" />
                             )}
-                          </p>
+                          </div>
                           <p className="text-xs text-muted-foreground mt-0.5">
                             {n.customerName} {n.customerPhone ? `(${n.customerPhone})` : ""}
                           </p>
                           <p className="text-xs font-extrabold text-foreground mt-1">
-                            {inr(n.totalAmount)} · {n.itemsCount} {n.itemsCount === 1 ? "item" : "items"}
+                            {n.requestCategory === "printing"
+                              ? `${n.paper || "Standard"} ${n.totalAmount > 0 ? `· ${inr(n.totalAmount)}` : ""}`
+                              : n.requestCategory === "customization"
+                              ? `${n.customizationType} · Qty: ${n.quantity}`
+                              : `${inr(n.totalAmount)} · ${n.itemsCount} ${n.itemsCount === 1 ? "item" : "items"}`}
                           </p>
                         </div>
                         <span className="text-[10px] text-muted-foreground shrink-0">

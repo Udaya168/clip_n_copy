@@ -2,11 +2,20 @@ import { supabase } from "./supabase";
 
 export interface PrintRequestParams {
   selectedFile: File;
+  customerEmail?: string | undefined;
+  totalPages?: number | string | undefined;
   printType: string;
-  copies: number;
-  paper: string;
-  finishing: string;
+  bwPages?: string | undefined;
+  colorPages?: string | undefined;
+  printSide: string;
+  paperSize: string;
+  media: string;
+  binding: string;
+  hardBindingPhone?: string | undefined;
   totalAmount: number;
+  copies?: number | undefined;
+  paper?: string | undefined;
+  finishing?: string | undefined;
 }
 
 export interface PrintRequestResult {
@@ -18,45 +27,102 @@ export interface PrintRequestResult {
 
 /**
  * Uploads document to Supabase Storage ('print-files'), inserts record into 'public.print_requests',
- * and calls the 'send-print-request' Supabase Edge Function to deliver email with attachment via Resend.
+ * and calls the 'send-print-request' Supabase Edge Function to deliver email via Resend.
  */
 export async function submitPrintRequest(params: PrintRequestParams): Promise<PrintRequestResult> {
-  const { selectedFile, printType, copies, paper, finishing, totalAmount } = params;
+  const {
+    selectedFile,
+    totalPages = "N/A",
+    printType,
+    bwPages = "N/A",
+    colorPages = "N/A",
+    printSide,
+    paperSize,
+    media,
+    binding,
+    hardBindingPhone,
+    totalAmount,
+  } = params;
 
   if (!selectedFile) {
     return { success: false, error: "Please select a file to upload." };
   }
 
-  // 1. Get authenticated user details if available
+  // 1. Get authenticated user details using existing Supabase auth/session mechanism
   let userId: string | null = null;
   let customerName: string = "Customer";
   let customerEmail: string | null = null;
   let customerPhone: string | null = null;
 
+  // A. Try getting user from active session
   try {
-    const { data: authData } = await supabase.auth.getUser();
-    if (authData?.user) {
-      userId = authData.user.id;
-      customerEmail = authData.user.email || null;
-      customerName = authData.user.user_metadata?.full_name || authData.user.user_metadata?.name || customerEmail?.split("@")[0] || "Customer";
-      customerPhone = authData.user.user_metadata?.phone || authData.user.phone || null;
+    const { data: sessionData } = await supabase.auth.getSession();
+    const sessionUser = sessionData?.session?.user;
+    if (sessionUser) {
+      userId = sessionUser.id;
+      customerEmail = sessionUser.email || null;
+      customerName = sessionUser.user_metadata?.full_name || sessionUser.user_metadata?.name || customerEmail?.split("@")[0] || "Customer";
+      customerPhone = sessionUser.user_metadata?.phone || sessionUser.phone || null;
+    }
+  } catch (_e) {
+    // ignore
+  }
 
-      // Try fetching profile for updated name/phone
+  // B. Fallback to getUser() if session user not retrieved
+  if (!userId || !customerEmail) {
+    try {
+      const { data: authData } = await supabase.auth.getUser();
+      if (authData?.user) {
+        userId = authData.user.id;
+        if (authData.user.email) customerEmail = authData.user.email;
+        if (!customerName || customerName === "Customer") {
+          customerName = authData.user.user_metadata?.full_name || authData.user.user_metadata?.name || customerEmail?.split("@")[0] || "Customer";
+        }
+        if (!customerPhone) {
+          customerPhone = authData.user.user_metadata?.phone || authData.user.phone || null;
+        }
+      }
+    } catch (_e) {
+      // ignore
+    }
+  }
+
+  // C. Sync profile details
+  if (userId) {
+    try {
       const { data: profile } = await supabase
         .from("profiles")
         .select("*")
-        .eq("id", authData.user.id)
+        .eq("id", userId)
         .maybeSingle();
 
       if (profile) {
         if (profile.full_name) customerName = profile.full_name;
         if (profile.phone) customerPhone = profile.phone;
-        if (profile.email) customerEmail = profile.email;
+        if (profile.email && !customerEmail) customerEmail = profile.email;
       }
+    } catch (_e) {
+      // ignore
     }
-  } catch (_e) {
-    // ignore auth lookup error
   }
+
+  // D. Fallback to explicitly passed customerEmail if authenticated lookup returned null
+  if (!customerEmail && params.customerEmail && params.customerEmail !== "N/A" && params.customerEmail.includes("@")) {
+    customerEmail = params.customerEmail;
+  }
+
+  // E. Reject submission if no authenticated user or valid email found
+  if (!userId || !customerEmail || customerEmail === "N/A") {
+    return {
+      success: false,
+      error: "Please log in before submitting a print request.",
+    };
+  }
+
+  const finalCustomerPhone = binding === "Hard Binding" && hardBindingPhone ? hardBindingPhone : (customerPhone || "N/A");
+  const paperSummary = params.paper || `${paperSize} · ${media} (${printSide})`;
+  const finishingSummary = params.finishing || (binding === "Hard Binding" && hardBindingPhone ? `Hard Binding (Phone: ${hardBindingPhone})` : binding);
+  const copiesCount = params.copies || 1;
 
   try {
     // 2. Upload file to Supabase Storage bucket 'print-files'
@@ -88,20 +154,24 @@ export async function submitPrintRequest(params: PrintRequestParams): Promise<Pr
     // 3. Create record in public.print_requests
     let insertedId: string | null = null;
 
+    const printTypeStored = printType === "B&W + Color"
+      ? `B&W + Color (B&W: ${bwPages || "1-20"}, Color: ${colorPages || "21-40"})`
+      : printType;
+
     const { data: insertedRecord, error: insertError } = await supabase
       .from("print_requests")
       .insert({
         user_id: userId,
         customer_name: customerName,
         customer_email: customerEmail,
-        customer_phone: customerPhone,
+        customer_phone: finalCustomerPhone,
         file_name: selectedFile.name,
         file_path: filePath,
         file_url: filePublicUrl,
-        print_type: printType,
-        copies: copies,
-        paper: paper,
-        finishing: finishing || "None",
+        print_type: printTypeStored,
+        copies: copiesCount,
+        paper: paperSummary,
+        finishing: finishingSummary,
         total_amount: totalAmount,
         status: "pending",
         email_sent: false,
@@ -117,14 +187,14 @@ export async function submitPrintRequest(params: PrintRequestParams): Promise<Pr
         p_user_id: userId,
         p_customer_name: customerName,
         p_customer_email: customerEmail,
-        p_customer_phone: customerPhone,
+        p_customer_phone: finalCustomerPhone,
         p_file_name: selectedFile.name,
         p_file_path: filePath,
         p_file_url: filePublicUrl,
         p_print_type: printType,
-        p_copies: copies,
-        p_paper: paper,
-        p_finishing: finishing || "None",
+        p_copies: copiesCount,
+        p_paper: paperSummary,
+        p_finishing: finishingSummary,
         p_total_amount: totalAmount,
       });
 
@@ -171,15 +241,23 @@ export async function submitPrintRequest(params: PrintRequestParams): Promise<Pr
       print_request_id: insertedId,
       user_id: userId,
       customer_name: customerName,
-      customer_email: customerEmail,
-      customer_phone: customerPhone,
+      customer_email: customerEmail || "N/A",
+      customer_phone: finalCustomerPhone || "N/A",
       file_name: selectedFile.name,
       file_path: filePath,
       file_url: filePublicUrl,
+      total_pages: totalPages,
       print_type: printType,
-      copies: copies,
-      paper: paper,
-      finishing: finishing || "None",
+      bw_pages: bwPages,
+      color_pages: colorPages,
+      print_side: printSide,
+      paper_size: paperSize,
+      media: media,
+      binding: binding,
+      hard_binding_phone: binding === "Hard Binding" ? (hardBindingPhone || "N/A") : "Not required",
+      copies: copiesCount,
+      paper: paperSummary,
+      finishing: finishingSummary,
       total_amount: totalAmount,
     };
 

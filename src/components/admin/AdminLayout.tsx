@@ -18,6 +18,8 @@ import { toast } from "sonner";
 
 import { NewOrderAlertModal } from "./NewOrderAlertModal";
 import { AdminOrderDetailsModal } from "./AdminOrderDetailsModal";
+import { AdminPrintDetailsModal } from "./AdminPrintDetailsModal";
+import { AdminCustomizationDetailsModal } from "./AdminCustomizationDetailsModal";
 
 export function AdminLayout() {
   return (
@@ -34,6 +36,8 @@ function AdminLayoutInner() {
   const [isAccepting, setIsAccepting] = useState<boolean>(false);
   const [rejectingOrder, setRejectingOrder] = useState<AdminOrderNotification | null>(null);
   const [viewingOrder, setViewingOrder] = useState<OrderRecord | null>(null);
+  const [viewingPrintNotif, setViewingPrintNotif] = useState<AdminOrderNotification | null>(null);
+  const [viewingCustomNotif, setViewingCustomNotif] = useState<AdminOrderNotification | null>(null);
 
   const {
     notifications,
@@ -48,6 +52,20 @@ function AdminLayoutInner() {
     if (!notif || isAccepting) return;
     setIsAccepting(true);
     try {
+      if (notif.requestCategory === "printing") {
+        await supabase.from("print_requests").update({ status: "accepted" }).eq("id", notif.orderId);
+        acknowledgeNotification(notif.id);
+        toast.success(`Printing order #${notif.orderNumber} acknowledged!`, { duration: 2000 });
+        return;
+      }
+
+      if (notif.requestCategory === "customization") {
+        await supabase.from("customization_requests").update({ status: "accepted" }).eq("id", notif.orderId);
+        acknowledgeNotification(notif.id);
+        toast.success(`Customization request #${notif.orderNumber} acknowledged!`, { duration: 2000 });
+        return;
+      }
+
       const ok = await acceptOrderInDb(notif.orderId);
       if (ok) {
         triggerOrderAcceptanceEmail(notif.orderId, notif.orderNumber);
@@ -181,6 +199,14 @@ function AdminLayoutInner() {
           onAcceptOrder={handleAcceptOrder}
           onRejectOrder={(notif) => setRejectingOrder(notif)}
           onViewOrder={(notif) => {
+            if (notif.requestCategory === "printing") {
+              setViewingPrintNotif(notif);
+              return;
+            }
+            if (notif.requestCategory === "customization") {
+              setViewingCustomNotif(notif);
+              return;
+            }
             setViewingOrder({
               id: notif.orderId,
               orderNumber: notif.orderNumber,
@@ -206,6 +232,22 @@ function AdminLayoutInner() {
             order={viewingOrder}
             isOpen={!!viewingOrder}
             onClose={() => setViewingOrder(null)}
+          />
+        )}
+
+        {viewingPrintNotif && (
+          <AdminPrintDetailsModal
+            notification={viewingPrintNotif}
+            isOpen={!!viewingPrintNotif}
+            onClose={() => setViewingPrintNotif(null)}
+          />
+        )}
+
+        {viewingCustomNotif && (
+          <AdminCustomizationDetailsModal
+            notification={viewingCustomNotif}
+            isOpen={!!viewingCustomNotif}
+            onClose={() => setViewingCustomNotif(null)}
           />
         )}
 

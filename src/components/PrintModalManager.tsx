@@ -4,6 +4,10 @@ const UploadPrintModal = lazy(() =>
   import("./UploadPrintModal").then((m) => ({ default: m.UploadPrintModal }))
 );
 
+const UploadCustomizationModal = lazy(() =>
+  import("./UploadCustomizationModal").then((m) => ({ default: m.UploadCustomizationModal }))
+);
+
 export function PrintModalManager() {
   const [open, setOpen] = useState(false);
   const [service, setService] = useState<string | null>(null);
@@ -22,7 +26,11 @@ export function PrintModalManager() {
 
   return (
     <Suspense fallback={null}>
-      <UploadPrintModal onClose={() => setOpen(false)} serviceName={service} />
+      {service === "Customization Printing" ? (
+        <UploadCustomizationModal onClose={() => setOpen(false)} />
+      ) : (
+        <UploadPrintModal onClose={() => setOpen(false)} serviceName={service} />
+      )}
     </Suspense>
   );
 }

@@ -25,6 +25,18 @@ export interface AdminOrderNotification {
   createdAt: string;
   acknowledged: boolean;
   read: boolean;
+  requestCategory?: "product" | "printing" | "customization";
+  printType?: string;
+  bwPages?: string;
+  colorPages?: string;
+  paper?: string;
+  finishing?: string;
+  customizationType?: string;
+  customizationTitle?: string;
+  quantity?: number;
+  fileName?: string;
+  fileUrl?: string;
+  filePath?: string;
 }
 
 interface AdminNotificationContextType {
@@ -44,6 +56,54 @@ interface AdminNotificationContextType {
 }
 
 const AdminNotificationContext = createContext<AdminNotificationContextType | undefined>(undefined);
+
+function mapPrintRequestToNotif(payload: any): AdminOrderNotification {
+  const reqId = String(payload.id);
+  return {
+    id: `notif-print-${reqId}`,
+    orderId: reqId,
+    orderNumber: `PRINT-${reqId.slice(0, 8).toUpperCase()}`,
+    customerName: String(payload.customer_name || "Customer"),
+    customerPhone: payload.customer_phone,
+    customerEmail: payload.customer_email,
+    totalAmount: Number(payload.total_amount || 0),
+    itemsCount: Number(payload.copies || 1),
+    createdAt: payload.created_at || new Date().toISOString(),
+    acknowledged: false,
+    read: false,
+    requestCategory: "printing",
+    printType: payload.print_type || "B&W",
+    paper: payload.paper || "A4",
+    finishing: payload.finishing || "None",
+    fileName: payload.file_name,
+    fileUrl: payload.file_url,
+    filePath: payload.file_path,
+  };
+}
+
+function mapCustomizationRequestToNotif(payload: any): AdminOrderNotification {
+  const reqId = String(payload.id);
+  return {
+    id: `notif-custom-${reqId}`,
+    orderId: reqId,
+    orderNumber: `CUSTOM-${reqId.slice(0, 8).toUpperCase()}`,
+    customerName: String(payload.customer_name || "Customer"),
+    customerPhone: payload.customer_phone,
+    customerEmail: payload.customer_email,
+    totalAmount: 0,
+    itemsCount: Number(payload.quantity || 1),
+    createdAt: payload.created_at || new Date().toISOString(),
+    acknowledged: false,
+    read: false,
+    requestCategory: "customization",
+    customizationType: payload.customization_type || "Brochure",
+    customizationTitle: payload.title || "Custom Request",
+    quantity: Number(payload.quantity || 1),
+    fileName: payload.file_name,
+    fileUrl: payload.file_url,
+    filePath: payload.file_path,
+  };
+}
 
 export function AdminNotificationProvider({ children }: { children: React.ReactNode }) {
   const { user, profile } = useAuth();
@@ -107,7 +167,7 @@ export function AdminNotificationProvider({ children }: { children: React.ReactN
     }
   }, []);
 
-  // Test sound helper (plays for max 2.5s and unlocks AudioContext)
+  // Test sound helper
   const testSound = useCallback(() => {
     orderAlarm.unlock();
     setActiveAlarm(true);
@@ -136,24 +196,21 @@ export function AdminNotificationProvider({ children }: { children: React.ReactN
     await enablePushNotifications();
   }, [user, enablePushNotifications]);
 
-  // Handle incoming new order payload
+  // Handle incoming new normal product order payload
   const handleNewOrderReceived = useCallback(
     (orderPayload: any) => {
       const orderId = String(orderPayload.id || orderPayload.order_number || Date.now());
       const orderNumber = String(orderPayload.order_number || orderPayload.orderNumber || orderId);
 
-      // 1. Deduplication check - ONLY process genuinely NEW orders once
       if (notifiedOrderIds.current.has(orderId)) {
         return;
       }
       notifiedOrderIds.current.add(orderId);
 
-      // Notify other tabs to record this order ID
       if (broadcastChannel.current) {
         broadcastChannel.current.postMessage({ type: "NEW_ORDER_ALERT", orderId });
       }
 
-      // 2. Ignore orders created before this session started (10s buffer)
       if (orderPayload.created_at) {
         const orderTime = new Date(orderPayload.created_at).getTime();
         if (!isNaN(orderTime) && orderTime < sessionStartTime.current - 10000) {
@@ -187,27 +244,23 @@ export function AdminNotificationProvider({ children }: { children: React.ReactN
         createdAt: orderPayload.created_at || new Date().toISOString(),
         acknowledged: false,
         read: false,
+        requestCategory: "product",
       };
 
-      // Add to notifications list
       setNotifications((prev) => [newNotif, ...prev.filter((n) => n.orderId !== orderId)]);
 
-      // 3. Start CONTINUOUS LOUD AUDIO ALARM SOUND
       orderAlarm.unlock();
       setActiveAlarm(true);
 
-      // Clear any previous backup sound timer
       if (soundTimerRef.current) {
         clearTimeout(soundTimerRef.current);
         soundTimerRef.current = null;
       }
 
-      // Start alarm sound continuously (0 = loop indefinitely until owner acknowledges)
       orderAlarm.start(0, () => {
         setActiveAlarm(false);
       });
 
-      // 4. Trigger Native Browser Notification if permission granted
       if (typeof window !== "undefined" && "Notification" in window && Notification.permission === "granted") {
         try {
           const nativeNotif = new Notification("🔔 New Order Received!", {
@@ -228,25 +281,140 @@ export function AdminNotificationProvider({ children }: { children: React.ReactN
     [stopAlarm]
   );
 
-  // Initial fetch for pending orders for persistence
+  // Handle incoming printing request payload
+  const handleNewPrintRequestReceived = useCallback(
+    (payload: any) => {
+      const requestId = String(payload.id || Date.now());
+
+      if (notifiedOrderIds.current.has(requestId)) {
+        return;
+      }
+      notifiedOrderIds.current.add(requestId);
+
+      if (broadcastChannel.current) {
+        broadcastChannel.current.postMessage({ type: "NEW_ORDER_ALERT", orderId: requestId });
+      }
+
+      if (payload.created_at) {
+        const orderTime = new Date(payload.created_at).getTime();
+        if (!isNaN(orderTime) && orderTime < sessionStartTime.current - 10000) {
+          return;
+        }
+      }
+
+      const notif = mapPrintRequestToNotif(payload);
+      setNotifications((prev) => [notif, ...prev.filter((n) => n.orderId !== requestId)]);
+
+      orderAlarm.unlock();
+      setActiveAlarm(true);
+
+      if (soundTimerRef.current) {
+        clearTimeout(soundTimerRef.current);
+        soundTimerRef.current = null;
+      }
+
+      orderAlarm.start(0, () => {
+        setActiveAlarm(false);
+      });
+
+      if (typeof window !== "undefined" && "Notification" in window && Notification.permission === "granted") {
+        try {
+          const nativeNotif = new Notification("🔔 New Printing Order!", {
+            body: `Printing Order from ${notif.customerName} — ${notif.paper || "Standard"}`,
+            icon: "/favicon.ico",
+            tag: `print-${requestId}`,
+          });
+
+          nativeNotif.onclick = () => {
+            window.focus();
+            stopAlarm();
+          };
+        } catch (err) {
+          console.warn("[AdminNotif] Native Printing Notification error:", err);
+        }
+      }
+    },
+    [stopAlarm]
+  );
+
+  // Handle incoming customization printing request payload
+  const handleNewCustomizationRequestReceived = useCallback(
+    (payload: any) => {
+      const requestId = String(payload.id || Date.now());
+
+      if (notifiedOrderIds.current.has(requestId)) {
+        return;
+      }
+      notifiedOrderIds.current.add(requestId);
+
+      if (broadcastChannel.current) {
+        broadcastChannel.current.postMessage({ type: "NEW_ORDER_ALERT", orderId: requestId });
+      }
+
+      if (payload.created_at) {
+        const orderTime = new Date(payload.created_at).getTime();
+        if (!isNaN(orderTime) && orderTime < sessionStartTime.current - 10000) {
+          return;
+        }
+      }
+
+      const notif = mapCustomizationRequestToNotif(payload);
+      setNotifications((prev) => [notif, ...prev.filter((n) => n.orderId !== requestId)]);
+
+      orderAlarm.unlock();
+      setActiveAlarm(true);
+
+      if (soundTimerRef.current) {
+        clearTimeout(soundTimerRef.current);
+        soundTimerRef.current = null;
+      }
+
+      orderAlarm.start(0, () => {
+        setActiveAlarm(false);
+      });
+
+      if (typeof window !== "undefined" && "Notification" in window && Notification.permission === "granted") {
+        try {
+          const nativeNotif = new Notification("🔔 New Customization Request!", {
+            body: `Customization (${notif.customizationType}) from ${notif.customerName} — Qty: ${notif.quantity}`,
+            icon: "/favicon.ico",
+            tag: `custom-${requestId}`,
+          });
+
+          nativeNotif.onclick = () => {
+            window.focus();
+            stopAlarm();
+          };
+        } catch (err) {
+          console.warn("[AdminNotif] Native Customization Notification error:", err);
+        }
+      }
+    },
+    [stopAlarm]
+  );
+
+  // Initial fetch for pending orders and requests for persistence
   useEffect(() => {
     if (!user || !isAdmin) return;
 
     let isMounted = true;
-    const loadPendingOrders = async () => {
+    const loadPendingRecords = async () => {
       try {
-        const { data, error } = await supabase
-          .from("orders")
-          .select("*")
-          .eq("status", "pending")
-          .order("created_at", { ascending: false })
-          .limit(10);
-        
-        if (!error && data && data.length > 0 && isMounted) {
-          const loadedNotifs: AdminOrderNotification[] = data.map((orderPayload: any) => {
+        const [ordersRes, printRes, customRes] = await Promise.all([
+          supabase.from("orders").select("*").eq("status", "pending").order("created_at", { ascending: false }).limit(10),
+          supabase.from("print_requests").select("*").eq("status", "pending").order("created_at", { ascending: false }).limit(10),
+          supabase.from("customization_requests").select("*").eq("status", "pending").order("created_at", { ascending: false }).limit(10),
+        ]);
+
+        if (!isMounted) return;
+
+        const loadedNotifs: AdminOrderNotification[] = [];
+
+        if (ordersRes.data) {
+          ordersRes.data.forEach((orderPayload: any) => {
             const orderId = String(orderPayload.id);
             notifiedOrderIds.current.add(orderId);
-            return {
+            loadedNotifs.push({
               id: `notif-${orderId}-${Date.now()}`,
               orderId: orderId,
               orderNumber: String(orderPayload.order_number || orderId),
@@ -262,12 +430,31 @@ export function AdminNotificationProvider({ children }: { children: React.ReactN
               createdAt: orderPayload.created_at || new Date().toISOString(),
               acknowledged: false,
               read: false,
-            };
+              requestCategory: "product",
+            });
           });
+        }
 
-          setNotifications(prev => {
-            const existingIds = new Set(prev.map(n => n.orderId));
-            const newNotifs = loadedNotifs.filter(n => !existingIds.has(n.orderId));
+        if (printRes.data) {
+          printRes.data.forEach((payload: any) => {
+            const reqId = String(payload.id);
+            notifiedOrderIds.current.add(reqId);
+            loadedNotifs.push(mapPrintRequestToNotif(payload));
+          });
+        }
+
+        if (customRes.data) {
+          customRes.data.forEach((payload: any) => {
+            const reqId = String(payload.id);
+            notifiedOrderIds.current.add(reqId);
+            loadedNotifs.push(mapCustomizationRequestToNotif(payload));
+          });
+        }
+
+        if (loadedNotifs.length > 0 && isMounted) {
+          setNotifications((prev) => {
+            const existingIds = new Set(prev.map((n) => n.orderId));
+            const newNotifs = loadedNotifs.filter((n) => !existingIds.has(n.orderId));
             if (newNotifs.length > 0) {
               orderAlarm.unlock();
               setActiveAlarm(true);
@@ -278,15 +465,17 @@ export function AdminNotificationProvider({ children }: { children: React.ReactN
           });
         }
       } catch (e) {
-        console.warn("[AdminNotif] Error fetching pending orders", e);
+        console.warn("[AdminNotif] Error fetching pending records", e);
       }
     };
-    
-    loadPendingOrders();
-    return () => { isMounted = false; };
+
+    loadPendingRecords();
+    return () => {
+      isMounted = false;
+    };
   }, [user, isAdmin]);
 
-  // Supabase Realtime channel subscription for `orders` INSERT events
+  // Supabase Realtime channel subscription for `orders`, `print_requests`, & `customization_requests`
   useEffect(() => {
     if (!user || !isAdmin) return;
 
@@ -295,7 +484,7 @@ export function AdminNotificationProvider({ children }: { children: React.ReactN
 
     try {
       channel = supabase
-        .channel("admin-realtime-orders-subscription")
+        .channel("admin-realtime-all-requests-subscription")
         .on(
           "postgres_changes",
           {
@@ -309,16 +498,41 @@ export function AdminNotificationProvider({ children }: { children: React.ReactN
             }
           }
         )
+        .on(
+          "postgres_changes",
+          {
+            event: "INSERT",
+            schema: "public",
+            table: "print_requests",
+          },
+          (payload: any) => {
+            if (payload && payload.new) {
+              handleNewPrintRequestReceived(payload.new);
+            }
+          }
+        )
+        .on(
+          "postgres_changes",
+          {
+            event: "INSERT",
+            schema: "public",
+            table: "customization_requests",
+          },
+          (payload: any) => {
+            if (payload && payload.new) {
+              handleNewCustomizationRequestReceived(payload.new);
+            }
+          }
+        )
         .subscribe((status: string) => {
           if (status === "SUBSCRIBED") {
-            console.log("[AdminRealtime] Subscribed to new orders channel");
+            console.log("[AdminRealtime] Subscribed to orders, print_requests, & customization_requests");
           }
         });
     } catch (err) {
       console.warn("[AdminRealtime] Realtime subscription exception:", err);
     }
 
-    // LocalStorage event listener fallback for orders placed in same browser session
     const handleStorageChange = (e: StorageEvent) => {
       if (e.key === "cnc_orders_v1" && e.newValue) {
         try {
@@ -355,13 +569,13 @@ export function AdminNotificationProvider({ children }: { children: React.ReactN
       }
       orderAlarm.stop();
     };
-  }, [user, isAdmin, handleNewOrderReceived]);
+  }, [user, isAdmin, handleNewOrderReceived, handleNewPrintRequestReceived, handleNewCustomizationRequestReceived]);
 
   const acknowledgeNotification = useCallback(
     (id: string) => {
       setNotifications((prev) => {
         const updated = prev.map((n) => (n.id === id || n.orderId === id ? { ...n, acknowledged: true, read: true } : n));
-        const pending = updated.filter(n => !n.acknowledged);
+        const pending = updated.filter((n) => !n.acknowledged);
         if (pending.length === 0) {
           stopAlarm();
         }

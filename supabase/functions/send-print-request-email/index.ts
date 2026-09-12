@@ -104,7 +104,68 @@ serve(async (req: Request) => {
         })
       : new Date().toLocaleString("en-IN");
 
-    const subjectTitle = `New Print Request - ${customerName}`;
+    const subjectTitle = "New Printing Order - Clip N Copy";
+
+    let bwPages = body.bw_pages || body.bwPages;
+    let colorPages = body.color_pages || body.colorPages;
+
+    const rawPrintType = requestRecord.print_type || body.print_type || "B&W";
+
+    if (!bwPages && rawPrintType) {
+      const match = rawPrintType.match(/B&W:\s*([^,|)]+)/i);
+      if (match) bwPages = match[1].trim();
+    }
+    if (!colorPages && rawPrintType) {
+      const match = rawPrintType.match(/Color:\s*([^,|)]+)/i);
+      if (match) colorPages = match[1].trim();
+    }
+
+    const isBwAndColor = /B&W \+ Color/i.test(rawPrintType) || /Black & White \+ Color/i.test(rawPrintType);
+    const isColorOnly = /Color/i.test(rawPrintType) && !isBwAndColor;
+
+    let printTypeAndPagesRows = "";
+    if (isBwAndColor) {
+      const finalBw = bwPages && bwPages !== "N/A" ? bwPages : "1-20";
+      const finalColor = colorPages && colorPages !== "N/A" ? colorPages : "21-40";
+      printTypeAndPagesRows = `
+          <tr>
+            <td style="font-weight: 600; color: #64748b; padding: 4px 0; width: 40%;">Print Type:</td>
+            <td style="font-weight: 700; color: #0f172a; padding: 4px 0;">B&amp;W + Color</td>
+          </tr>
+          <tr>
+            <td style="font-weight: 600; color: #64748b; padding: 4px 0;">B&amp;W Pages:</td>
+            <td style="font-weight: 700; color: #0f172a; padding: 4px 0;">${finalBw}</td>
+          </tr>
+          <tr>
+            <td style="font-weight: 600; color: #64748b; padding: 4px 0;">Color Pages:</td>
+            <td style="font-weight: 700; color: #0f172a; padding: 4px 0;">${finalColor}</td>
+          </tr>
+      `;
+    } else if (isColorOnly) {
+      const finalColor = colorPages && colorPages !== "N/A" ? colorPages : "All pages";
+      printTypeAndPagesRows = `
+          <tr>
+            <td style="font-weight: 600; color: #64748b; padding: 4px 0; width: 40%;">Print Type:</td>
+            <td style="font-weight: 700; color: #0f172a; padding: 4px 0;">Color</td>
+          </tr>
+          <tr>
+            <td style="font-weight: 600; color: #64748b; padding: 4px 0;">Color Pages:</td>
+            <td style="font-weight: 700; color: #0f172a; padding: 4px 0;">${finalColor}</td>
+          </tr>
+      `;
+    } else {
+      const finalBw = bwPages && bwPages !== "N/A" ? bwPages : "All pages";
+      printTypeAndPagesRows = `
+          <tr>
+            <td style="font-weight: 600; color: #64748b; padding: 4px 0; width: 40%;">Print Type:</td>
+            <td style="font-weight: 700; color: #0f172a; padding: 4px 0;">B&amp;W</td>
+          </tr>
+          <tr>
+            <td style="font-weight: 600; color: #64748b; padding: 4px 0;">B&amp;W Pages:</td>
+            <td style="font-weight: 700; color: #0f172a; padding: 4px 0;">${finalBw}</td>
+          </tr>
+      `;
+    }
 
     const emailHtml = `
 <!DOCTYPE html>
@@ -154,18 +215,15 @@ serve(async (req: Request) => {
         </table>
       </div>
 
-      <!-- Print Specifications Card -->
+      <!-- PRINT SPECIFICATIONS Card -->
       <div style="background-color: #f1f5f9; border: 1px solid #cbd5e1; border-radius: 12px; padding: 16px; margin-bottom: 20px; font-size: 13px; line-height: 1.6;">
-        <div style="font-size: 11px; font-weight: 800; text-transform: uppercase; color: #475569; margin-bottom: 8px;">Print Specifications</div>
+        <div style="font-size: 11px; font-weight: 800; text-transform: uppercase; color: #475569; margin-bottom: 8px;">PRINT SPECIFICATIONS</div>
         <table style="width: 100%; border-collapse: collapse;">
           <tr>
-            <td style="font-weight: 600; color: #64748b; padding: 4px 0; width: 35%;">File Name:</td>
+            <td style="font-weight: 600; color: #64748b; padding: 4px 0; width: 40%;">File Name:</td>
             <td style="font-weight: 700; color: #0f172a; padding: 4px 0;">${requestRecord.file_name}</td>
           </tr>
-          <tr>
-            <td style="font-weight: 600; color: #64748b; padding: 4px 0;">Print Type:</td>
-            <td style="font-weight: 700; color: #0f172a; padding: 4px 0;">${requestRecord.print_type}</td>
-          </tr>
+          ${printTypeAndPagesRows}
           <tr>
             <td style="font-weight: 600; color: #64748b; padding: 4px 0;">Copies:</td>
             <td style="font-weight: 700; color: #0f172a; padding: 4px 0;">${requestRecord.copies}</td>
@@ -179,7 +237,7 @@ serve(async (req: Request) => {
             <td style="font-weight: 700; color: #0f172a; padding: 4px 0;">${requestRecord.finishing || "None"}</td>
           </tr>
           <tr>
-            <td style="font-weight: 600; color: #64748b; padding: 6px 0; border-top: 1px solid #cbd5e1;">Total Estimate:</td>
+            <td style="font-weight: 600; color: #64748b; padding: 6px 0; border-top: 1px solid #cbd5e1;">Total Amount:</td>
             <td style="font-weight: 800; color: #2563eb; font-size: 16px; padding: 6px 0; border-top: 1px solid #cbd5e1;">₹${requestRecord.total_amount}</td>
           </tr>
         </table>
@@ -216,9 +274,14 @@ serve(async (req: Request) => {
       );
     }
 
+    const recipients = [storeTargetEmail];
+    if (customerEmail && customerEmail !== "N/A" && customerEmail.includes("@") && !recipients.includes(customerEmail)) {
+      recipients.push(customerEmail);
+    }
+
     const payload: Record<string, any> = {
       from: resendFromEmail,
-      to: [storeTargetEmail],
+      to: recipients,
       subject: subjectTitle,
       html: emailHtml,
     };
@@ -227,7 +290,7 @@ serve(async (req: Request) => {
       payload.attachments = [fileAttachment];
     }
 
-    console.log(`[send-print-request-email] Sending Resend email to ${storeTargetEmail} from ${resendFromEmail} with attachment: ${Boolean(fileAttachment)}`);
+    console.log(`[send-print-request-email] Sending Resend email to ${recipients.join(", ")} from ${resendFromEmail} with attachment: ${Boolean(fileAttachment)}`);
 
     const resendResponse = await fetch("https://api.resend.com/emails", {
       method: "POST",
@@ -252,16 +315,11 @@ serve(async (req: Request) => {
       );
     }
 
-    // 6. Only after Resend successfully sends email: update email_sent = true
+    // 6. Update email_sent = true in DB
     await supabase
       .from("print_requests")
-      .update({
-        email_sent: true,
-        updated_at: new Date().toISOString(),
-      })
+      .update({ email_sent: true, updated_at: new Date().toISOString() })
       .eq("id", requestId);
-
-    console.log(`[send-print-request-email] Successfully updated email_sent = true for request ${requestId}`);
 
     return new Response(
       JSON.stringify({

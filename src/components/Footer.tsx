@@ -12,9 +12,8 @@ const SHOP = [
 
 const SERVICES = [
   { label: "Printing", to: "/services" },
-  { label: "Photocopy", to: "/services" },
+  { label: "Customization Printing", to: "/services" },
   { label: "Binding", to: "/services" },
-  { label: "Project Printing", to: "/services" },
 ];
 
 const SUPPORT = [

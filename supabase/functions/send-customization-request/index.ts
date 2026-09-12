@@ -29,13 +29,13 @@ serve(async (req: Request) => {
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
     const body = await req.json();
-    const requestId = body.print_request_id || body.requestId || body.id;
+    const requestId = body.customization_request_id || body.requestId || body.id;
 
     let requestRecord = null;
 
     if (requestId) {
       const { data, error } = await supabase
-        .from("print_requests")
+        .from("customization_requests")
         .select("*")
         .eq("id", requestId)
         .maybeSingle();
@@ -45,7 +45,6 @@ serve(async (req: Request) => {
       }
     }
 
-    // Merge fallback from body parameters
     const customerName = requestRecord?.customer_name || body.customer_name || "Customer";
     const customerPhone = requestRecord?.customer_phone || body.customer_phone || "N/A";
     const customerEmail = (requestRecord?.customer_email && requestRecord.customer_email !== "N/A")
@@ -53,81 +52,18 @@ serve(async (req: Request) => {
       : (body.customer_email && body.customer_email !== "N/A")
       ? body.customer_email
       : (requestRecord?.customer_email || body.customer_email || "N/A");
-    const fileName = requestRecord?.file_name || body.file_name || "print_document";
+    const fileName = requestRecord?.file_name || body.file_name || "preference_file";
     const filePath = requestRecord?.file_path || body.file_path;
     const fileUrl = requestRecord?.file_url || body.file_url;
-    const printType = requestRecord?.print_type || body.print_type || "B&W";
-    const copies = requestRecord?.copies || body.copies || 1;
-    const paper = requestRecord?.paper || body.paper || "A4";
-    const finishing = requestRecord?.finishing || body.finishing || "None";
-    const totalAmount = requestRecord?.total_amount || body.total_amount || 0;
+    const customizationType = requestRecord?.customization_type || body.customization_type || "Customization";
+    const title = requestRecord?.title || body.title || "N/A";
+    const quantity = requestRecord?.quantity || body.quantity || 1;
 
-    const totalPages = body.total_pages || "N/A";
-    let bwPages = body.bw_pages || body.bwPages;
-    let colorPages = body.color_pages || body.colorPages;
-
-    // Graceful fallback parsing if stored in requestRecord.print_type
-    if (!bwPages && requestRecord?.print_type) {
-      const match = requestRecord.print_type.match(/B&W:\s*([^,|)]+)/i);
-      if (match) bwPages = match[1].trim();
-    }
-    if (!colorPages && requestRecord?.print_type) {
-      const match = requestRecord.print_type.match(/Color:\s*([^,|)]+)/i);
-      if (match) colorPages = match[1].trim();
-    }
-
-    const isBwAndColor = /B&W \+ Color/i.test(printType) || /Black & White \+ Color/i.test(printType);
-    const isColorOnly = /Color/i.test(printType) && !isBwAndColor;
-
-    let printTypeAndPagesRows = "";
-    if (isBwAndColor) {
-      const finalBw = bwPages && bwPages !== "N/A" ? bwPages : "1-20";
-      const finalColor = colorPages && colorPages !== "N/A" ? colorPages : "21-40";
-      printTypeAndPagesRows = `
-          <tr>
-            <td style="font-weight: 600; color: #64748b; padding: 4px 0; width: 40%;">Print Type:</td>
-            <td style="font-weight: 700; color: #0f172a; padding: 4px 0;">B&amp;W + Color</td>
-          </tr>
-          <tr>
-            <td style="font-weight: 600; color: #64748b; padding: 4px 0;">B&amp;W Pages:</td>
-            <td style="font-weight: 700; color: #0f172a; padding: 4px 0;">${finalBw}</td>
-          </tr>
-          <tr>
-            <td style="font-weight: 600; color: #64748b; padding: 4px 0;">Color Pages:</td>
-            <td style="font-weight: 700; color: #0f172a; padding: 4px 0;">${finalColor}</td>
-          </tr>
-      `;
-    } else if (isColorOnly) {
-      const finalColor = colorPages && colorPages !== "N/A" ? colorPages : "All pages";
-      printTypeAndPagesRows = `
-          <tr>
-            <td style="font-weight: 600; color: #64748b; padding: 4px 0; width: 40%;">Print Type:</td>
-            <td style="font-weight: 700; color: #0f172a; padding: 4px 0;">Color</td>
-          </tr>
-          <tr>
-            <td style="font-weight: 600; color: #64748b; padding: 4px 0;">Color Pages:</td>
-            <td style="font-weight: 700; color: #0f172a; padding: 4px 0;">${finalColor}</td>
-          </tr>
-      `;
-    } else {
-      const finalBw = bwPages && bwPages !== "N/A" ? bwPages : "All pages";
-      printTypeAndPagesRows = `
-          <tr>
-            <td style="font-weight: 600; color: #64748b; padding: 4px 0; width: 40%;">Print Type:</td>
-            <td style="font-weight: 700; color: #0f172a; padding: 4px 0;">B&amp;W</td>
-          </tr>
-          <tr>
-            <td style="font-weight: 600; color: #64748b; padding: 4px 0;">B&amp;W Pages:</td>
-            <td style="font-weight: 700; color: #0f172a; padding: 4px 0;">${finalBw}</td>
-          </tr>
-      `;
-    }
-
-    // Download attached file from Supabase storage bucket 'print-files'
+    // Download attached preference file from storage
     let fileAttachment = null;
     if (filePath) {
       try {
-        console.log(`[send-print-request] Downloading file from storage: ${filePath}`);
+        console.log(`[send-customization-request] Downloading file: ${filePath}`);
         const { data: fileBlob, error: downloadError } = await supabase.storage
           .from("print-files")
           .download(filePath);
@@ -141,12 +77,9 @@ serve(async (req: Request) => {
             filename: fileName,
             content: base64Content,
           };
-          console.log(`[send-print-request] Successfully converted storage file attachment (${uint8Array.byteLength} bytes)`);
-        } else {
-          console.warn("[send-print-request] Download storage error:", downloadError?.message);
         }
       } catch (fileErr) {
-        console.warn("[send-print-request] Storage download exception:", fileErr);
+        console.warn("[send-customization-request] Storage download exception:", fileErr);
       }
     }
 
@@ -161,7 +94,7 @@ serve(async (req: Request) => {
         })
       : new Date().toLocaleString("en-IN");
 
-    const subjectTitle = "New Printing Order - Clip N Copy";
+    const subjectTitle = `New Customization Printing Request (${customizationType}) - Clip N Copy`;
 
     const emailHtml = `
 <!DOCTYPE html>
@@ -175,18 +108,18 @@ serve(async (req: Request) => {
   <div style="max-width: 600px; margin: 20px auto; background: #ffffff; border-radius: 16px; overflow: hidden; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05); border: 1px solid #e2e8f0;">
     <div style="background-color: #0f172a; padding: 28px 24px; text-align: center;">
       <h1 style="color: #ffffff; margin: 0; font-size: 22px; font-weight: 800;">Clip N Copy</h1>
-      <p style="color: #94a3b8; margin: 4px 0 0 0; font-size: 13px;">NEW PRINTING ORDER</p>
-      <div style="display: inline-block; background-color: #0647e8; color: #ffffff; padding: 4px 14px; border-radius: 20px; font-size: 11px; font-weight: 700; margin-top: 10px; text-transform: uppercase;">NEW ORDER</div>
+      <p style="color: #94a3b8; margin: 4px 0 0 0; font-size: 13px;">NEW CUSTOMIZATION PRINTING REQUEST</p>
+      <div style="display: inline-block; background-color: #8b5cf6; color: #ffffff; padding: 4px 14px; border-radius: 20px; font-size: 11px; font-weight: 700; margin-top: 10px; text-transform: uppercase;">CUSTOMIZATION REQUEST</div>
     </div>
     
     <div style="padding: 28px 24px;">
       <div style="font-size: 15px; font-weight: 700; color: #0f172a; margin-bottom: 16px;">
-        New printing order submitted:
+        A new customization request has been received:
       </div>
 
-      <!-- Customer Details Card -->
+      <!-- Customer Information Card -->
       <div style="background-color: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; padding: 16px; margin-bottom: 20px; font-size: 13px; line-height: 1.6;">
-        <div style="font-size: 11px; font-weight: 800; text-transform: uppercase; color: #64748b; margin-bottom: 8px;">Customer Information</div>
+        <div style="font-size: 11px; font-weight: 800; text-transform: uppercase; color: #64748b; margin-bottom: 8px;">CUSTOMER INFORMATION</div>
         <table style="width: 100%; border-collapse: collapse;">
           <tr>
             <td style="font-weight: 600; color: #64748b; padding: 3px 0; width: 40%;">Customer Name:</td>
@@ -202,7 +135,7 @@ serve(async (req: Request) => {
           </tr>
           <tr>
             <td style="font-weight: 600; color: #64748b; padding: 3px 0;">Request ID:</td>
-            <td style="font-weight: 700; color: #0647e8; padding: 3px 0;">${requestId || "N/A"}</td>
+            <td style="font-weight: 700; color: #8b5cf6; padding: 3px 0;">${requestId || "N/A"}</td>
           </tr>
           <tr>
             <td style="font-weight: 600; color: #64748b; padding: 3px 0;">Date / Time:</td>
@@ -211,59 +144,57 @@ serve(async (req: Request) => {
         </table>
       </div>
 
-      <!-- PRINT SPECIFICATIONS Card -->
-      <div style="background-color: #f1f5f9; border: 1px solid #cbd5e1; border-radius: 12px; padding: 16px; margin-bottom: 20px; font-size: 13px; line-height: 1.6;">
-        <div style="font-size: 11px; font-weight: 800; text-transform: uppercase; color: #475569; margin-bottom: 8px;">PRINT SPECIFICATIONS</div>
+      <!-- CUSTOMIZATION DETAILS Card -->
+      <div style="background-color: #f5f3ff; border: 1px solid #ddd6fe; border-radius: 12px; padding: 16px; margin-bottom: 20px; font-size: 13px; line-height: 1.6;">
+        <div style="font-size: 11px; font-weight: 800; text-transform: uppercase; color: #6d28d9; margin-bottom: 8px;">CUSTOMIZATION DETAILS</div>
         <table style="width: 100%; border-collapse: collapse;">
           <tr>
-            <td style="font-weight: 600; color: #64748b; padding: 4px 0; width: 40%;">File Name:</td>
+            <td style="font-weight: 600; color: #64748b; padding: 4px 0; width: 40%;">Type of Customization:</td>
+            <td style="font-weight: 700; color: #0f172a; padding: 4px 0;">${customizationType}</td>
+          </tr>
+          <tr>
+            <td style="font-weight: 600; color: #64748b; padding: 4px 0;">Title / Text:</td>
+            <td style="font-weight: 700; color: #0f172a; padding: 4px 0;">${title}</td>
+          </tr>
+          <tr>
+            <td style="font-weight: 600; color: #64748b; padding: 4px 0;">Quantity:</td>
+            <td style="font-weight: 700; color: #0f172a; padding: 4px 0;">${quantity}</td>
+          </tr>
+          <tr>
+            <td style="font-weight: 600; color: #64748b; padding: 4px 0;">Contact Number:</td>
+            <td style="font-weight: 700; color: #0f172a; padding: 4px 0;">${customerPhone}</td>
+          </tr>
+          <tr>
+            <td style="font-weight: 600; color: #64748b; padding: 4px 0;">Uploaded Preference:</td>
             <td style="font-weight: 700; color: #0f172a; padding: 4px 0;">${fileName}</td>
-          </tr>
-          ${printTypeAndPagesRows}
-          <tr>
-            <td style="font-weight: 600; color: #64748b; padding: 4px 0;">Copies:</td>
-            <td style="font-weight: 700; color: #0f172a; padding: 4px 0;">${copies}</td>
-          </tr>
-          <tr>
-            <td style="font-weight: 600; color: #64748b; padding: 4px 0;">Paper:</td>
-            <td style="font-weight: 700; color: #0f172a; padding: 4px 0;">${paper}</td>
-          </tr>
-          <tr>
-            <td style="font-weight: 600; color: #64748b; padding: 4px 0;">Finishing:</td>
-            <td style="font-weight: 700; color: #0f172a; padding: 4px 0;">${finishing}</td>
-          </tr>
-          <tr>
-            <td style="font-weight: 600; color: #64748b; padding: 6px 0; border-top: 1px solid #cbd5e1;">Total Amount:</td>
-            <td style="font-weight: 800; color: #0647e8; font-size: 16px; padding: 6px 0; border-top: 1px solid #cbd5e1;">₹${totalAmount}</td>
           </tr>
         </table>
       </div>
 
       ${
         fileAttachment
-          ? `<p style="font-size: 13px; color: #16a34a; font-weight: 600; margin: 0 0 16px 0;">📎 Attached file: <strong>"${fileName}"</strong></p>`
+          ? `<p style="font-size: 13px; color: #16a34a; font-weight: 600; margin: 0 0 16px 0;">📎 Attached preference file: <strong>"${fileName}"</strong></p>`
           : fileUrl
-          ? `<p style="font-size: 13px; color: #0647e8; font-weight: 600; margin: 0 0 16px 0;">🔗 <a href="${fileUrl}" target="_blank" style="color: #0647e8;">Click to view uploaded file</a></p>`
+          ? `<p style="font-size: 13px; color: #8b5cf6; font-weight: 600; margin: 0 0 16px 0;">🔗 <a href="${fileUrl}" target="_blank" style="color: #8b5cf6;">Click to view uploaded preference file</a></p>`
           : ""
       }
     </div>
 
     <div style="background-color: #f1f5f9; padding: 20px; text-align: center; font-size: 12px; color: #64748b; border-top: 1px solid #e2e8f0;">
       <p style="margin: 0 0 4px 0; font-weight: 700; color: #0f172a;">Clip N Copy Store System</p>
-      <p style="margin: 0;">Automated Print Request Notification</p>
+      <p style="margin: 0;">Automated Customization Request Notification</p>
     </div>
   </div>
 </body>
 </html>
     `;
 
-    // Send email via Resend API
     const resendApiKey = Deno.env.get("RESEND_API_KEY");
     const resendFromEmail = Deno.env.get("RESEND_FROM_EMAIL") || "Clip N Copy <noreply@clipncopy.co.in>";
     const storeTargetEmail = Deno.env.get("STORE_EMAIL") || Deno.env.get("RESEND_TO_EMAIL") || "udayakatika@gmail.com";
 
     if (!resendApiKey) {
-      console.error("[send-print-request] Missing RESEND_API_KEY environment variable");
+      console.error("[send-customization-request] Missing RESEND_API_KEY");
       return new Response(
         JSON.stringify({ error: "Resend API key is not configured in Supabase secrets" }),
         { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 500 }
@@ -286,8 +217,6 @@ serve(async (req: Request) => {
       payload.attachments = [fileAttachment];
     }
 
-    console.log(`[send-print-request] Sending Resend email to ${storeTargetEmail} from ${resendFromEmail}`);
-
     const resendResponse = await fetch("https://api.resend.com/emails", {
       method: "POST",
       headers: {
@@ -297,11 +226,8 @@ serve(async (req: Request) => {
       body: JSON.stringify(payload),
     });
 
-    console.log(`[send-print-request] Resend response HTTP status: ${resendResponse.status}`);
-
     if (!resendResponse.ok) {
       const resendErr = await resendResponse.json().catch(() => ({ message: "Failed to parse Resend error response" }));
-      console.error("[send-print-request] Resend error response:", resendErr);
       return new Response(
         JSON.stringify({
           error: "Resend email delivery failed",
@@ -311,10 +237,9 @@ serve(async (req: Request) => {
       );
     }
 
-    // Update email_sent = true in DB if request ID exists
     if (requestId) {
       await supabase
-        .from("print_requests")
+        .from("customization_requests")
         .update({
           email_sent: true,
           updated_at: new Date().toISOString(),
@@ -331,7 +256,7 @@ serve(async (req: Request) => {
       { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 200 }
     );
   } catch (err: any) {
-    console.error("[send-print-request] Exception:", err);
+    console.error("[send-customization-request] Exception:", err);
     return new Response(
       JSON.stringify({ error: err.message || "Internal server error" }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 500 }

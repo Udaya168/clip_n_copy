@@ -1,4 +1,4 @@
-import { ChevronRight, Printer, Zap, Box, ShieldCheck, Book, Briefcase, Copy, Palette, FileText } from "lucide-react";
+import { ChevronRight, Printer, Zap, Box, ShieldCheck, Book, Briefcase, Palette, FileText, Sparkles } from "lucide-react";
 import { useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
@@ -18,14 +18,10 @@ import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious
 
 function getServiceIcon(name: string) {
   switch (name) {
-    case "Color Printing": return <Palette className="size-6" />;
-    case "Photocopy": return <Copy className="size-6" />;
-    case "Spiral Binding": return <Book className="size-6" />;
-    case "Project Printing": return <FileText className="size-6" />;
-    case "Resume Printing": return <Briefcase className="size-6" />;
-    case "B&W Printing":
+    case "Customization Printing": return <Sparkles className="size-7" />;
+    case "Printing":
     default:
-      return <Printer className="size-6" />;
+      return <Printer className="size-7" />;
   }
 }
 
@@ -177,19 +173,24 @@ export default function IndexPage() {
             <p className="mt-3 max-w-2xl text-[#0B2455]/70 text-lg font-medium">High quality printing, binding & finishing — fast, reliable & professional.</p>
           </div>
           
-          <div className="relative z-10 grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
+          <div className="relative z-10 grid gap-6 grid-cols-1 sm:grid-cols-2 max-w-3xl">
             {PRINT_SERVICES.map((service) => (
               <button
                 key={service.name}
                 onClick={() => handleOrder(service.name)}
-                className="group flex flex-col items-center justify-center gap-4 rounded-[1.25rem] bg-white p-6 shadow-[0_4px_16px_-4px_rgba(11,92,255,0.08)] border border-[#EAF2FF] transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_12px_28px_-6px_rgba(11,92,255,0.15)] hover:border-[#DCEBFF] text-center cursor-pointer"
+                className="group flex flex-col sm:flex-row items-center sm:items-start text-center sm:text-left gap-5 rounded-[1.5rem] bg-white p-6 shadow-[0_4px_20px_-4px_rgba(11,92,255,0.08)] border border-[#EAF2FF] transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_12px_32px_-6px_rgba(11,92,255,0.16)] hover:border-[#DCEBFF] cursor-pointer w-full"
               >
-                <div className="grid size-14 place-items-center rounded-2xl bg-[#075BFF]/10 text-[#075BFF] transition-all duration-300 group-hover:scale-110 group-hover:bg-[#075BFF] group-hover:text-white group-hover:shadow-[0_8px_16px_-4px_rgba(7,91,255,0.4)]">
+                <div className="grid size-16 shrink-0 place-items-center rounded-2xl bg-[#075BFF]/10 text-[#075BFF] transition-all duration-300 group-hover:scale-105 group-hover:bg-[#075BFF] group-hover:text-white group-hover:shadow-[0_8px_20px_-4px_rgba(7,91,255,0.4)]">
                   {getServiceIcon(service.name)}
                 </div>
-                <div>
-                  <h3 className="font-display text-lg font-bold text-[#0B2455]">{service.name}</h3>
-                  <p className="mt-1 text-[13px] font-medium text-[#0B2455]/60 leading-tight">{service.note}</p>
+                <div className="flex-1">
+                  <div className="flex items-center justify-between gap-2">
+                    <h3 className="font-display text-xl font-bold text-[#0B2455]">{service.name}</h3>
+                  </div>
+                  <p className="mt-1 text-sm font-medium text-[#0B2455]/70 leading-relaxed">{service.note}</p>
+                  <p className="mt-3 text-xs font-bold text-[#075BFF] group-hover:underline inline-flex items-center gap-1">
+                    {service.name === "Printing" ? "Order now →" : "Customize your requirements →"}
+                  </p>
                 </div>
               </button>
             ))}

@@ -19,7 +19,7 @@ export const STORE = {
   address:
     "Shop No. 171, 3rd Cross, 3rd Main, ITPL Main Rd, Kundalahalli Colony, Bengaluru, Karnataka 560037",
   hours: "Mon – Sun · 9:00 AM – 9:30 PM",
-  services: ["In-store Shopping", "Delivery", "Printing", "Photocopy", "Binding"],
+  services: ["In-store Shopping", "Delivery", "Printing", "Customization Printing", "Binding"],
 };
 
 export type ProductVariant = {
@@ -701,16 +701,8 @@ export const OFFICE_ESSENTIALS = [
 ];
 
 export const PRINT_SERVICES = [
-  { name: "B&W Printing", price: "Starting from ₹2/page", note: "Crisp laser prints, any volume" },
-  { name: "Color Printing", price: "Starting from ₹5/page", note: "Laser colour printout & xerox" },
-  { name: "Photocopy", price: "Fast document copies", note: "Jumbo xerox up to A0" },
-  { name: "Spiral Binding", price: "Professional binding", note: "Spiral, comb & thesis binding" },
-  {
-    name: "Project Printing",
-    price: "Perfect for college projects",
-    note: "AutoCAD prints & lamination",
-  },
-  { name: "Resume Printing", price: "Professional-quality printing", note: "Premium bond paper" },
+  { name: "Printing", price: "High quality document printing", note: "Print your documents with custom settings" },
+  { name: "Customization Printing", price: "Custom printing services", note: "Customize your requirements: Brochure, Banner, ID Card & Magazine" },
 ];
 
 export const POPULAR_SEARCHES = [
