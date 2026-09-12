@@ -174,6 +174,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     let isMounted = true;
 
+    // Safety fallback timer to prevent infinite loading screen on slow/failing network in production
+    const safetyTimer = setTimeout(() => {
+      if (isMounted) {
+        console.warn("[AUTH] Bootstrap safety timer fired after 3.5s, disabling loading screen");
+        setLoading(false);
+      }
+    }, 3500);
+
     const bootstrapAuth = async () => {
       console.log("[AUTH] bootstrap started");
       try {
@@ -225,6 +233,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         }
       } finally {
         if (isMounted) {
+          clearTimeout(safetyTimer);
           console.log("[AUTH] auth initialization completed");
           console.log("[AUTH] loading disabled");
           setLoading(false);

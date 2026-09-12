@@ -64,7 +64,21 @@ const htmlContent = `<!DOCTYPE html>
     ${cssFile ? `<link rel="stylesheet" href="/assets/${cssFile}" />` : ""}
   </head>
   <body>
-    <div id="root"></div>
+    <div id="root">
+      <div style="position:fixed;inset:0;z-index:9999;display:flex;min-height:100vh;width:100%;flex-direction:column;align-items:center;justify-content:center;background-color:#ffffff;padding:1rem;font-family:sans-serif;user-select:none;">
+        <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;">
+          <img src="/logo.webp" alt="Clip N Copy" style="width:160px;height:auto;object-fit:contain;margin-bottom:1rem;" />
+          <p style="font-size:0.875rem;font-weight:600;color:#475569;letter-spacing:0.025em;margin-bottom:0.625rem;margin-top:0;">Loading...</p>
+          <div style="display:flex;align-items:center;justify-content:center;">
+            <svg style="width:1rem;height:1rem;color:#0647E8;animation:spin 1s linear infinite;" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+              <style>@keyframes spin { to { transform: rotate(360deg); } }</style>
+              <circle style="opacity:0.25;" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+              <path style="opacity:0.75;" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+            </svg>
+          </div>
+        </div>
+      </div>
+    </div>
     ${jsFile ? `<script type="module" src="/assets/${jsFile}"></script>` : ""}
   </body>
 </html>
