@@ -16,10 +16,11 @@ export function StoreStatusCard() {
       if (targetOnline) {
         toast.success("Store is now set to ONLINE manually.");
       } else {
-        toast.error("Store is now set to OFFLINE manually. New orders are blocked.");
+        toast.warning("Store is now set to OFFLINE manually. New orders are blocked.");
       }
-    } catch (err) {
-      toast.error("Failed to update store status.");
+    } catch (err: any) {
+      const errMsg = err?.message || err?.details || "Failed to update store status.";
+      toast.error(`Error: ${errMsg}`);
     } finally {
       setIsUpdating(false);
     }

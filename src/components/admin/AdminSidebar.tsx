@@ -88,19 +88,6 @@ export function AdminSidebar({ activeTab, setActiveTab }: AdminSidebarProps) {
         </nav>
 
         <div className="mt-auto space-y-3 pt-4">
-          <div className="flex items-center justify-between rounded-xl border border-border bg-secondary/30 p-3">
-            <div className="flex flex-col">
-              <span className="text-xs font-semibold text-foreground">Store Status</span>
-              <span className="flex items-center gap-1.5 text-[11px] font-medium text-emerald-600 dark:text-emerald-400">
-                <span className="relative flex size-2">
-                  <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-75"></span>
-                  <span className="relative inline-flex size-2 rounded-full bg-emerald-500"></span>
-                </span>
-                Online
-              </span>
-            </div>
-          </div>
-          
           <div className="space-y-1">
             <Link
               to="/"

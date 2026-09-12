@@ -1,0 +1,2 @@
+[functions.send-email-otp]
+verify_jwt = false

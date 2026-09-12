@@ -243,7 +243,7 @@ export function AdminNotificationProvider({ children }: { children: React.ReactN
           .limit(10);
         
         if (!error && data && data.length > 0 && isMounted) {
-          const loadedNotifs: AdminOrderNotification[] = data.map(orderPayload => {
+          const loadedNotifs: AdminOrderNotification[] = data.map((orderPayload: any) => {
             const orderId = String(orderPayload.id);
             notifiedOrderIds.current.add(orderId);
             return {

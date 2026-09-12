@@ -11,7 +11,6 @@ import { setProductsCache } from "@/lib/data";
 import { supabase } from "@/lib/supabase";
 import { acceptOrderInDb, rejectOrderInDb, OrderRecord } from "@/lib/orders-store";
 import { triggerOrderAcceptanceEmail, triggerOrderRejectionEmail } from "@/lib/order-email-service";
-import { AdminSettingsStoreStatusCard } from "./AdminSettingsStoreStatusCard";
 import { Sliders, ShieldCheck, BellRing, VolumeX, Eye, X, CheckCircle2, XCircle, Loader2 } from "lucide-react";
 import { AdminNotificationProvider, useAdminNotifications, AdminOrderNotification } from "@/lib/admin-notification-context";
 import { inr } from "@/lib/shop-store";
@@ -248,8 +247,6 @@ function AdminLayoutInner() {
 
           {activeTab === "settings" && (
             <div className="space-y-6 max-w-4xl">
-              <AdminSettingsStoreStatusCard />
-
               <div className="rounded-3xl border border-border bg-background p-6 shadow-soft">
                 <h2 className="font-display text-xl font-bold flex items-center gap-2">
                   <Sliders className="size-5 text-primary" /> Admin Settings & Configuration

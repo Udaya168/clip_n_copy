@@ -41,10 +41,13 @@ export interface isEmailConfirmedResult {
 export function isEmailConfirmed(u: User | null): boolean {
   if (!u) return false;
   if (u.email_confirmed_at || (u as unknown as Record<string, unknown>)["confirmed_at"]) return true;
-  if (u.phone_confirmed_at || u.phone) return true;
   if (u.app_metadata?.provider === "google" || u.app_metadata?.providers?.includes("google")) return true;
-  // Preserve authenticated sessions on page refresh
-  return !!(u.id && (u.email || u.phone));
+  if (u.user_metadata?.["email_verified"] === true || u.user_metadata?.["is_email_verified"] === true) return true;
+  if (u.email) {
+    return false;
+  }
+  if (u.phone && u.phone_confirmed_at) return true;
+  return false;
 }
 
 export interface SignInResult {
@@ -171,58 +174,114 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     let isMounted = true;
 
-    const initAuth = async () => {
+    const bootstrapAuth = async () => {
+      console.log("[AUTH] bootstrap started");
       try {
+        const isOtpPending =
+          typeof window !== "undefined" &&
+          sessionStorage.getItem("registration_otp_pending") === "true";
+
+        if (isOtpPending) {
+          if (isMounted) {
+            setSession(null);
+            setUser(null);
+            setProfile(null);
+            console.log("[AUTH] initial session: logged-out");
+          }
+          return;
+        }
+
+        console.log("[AUTH] getSession started");
         const {
           data: { session: initialSession },
+          error: sessionError,
         } = await supabase.auth.getSession();
+        console.log("[AUTH] getSession completed");
+
+        if (sessionError) {
+          console.error("[AUTH] getSession error:", sessionError.message);
+        }
 
         if (isMounted) {
           const currentUser = initialSession?.user ?? null;
           if (currentUser && isEmailConfirmed(currentUser)) {
+            console.log("[AUTH] initial session: authenticated");
             setSession(initialSession);
             setUser(currentUser);
             await fetchAndSyncProfile(currentUser);
           } else {
+            console.log("[AUTH] initial session: logged-out");
             setSession(null);
             setUser(null);
             setProfile(null);
           }
         }
       } catch (err) {
-        console.error("Error checking auth session:", err);
+        console.error("[AUTH] Error checking auth session:", err);
+        if (isMounted) {
+          setSession(null);
+          setUser(null);
+          setProfile(null);
+        }
       } finally {
         if (isMounted) {
+          console.log("[AUTH] auth initialization completed");
+          console.log("[AUTH] loading disabled");
           setLoading(false);
         }
       }
     };
 
-    initAuth();
+    bootstrapAuth();
 
     let subscription: any = null;
 
     try {
-      const { data } = supabase.auth.onAuthStateChange(async (_event: any, currentSession: Session | null) => {
-        if (!isMounted) return;
+      const { data } = supabase.auth.onAuthStateChange(
+        (event: string, currentSession: Session | null) => {
+          if (!isMounted) return;
 
-        const currentUser = currentSession?.user ?? null;
+          // Skip INITIAL_SESSION event so it doesn't collide with getSession() bootstrap
+          if (event === "INITIAL_SESSION") {
+            return;
+          }
 
-        if (currentUser && isEmailConfirmed(currentUser)) {
-          setSession(currentSession);
-          setUser(currentUser);
-          await fetchAndSyncProfile(currentUser);
-        } else {
-          setSession(null);
-          setUser(null);
-          setProfile(null);
+          console.log(`[AUTH] onAuthStateChange event: ${event}`);
+
+          const isOtpPending =
+            typeof window !== "undefined" &&
+            sessionStorage.getItem("registration_otp_pending") === "true";
+
+          if (isOtpPending) {
+            setSession(null);
+            setUser(null);
+            setProfile(null);
+            setLoading(false);
+            return;
+          }
+
+          const currentUser = currentSession?.user ?? null;
+
+          if (currentUser && isEmailConfirmed(currentUser)) {
+            setSession(currentSession);
+            setUser(currentUser);
+            fetchAndSyncProfile(currentUser).catch((err) => {
+              console.warn("[AUTH] Profile sync error on auth state change:", err);
+            });
+          } else {
+            setSession(null);
+            setUser(null);
+            setProfile(null);
+          }
+          setLoading(false);
         }
-        setLoading(false);
-      });
+      );
       subscription = data.subscription;
     } catch (err) {
-      console.warn("Supabase auth state change listener failed to initialize:", err);
-      setLoading(false);
+      console.warn("[AUTH] Supabase auth state change listener failed to initialize:", err);
+      if (isMounted) {
+        setLoading(false);
+      }
     }
 
     return () => {
@@ -417,20 +476,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           console.warn("Could not insert profile record immediately:", profileError.message);
         }
 
-        const confirmed = isEmailConfirmed(data.user);
-
-        if (confirmed) {
-          setUser(data.user);
-          setSession(data.session);
-          await fetchAndSyncProfile(data.user);
-          return { error: null, user: data.user, confirmed: true };
-        } else {
-          await supabase.auth.signOut();
-          setUser(null);
-          setSession(null);
-          setProfile(null);
-          return { error: null, user: data.user, confirmed: false };
-        }
+        await supabase.auth.signOut();
+        setUser(null);
+        setSession(null);
+        setProfile(null);
+        return { error: null, user: data.user, confirmed: false };
       }
 
       return { error: null, user: null, confirmed: false };
@@ -616,7 +666,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const signInWithGoogle = async (redirectTarget?: string): Promise<{ error: Error | null }> => {
     try {
       const target = redirectTarget || "/";
-      const redirectUrl = `${window.location.origin}/login?redirect=${encodeURIComponent(target)}`;
+      const origin =
+        typeof window !== "undefined" && window.location.origin && !window.location.origin.includes("localhost")
+          ? window.location.origin
+          : (typeof window !== "undefined" && window.location.origin ? window.location.origin : "https://clipncopy.co.in");
+      const redirectUrl = `${origin}/login?redirect=${encodeURIComponent(target)}`;
       const { error } = await supabase.auth.signInWithOAuth({
         provider: "google",
         options: {

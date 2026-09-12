@@ -672,5 +672,3 @@ function LoginForm({ initialSuccessMessage }: { initialSuccessMessage: string | 
     </>
   );
 }
-
-

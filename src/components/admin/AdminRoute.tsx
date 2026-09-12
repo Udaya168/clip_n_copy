@@ -4,6 +4,7 @@ import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/lib/auth-store";
 import { toast } from "sonner";
 import { Loader2 } from "lucide-react";
+import { AccessDeniedPage } from "@/components/errors/AccessDeniedPage";
 
 interface AdminRouteProps {
   children: React.ReactNode;
@@ -83,10 +84,6 @@ export function AdminRoute({ children }: AdminRouteProps) {
       // 8. If the user is not authenticated: redirect to /login
       toast.error("Please sign in as administrator to access Admin Portal.");
       navigate("/login");
-    } else if (authStatus === "denied") {
-      // 6 & 7. If role is user or missing: deny access and redirect to normal customer homepage
-      toast.error("You do not have permission to access the Admin Portal.");
-      navigate("/");
     }
   }, [authStatus, navigate, isLoggingOut]);
 
@@ -99,6 +96,10 @@ export function AdminRoute({ children }: AdminRouteProps) {
         </div>
       </div>
     );
+  }
+
+  if (authStatus === "denied") {
+    return <AccessDeniedPage />;
   }
 
   // ONLY render Admin Portal if verified role === 'admin'

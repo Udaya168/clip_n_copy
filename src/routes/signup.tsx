@@ -1,6 +1,7 @@
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { useState } from "react";
-import { useAuth } from "@/lib/auth-store";
+import { useAuth, isEmailConfirmed } from "@/lib/auth-store";
+import { sendEmailOtp } from "@/lib/email-otp-service";
 import { AlertCircle, CheckCircle2, Loader2, Lock, Mail, User, MailCheck, Phone } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -28,7 +29,9 @@ export default function SignupPage() {
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [signupSuccess, setSignupSuccess] = useState(false);
 
-  if (user) {
+  const isOtpPending = typeof window !== "undefined" && sessionStorage.getItem("registration_otp_pending") === "true";
+
+  if (user && isEmailConfirmed(user) && !isOtpPending) {
     const userDisplayName = profile?.full_name || (user.user_metadata?.["full_name"] as string) || user.email;
     return (
       <div className="flex min-h-[100dvh] items-center justify-center p-6 bg-blue-50 font-sans">
@@ -85,13 +88,15 @@ export default function SignupPage() {
   const handleSignup = async (e: React.FormEvent) => {
     e.preventDefault();
     setErrorMessage(null);
+    console.log("[REGISTER] submit started");
 
+    const cleanEmail = email.trim().toLowerCase();
     if (!fullName.trim()) {
       setErrorMessage("Please enter your full name.");
       return;
     }
 
-    if (!email) {
+    if (!cleanEmail) {
       setErrorMessage("Please enter your email address.");
       return;
     }
@@ -112,29 +117,58 @@ export default function SignupPage() {
       return;
     }
 
+    console.log("[REGISTER] validation passed");
     setLoading(true);
 
     try {
+      if (typeof window !== "undefined") {
+        sessionStorage.setItem("registration_otp_pending", "true");
+        sessionStorage.setItem("registration_otp_email", cleanEmail);
+      }
+
+      console.log("[REGISTER] signup/registration request started");
       const fullPhone = `${countryCode}${cleanPhone}`;
-      const { error, confirmed } = await signUp(fullName.trim(), email.trim(), fullPhone, password);
+      const { error } = await signUp(fullName.trim(), cleanEmail, fullPhone, password);
 
       if (error) {
+        if (typeof window !== "undefined") {
+          sessionStorage.removeItem("registration_otp_pending");
+          sessionStorage.removeItem("registration_otp_email");
+        }
         let msg = error.message || "Failed to create account. Please try again.";
-        if (msg.toLowerCase().includes("failed to fetch")) {
+        if (msg.toLowerCase().includes("already exists") || msg.toLowerCase().includes("already registered")) {
+          msg = "An account with this email already exists. Please log in.";
+        } else if (msg.toLowerCase().includes("failed to fetch")) {
           msg = "Unable to connect to Supabase server. Please check your network connection or verify VITE_SUPABASE_URL in your .env file.";
-        } else if (msg.toLowerCase().includes("rate limit")) {
-          msg = "Email rate limit exceeded. Supabase temporary limit reached for email sending. Please wait a few minutes before trying again, or try logging in if you already received the link.";
         }
         setErrorMessage(msg);
-      } else if (confirmed) {
-        setSuccessMessage("Account created successfully! Redirecting...");
-        setTimeout(() => {
-          navigate(redirectTarget );
-        }, 1000);
       } else {
-        setSignupSuccess(true);
+        console.log("[REGISTER] invoking OTP Edge Function");
+        const otpRes = await sendEmailOtp(cleanEmail, "verification");
+        console.log("[REGISTER] Edge Function response", { success: otpRes.success, error: otpRes.error });
+
+        if (!otpRes.success) {
+          if (typeof window !== "undefined") {
+            sessionStorage.removeItem("registration_otp_pending");
+            sessionStorage.removeItem("registration_otp_email");
+          }
+          setErrorMessage(otpRes.error || "Unable to send verification code. Please try again.");
+          setLoading(false);
+          return;
+        }
+
+        console.log("[REGISTER] OTP send successful");
+        console.log("[REGISTER] navigating to OTP page");
+        const verifyUrl = redirect
+          ? `/verify-registration-otp?email=${encodeURIComponent(cleanEmail)}&redirect=${encodeURIComponent(redirect)}`
+          : `/verify-registration-otp?email=${encodeURIComponent(cleanEmail)}`;
+        navigate(verifyUrl);
       }
     } catch (err: any) {
+      if (typeof window !== "undefined") {
+        sessionStorage.removeItem("registration_otp_pending");
+        sessionStorage.removeItem("registration_otp_email");
+      }
       setErrorMessage(err.message || "An unexpected error occurred during signup.");
     } finally {
       setLoading(false);

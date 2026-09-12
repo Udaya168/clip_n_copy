@@ -339,7 +339,7 @@ export function Header() {
             {/* 1. Header */}
             <div className="shrink-0 flex items-center justify-between px-4 h-[68px] border-b border-[#E5EAF2] bg-white">
               <Link to="/" onClick={() => setMobileMenuOpen(false)} className="flex items-center">
-                <img src="/logo.webp" alt="Clip N Copy" className="w-[42px] h-auto object-contain" />
+                <img src="/logo.webp" alt="Clip N Copy" className="h-10 w-auto object-contain" />
               </Link>
               <button
                 onClick={() => setMobileMenuOpen(false)}
