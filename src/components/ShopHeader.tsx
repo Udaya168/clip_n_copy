@@ -10,21 +10,34 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { useAppBack } from "@/lib/useAppBack";
+import { useLocation, useNavigate } from "react-router-dom";
 
 export function ShopHeader() {
   const { cartCount, wishlist, setCartOpen } = useShop();
   const { user, profile, role, signOut } = useAuth();
-  const goBack = useAppBack();
+  const navigate = useNavigate();
+  const location = useLocation();
   
   const fullName = profile?.full_name || (user?.user_metadata?.["full_name"] as string) || "User";
+
+  const handleBack = (e: React.MouseEvent) => {
+    e.preventDefault();
+    if (location.pathname === '/shop') {
+      // Escape the filter query-parameter trap on the shop page
+      navigate('/');
+    } else {
+      // For product pages, checkout, wishlist, etc., use standard browser back
+      // so users return exactly to where they came from (e.g. retaining filters)
+      navigate(-1);
+    }
+  };
 
   return (
     <header className="sticky top-0 z-50 w-full border-b border-border bg-background/85 backdrop-blur-xl">
       <div className="section-shell flex h-16 items-center gap-3 md:h-20 md:gap-6 justify-between">
         <div className="flex items-center gap-4">
           <button 
-            onClick={(e) => { e.preventDefault(); goBack("/shop"); }}
+            onClick={handleBack}
             className="flex items-center gap-2 text-slate-500 hover:text-[#0647E8] transition-colors text-sm font-medium mr-2"
           >
             <ArrowLeft className="w-5 h-5" />

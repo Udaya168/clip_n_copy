@@ -94,7 +94,7 @@ export default function ShopPage() {
           <Link
             to="/shop"
             className={cn(
-              "block rounded-lg px-2 py-1.5 text-sm hover:bg-secondary",
+              "block rounded-lg px-2 py-1.5 text-sm hover:bg-secondary/10",
               !category && "bg-primary-soft font-semibold text-primary",
             )}
           >
@@ -105,7 +105,7 @@ export default function ShopPage() {
               key={c.slug}
               to={`/shop?category=${c.slug}`}
               className={cn(
-                "flex items-center justify-between rounded-lg px-2 py-1.5 text-sm hover:bg-secondary",
+                "flex items-center justify-between rounded-lg px-2 py-1.5 text-sm hover:bg-secondary/10",
                 category === c.slug && "bg-primary-soft font-semibold text-primary",
               )}
             >

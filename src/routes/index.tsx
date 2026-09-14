@@ -1,224 +1,345 @@
-import { ChevronRight, Printer, Zap, Box, ShieldCheck, Book, Briefcase, Palette, FileText, Sparkles } from "lucide-react";
-import { useMemo, useState } from "react";
 import { Link } from "react-router-dom";
-import { motion } from "framer-motion";
-import { HeroSection } from "@/components/HeroSection";
-import { ProductCard, ProductSkeleton } from "@/components/ProductCard";
-import { SectionHead } from "@/components/SectionHead";
-import { StoreSection } from "@/components/StoreSection";
-import { openPrintModal } from "@/lib/print-modal";
-import { RAW_CATEGORIES, PRINT_SERVICES } from "@/lib/data";
+import { useState, useMemo } from "react";
+import { MapPin, Phone, MessageCircle, Heart, Minus, Plus, ChevronRight, ArrowRight, Check } from "lucide-react";
+import { STORE, PRODUCTS, RAW_CATEGORIES } from "@/lib/data";
 import { useShop } from "@/lib/shop-store";
-import { useSupabaseProducts } from "@/lib/supabase-products";
-import { useScrollRestoration } from "@/lib/useScrollRestoration";
 import { LandingLayout } from "@/components/LandingLayout";
-import { ProductCarousel, ProductCarouselItem } from "@/components/ProductCarousel";
-import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from "@/components/ui/carousel";
+import { useScrollRestoration } from "@/lib/useScrollRestoration";
 
-
-function getServiceIcon(name: string) {
-  switch (name) {
-    case "Customization Printing": return <Sparkles className="size-7" />;
-    case "Printing":
-    default:
-      return <Printer className="size-7" />;
-  }
-}
+import heroImg from "@/assets/hero.webp";
+import officeImg from "@/assets/slide-office.webp";
+import printImg from "@/assets/slide-printing.webp";
 
 export default function IndexPage() {
-  const { addToCart } = useShop();
-  const { data: products = [], isLoading, isError, error, refetch } = useSupabaseProducts();
+  const { addToCart, setQty, lines, wishlist, toggleWishlist } = useShop();
+  const [activeCategory, setActiveCategory] = useState<string>("All");
+  const [searchQuery, setSearchQuery] = useState("");
 
-  const handleOrder = (serviceName: string | null = null) => {
-    openPrintModal(serviceName);
-  };
+  useScrollRestoration(true);
 
-  useScrollRestoration(!isLoading);
-
-  const categoriesWithCounts = useMemo(() => {
-    if (!products || products.length === 0) return [];
-
-    const categoryMap = new Map<string, { slug: string; name: string; image: string; count: number }>();
-    
-    products.forEach((p) => {
-      if (!p.category) return;
-      const slug = p.category;
-      if (!categoryMap.has(slug)) {
-        const raw = RAW_CATEGORIES.find(c => c.slug === slug);
-        categoryMap.set(slug, {
-          slug,
-          name: raw ? raw.name : slug.split('-').map(s => s.charAt(0).toUpperCase() + s.slice(1)).join(' '),
-          image: raw ? raw.image : (RAW_CATEGORIES[0]?.image || ""),
-          count: 0
-        });
-      }
-      categoryMap.get(slug)!.count++;
-    });
-
-    return Array.from(categoryMap.values()).sort((a, b) => b.count - a.count);
-  }, [products]);
-
-  const best = products.slice(0, 12);
+  const bestSellers = useMemo(() => {
+    let filtered = PRODUCTS.slice(0, 12);
+    if (activeCategory !== "All") {
+      filtered = filtered.filter((p) => p.category === activeCategory);
+    }
+    if (searchQuery) {
+      const q = searchQuery.toLowerCase();
+      filtered = filtered.filter(
+        (p) =>
+          p.name.toLowerCase().includes(q) ||
+          p.brand.toLowerCase().includes(q) ||
+          p.category.toLowerCase().includes(q)
+      );
+    }
+    return filtered;
+  }, [activeCategory, searchQuery]);
 
   return (
     <LandingLayout>
-      <HeroSection />
 
-      {/* Categories - Compact Premium Cards */}
-      <section className="section-shell py-6 md:py-8">
-        <SectionHead
-          title="Shop by Category"
-          ctaLabel="View All →"
-          to="/shop"
-        />
-        <div className="group/carousel relative -mx-4 sm:mx-0">
-          <Carousel
-            opts={{
-              align: "start",
-              loop: true
-            }}
-            className="w-full"
-          >
-            <CarouselContent className="px-4 sm:px-0 -ml-4">
-              {categoriesWithCounts.map((c, i) => (
-                <CarouselItem key={c.slug} className="pl-4 basis-[80%] sm:basis-[45%] md:basis-[33.33%] lg:basis-[25%]">
-                  <motion.div
-                    initial={{ opacity: 0, y: 20 }}
-                    whileInView={{ opacity: 1, y: 0 }}
-                    viewport={{ once: true, margin: "-50px" }}
-                    transition={{ duration: 0.4, delay: i * 0.1, ease: "easeOut" }}
-                  >
-                    <Link to={`/shop?category=${c.slug }`}
-                      className="group relative flex items-center gap-4 overflow-hidden rounded-[1.25rem] bg-white p-3 shadow-[0_4px_16px_-4px_rgba(11,92,255,0.08)] ring-1 ring-[#EAF2FF] transition-all duration-300 hover:scale-[1.03] hover:-translate-y-1 hover:shadow-[0_12px_28px_-6px_rgba(11,92,255,0.15)] hover:ring-[#DCEBFF]"
-                    >
-                      <div className="grid size-14 shrink-0 place-items-center rounded-xl bg-[#F4F8FF] transition-transform duration-500 group-hover:scale-105 group-hover:bg-[#EAF2FF]">
-                        <img
-                          src={c.image}
-                          alt={c.name}
-                          loading="lazy"
-                          className="size-8 object-contain mix-blend-multiply transition-all duration-500 group-hover:scale-110 group-hover:rotate-6 group-hover:-translate-y-1"
-                        />
-                      </div>
-                      <div className="flex flex-1 flex-col justify-center min-w-0 pr-2">
-                        <h3 className="truncate font-bold text-[#0B2455] transition-colors group-hover:text-[#075BFF] text-sm sm:text-[15px]">
-                          {c.name}
-                        </h3>
-                        <p className="mt-0.5 truncate text-[12px] font-medium text-[#075BFF]/70">{c.count} Products</p>
-                      </div>
-                      <ChevronRight className="absolute right-4 size-4 text-[#0B2455]/20 opacity-0 transition-all duration-300 group-hover:translate-x-1 group-hover:opacity-100 group-hover:text-[#075BFF]" />
-                    </Link>
-                  </motion.div>
-                </CarouselItem>
-              ))}
-            </CarouselContent>
-            <CarouselPrevious className="-left-4 hidden md:flex opacity-0 group-hover/carousel:opacity-100" />
-            <CarouselNext className="-right-4 hidden md:flex opacity-0 group-hover/carousel:opacity-100" />
-          </Carousel>
+
+      {/* 4. MAIN FEATURE AREA */}
+      <section className="section-shell py-8 md:py-12">
+        <div className="grid gap-4 md:grid-cols-3 md:grid-rows-2">
+          {/* Main Hero Card */}
+          <div className="md:col-span-2 md:row-span-2 overflow-hidden rounded-lg relative isolate min-h-[460px] flex flex-col justify-center border border-border">
+            {/* Background Image (Right Side) */}
+            <div className="absolute inset-0 z-[-3]">
+              <img 
+                src={heroImg} 
+                alt="Stationery flatlay"
+                className="w-full h-full object-cover object-right"
+              />
+            </div>
+            
+            {/* Desktop Diagonal Mask */}
+            <div 
+              className="hidden sm:block absolute inset-0 z-[-2] bg-[#F7F9FC]" 
+              style={{ clipPath: "polygon(0 0, 68% 0, 52% 100%, 0% 100%)" }}
+            />
+            {/* Mobile Gradient Overlay */}
+            <div className="sm:hidden absolute inset-0 z-[-2] bg-gradient-to-r from-[#F7F9FC] via-[#F7F9FC]/95 to-[#F7F9FC]/40" />
+
+            <div className="max-w-xl p-8 sm:p-12 z-10">
+              <p className="text-[11px] sm:text-[13px] font-bold uppercase tracking-[0.1em] text-primary mb-4 flex items-center gap-3">
+                <span className="w-10 h-[2px] bg-primary"></span>
+                YOUR NEIGHBOURHOOD STATIONERY STORE
+              </p>
+              
+              <h1 className="font-display text-4xl sm:text-5xl lg:text-[4.5rem] font-extrabold leading-[1.05] tracking-tight text-ink">
+                Everything you need, all in one place.
+              </h1>
+              
+              <p className="mt-6 text-lg sm:text-xl text-muted-foreground font-medium max-w-[480px] leading-relaxed">
+                Books, stationery, office supplies, printing and more — delivered fast across the ITPL area.
+              </p>
+              
+              <div className="mt-8 flex flex-wrap gap-3 sm:gap-4">
+                <button
+                  onClick={() => document.getElementById("best-sellers")?.scrollIntoView({ behavior: "smooth" })}
+                  className="rounded-lg bg-primary px-6 sm:px-8 py-3 sm:py-3.5 text-sm font-bold text-primary-foreground transition-all hover:bg-primary/90 hover:scale-[1.02] cursor-pointer inline-flex items-center gap-2"
+                >
+                  Shop now <ArrowRight className="size-4" />
+                </button>
+                <button
+                  onClick={() => document.getElementById("printing")?.scrollIntoView({ behavior: "smooth" })}
+                  className="rounded-lg bg-secondary px-6 sm:px-8 py-3 sm:py-3.5 text-sm font-bold text-secondary-foreground transition-all hover:bg-secondary/90 hover:scale-[1.02] cursor-pointer"
+                >
+                  Explore printing
+                </button>
+              </div>
+
+              <div className="mt-8 flex flex-wrap items-center gap-4 sm:gap-6 text-sm font-semibold text-ink">
+                <span className="flex items-center gap-2">
+                  <Check className="size-4 text-primary" /> Genuine brands
+                </span>
+                <span className="flex items-center gap-2">
+                  <Check className="size-4 text-primary" /> Same-day delivery
+                </span>
+              </div>
+            </div>
+          </div>
+
+          {/* Supporting Image 1 */}
+          <Link to="/shop" className="group overflow-hidden rounded-lg bg-muted relative isolate aspect-video md:aspect-auto min-h-[180px] block cursor-pointer">
+            <img src={officeImg} alt="Premium office supplies" className="absolute inset-0 w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" />
+            <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent p-6 flex flex-col justify-end">
+              <h3 className="font-display text-white font-bold text-xl">Premium office supplies</h3>
+            </div>
+          </Link>
+
+          {/* Supporting Image 2 */}
+          <Link to="/services" className="group overflow-hidden rounded-lg bg-muted relative isolate aspect-video md:aspect-auto min-h-[180px] block cursor-pointer">
+            <img src={printImg} alt="Professional printing" className="absolute inset-0 w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" />
+            <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent p-6 flex flex-col justify-end">
+              <h3 className="font-display text-white font-bold text-xl">Professional printing</h3>
+            </div>
+          </Link>
         </div>
       </section>
 
-      {/* Best sellers */}
-      <section className="section-shell py-6 md:py-8">
-        <div className="rounded-[2.5rem] bg-white p-6 shadow-[0_4px_24px_-8px_rgba(11,92,255,0.08)] border border-[#EAF2FF] sm:p-10 lg:p-12">
-          <SectionHead
-            title="Best Sellers"
-            ctaLabel="View All →"
-            to="/shop"
+      {/* 5. BEST SELLERS */}
+      <section id="best-sellers" className="section-shell py-8 md:py-12">
+        <div className="flex items-end justify-between mb-8">
+          <div className="flex flex-col">
+            <p className="text-sm font-bold uppercase tracking-wider text-primary">From our real shelves</p>
+            <h2 className="font-display text-3xl md:text-4xl font-extrabold text-foreground mt-1">Best sellers</h2>
+          </div>
+          <Link to="/shop" className="text-primary font-bold hover:underline flex items-center gap-1">
+            View all products <ChevronRight className="size-4" />
+          </Link>
+        </div>
+
+        {/* Search */}
+        <div className="mb-6 max-w-md relative">
+          <input 
+            type="text" 
+            placeholder="Search products or brands" 
+            className="input-base pr-10"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
           />
-          {isLoading ? (
-            <div className="grid-products">
-              {Array.from({ length: 4 }).map((_, i) => (
-                <ProductSkeleton key={i} />
-              ))}
-            </div>
-          ) : isError ? (
-            <div className="surface-card space-y-4 p-8 text-center border border-destructive/20">
-              <p className="font-display text-lg font-bold text-destructive">
-                Failed to load products from Supabase
-              </p>
-              <p className="text-sm text-muted-foreground">{error?.message}</p>
-              <button
-                onClick={() => refetch()}
-                className="inline-flex h-10 items-center justify-center rounded-full bg-[#0B2455] px-5 text-sm font-semibold text-white"
-              >
-                Try Again
-              </button>
-            </div>
-          ) : products.length === 0 ? (
-            <div className="surface-card p-8 text-center">
-              <p className="font-display text-lg font-bold">No products found</p>
-              <p className="text-sm text-muted-foreground">
-                The Supabase products table is currently empty.
-              </p>
-            </div>
-          ) : (
-            <ProductCarousel>
-              {best.map((p) => (
-                <ProductCarouselItem key={p.id}>
-                  <ProductCard product={p} />
-                </ProductCarouselItem>
-              ))}
-            </ProductCarousel>
+          {searchQuery && (
+            <button 
+              onClick={() => setSearchQuery("")}
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-sm font-semibold text-muted-foreground hover:text-foreground cursor-pointer"
+            >
+              Clear
+            </button>
           )}
         </div>
+
+        {bestSellers.length === 0 ? (
+          <div className="text-center py-12 rounded-lg border border-dashed border-border bg-background">
+            <p className="font-display font-bold text-lg">No products found</p>
+            <button 
+              onClick={() => { setSearchQuery(""); setActiveCategory("All"); }}
+              className="mt-2 text-primary text-sm font-semibold hover:underline cursor-pointer"
+            >
+              Clear filters
+            </button>
+          </div>
+        ) : (
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-6">
+            {bestSellers.map((product) => {
+              const inCart = lines.find((item) => item.product.id === product.id);
+              const isWishlisted = wishlist.includes(product.id);
+              
+              return (
+                <div key={product.id} className="group relative flex flex-col overflow-hidden rounded-lg border border-border bg-card p-4 transition-all hover:shadow-soft">
+                  <button 
+                    onClick={() => toggleWishlist(product.id)}
+                    className="absolute right-3 top-3 z-10 grid size-8 place-items-center rounded-full bg-background/80 backdrop-blur-sm transition-colors hover:bg-secondary/10 cursor-pointer"
+                    aria-label="Toggle wishlist"
+                  >
+                    <Heart className={`size-4 ${isWishlisted ? "fill-primary text-primary" : "text-muted-foreground"}`} />
+                  </button>
+                  
+                  <div className="relative aspect-square overflow-hidden rounded-md bg-muted/20 mb-4 isolate">
+                    <img
+                      src={product.image}
+                      alt={product.name}
+                      loading="lazy"
+                      className="absolute inset-0 h-full w-full object-contain transition-transform duration-500 group-hover:scale-110 mix-blend-multiply"
+                    />
+                  </div>
+                  
+                  <div className="flex flex-col flex-1">
+                    <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wide">{product.brand}</p>
+                    <h3 className="mt-1 text-sm font-semibold text-foreground line-clamp-2 min-h-[2.5rem] leading-tight">
+                      {product.name}
+                    </h3>
+                    
+                    <div className="mt-auto pt-3 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                      <div className="flex flex-row sm:flex-col items-center sm:items-start gap-1 sm:gap-0">
+                        <span className="font-display font-bold text-lg text-foreground">₹{product.price}</span>
+                        {product.mrp > product.price && (
+                          <span className="text-xs font-medium text-muted-foreground line-through">₹{product.mrp}</span>
+                        )}
+                      </div>
+                      
+                      {inCart ? (
+                        <div className="flex items-center gap-2 rounded-lg border border-border bg-background p-1">
+                          <button
+                            onClick={() => setQty(product.id, inCart.qty - 1)}
+                            className="grid size-7 place-items-center rounded-md hover:bg-secondary/10 cursor-pointer"
+                          >
+                            <Minus className="size-3" />
+                          </button>
+                          <span className="min-w-[1.5rem] text-center text-sm font-bold">{inCart.qty}</span>
+                          <button
+                            onClick={() => setQty(product.id, inCart.qty + 1)}
+                            className="grid size-7 place-items-center rounded-md hover:bg-secondary/10 cursor-pointer"
+                          >
+                            <Plus className="size-3" />
+                          </button>
+                        </div>
+                      ) : (
+                        <button
+                          onClick={() => addToCart(product.id, 1)}
+                          className="w-full sm:w-auto rounded-lg bg-secondary px-4 py-2 text-sm font-bold text-secondary-foreground transition-all hover:bg-secondary/90 hover:scale-[1.02] cursor-pointer"
+                        >
+                          Add
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
       </section>
 
-      {/* Printing & Services */}
-      <section className="section-shell py-6 md:py-8">
-        <div className="rounded-[2.5rem] bg-[#F4F8FF] p-8 sm:p-12 shadow-[0_4px_24px_-8px_rgba(11,92,255,0.08)] border border-[#EAF2FF] relative overflow-hidden">
-          <div className="absolute top-0 right-0 -mr-20 -mt-20 w-96 h-96 rounded-full bg-[#075BFF]/5 blur-3xl pointer-events-none" />
-          
-          <div className="relative z-10 mb-10">
-            <h2 className="font-display text-3xl font-black text-[#0B2455] sm:text-4xl">Printing & Services</h2>
-            <p className="mt-3 max-w-2xl text-[#0B2455]/70 text-lg font-medium">High quality printing, binding & finishing — fast, reliable & professional.</p>
-          </div>
-          
-          <div className="relative z-10 grid gap-6 grid-cols-1 sm:grid-cols-2 max-w-3xl">
-            {PRINT_SERVICES.map((service) => (
-              <button
-                key={service.name}
-                onClick={() => handleOrder(service.name)}
-                className="group flex flex-col sm:flex-row items-center sm:items-start text-center sm:text-left gap-5 rounded-[1.5rem] bg-white p-6 shadow-[0_4px_20px_-4px_rgba(11,92,255,0.08)] border border-[#EAF2FF] transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_12px_32px_-6px_rgba(11,92,255,0.16)] hover:border-[#DCEBFF] cursor-pointer w-full"
+      {/* 6. PRINTING SERVICES */}
+      <section id="printing" className="bg-secondary text-secondary-foreground py-16 md:py-24 relative overflow-hidden">
+        <div className="absolute right-0 top-1/2 -translate-y-1/2 w-1/2 h-full opacity-20 pointer-events-none mix-blend-overlay">
+          <img src="/shelves.webp" alt="Printing Background" className="w-full h-full object-cover" style={{ maskImage: 'linear-gradient(to right, transparent, black)', WebkitMaskImage: 'linear-gradient(to right, transparent, black)' }} />
+        </div>
+        <div className="section-shell relative z-10">
+          <div className="max-w-2xl">
+            <h2 className="font-display text-4xl sm:text-5xl font-extrabold leading-tight">
+              Print, bind and finish — ready in minutes.
+            </h2>
+            <div className="mt-8 grid grid-cols-2 gap-4 sm:gap-6 text-base sm:text-lg font-medium text-secondary-foreground/80">
+              <span className="flex items-center gap-3">
+                <div className="size-1.5 rounded-full bg-primary shrink-0" /> Document printing
+              </span>
+              <span className="flex items-center gap-3">
+                <div className="size-1.5 rounded-full bg-primary shrink-0" /> Spiral binding
+              </span>
+              <span className="flex items-center gap-3">
+                <div className="size-1.5 rounded-full bg-primary shrink-0" /> Lamination
+              </span>
+              <span className="flex items-center gap-3">
+                <div className="size-1.5 rounded-full bg-primary shrink-0" /> Custom brochures
+              </span>
+              <span className="flex items-center gap-3">
+                <div className="size-1.5 rounded-full bg-primary shrink-0" /> Banners & posters
+              </span>
+              <span className="flex items-center gap-3">
+                <div className="size-1.5 rounded-full bg-primary shrink-0" /> ID cards & magazines
+              </span>
+            </div>
+            
+            <div className="mt-10 flex flex-wrap gap-4">
+              <Link
+                to="/services"
+                className="inline-flex items-center gap-2 rounded-lg bg-white px-8 py-4 text-base font-bold text-secondary transition-all hover:bg-white/90 hover:scale-[1.02]"
               >
-                <div className="grid size-16 shrink-0 place-items-center rounded-2xl bg-[#075BFF]/10 text-[#075BFF] transition-all duration-300 group-hover:scale-105 group-hover:bg-[#075BFF] group-hover:text-white group-hover:shadow-[0_8px_20px_-4px_rgba(7,91,255,0.4)]">
-                  {getServiceIcon(service.name)}
-                </div>
-                <div className="flex-1">
-                  <div className="flex items-center justify-between gap-2">
-                    <h3 className="font-display text-xl font-bold text-[#0B2455]">{service.name}</h3>
-                  </div>
-                  <p className="mt-1 text-sm font-medium text-[#0B2455]/70 leading-relaxed">{service.note}</p>
-                  <p className="mt-3 text-xs font-bold text-[#075BFF] group-hover:underline inline-flex items-center gap-1">
-                    {service.name === "Printing" ? "Order now →" : "Customize your requirements →"}
-                  </p>
-                </div>
-              </button>
-            ))}
+                Printing and services
+              </Link>
+              <a
+                href={`https://wa.me/${STORE.whatsapp}?text=${encodeURIComponent("Hi Clip N Copy, I'd like to get a quote for some printing services.")}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-2 rounded-lg bg-primary px-8 py-4 text-base font-bold text-primary-foreground transition-all hover:bg-primary/90 hover:scale-[1.02]"
+              >
+                <MessageCircle className="size-5" /> Get a print quote
+              </a>
+            </div>
           </div>
         </div>
       </section>
 
-      <StoreSection />
-
-      {/* Benefits Strip */}
-      <section className="section-shell py-6 pb-10 md:py-8 md:pb-12">
-        <div className="grid grid-cols-2 gap-4 md:grid-cols-4 bg-white rounded-[2rem] shadow-sm border border-slate-100 p-6 md:p-8">
-          {[
-            { title: "Wide Range", desc: "1000+ products", icon: <Box className="size-6" /> },
-            { title: "Fast Delivery", desc: "Within ITPL area", icon: <Zap className="size-6" /> },
-            { title: "Best Prices", desc: "Unbeatable deals", icon: <ShieldCheck className="size-6" /> },
-            { title: "Print & Bind", desc: "Ready in minutes", icon: <Printer className="size-6" /> }
-          ].map((benefit) => (
-            <div key={benefit.title} className="flex flex-col sm:flex-row items-center sm:items-start gap-4 text-center sm:text-left p-4">
-              <div className="grid size-12 shrink-0 place-items-center rounded-full bg-blue-50 text-blue-600">
-                {benefit.icon}
-              </div>
-              <div>
-                <h4 className="font-bold text-slate-900">{benefit.title}</h4>
-                <p className="mt-1 text-sm text-slate-500">{benefit.desc}</p>
-              </div>
+      {/* 7. STORE VISIT SECTION */}
+      <section className="section-shell py-12 md:py-20">
+        <div className="grid md:grid-cols-2 gap-8 lg:gap-16 items-center">
+          <div className="flex flex-col">
+            <h2 className="font-display text-3xl font-extrabold text-foreground">{STORE.name}</h2>
+            <div className="mt-6 space-y-5 text-foreground/80">
+              <p className="flex items-start gap-3">
+                <MapPin className="size-5 mt-0.5 shrink-0 text-primary" />
+                <span>{STORE.address}</span>
+              </p>
+              <p className="flex items-center gap-3">
+                <Phone className="size-5 shrink-0 text-primary" />
+                <span>{STORE.phone}</span>
+              </p>
+              <p className="flex items-center gap-3 font-medium">
+                <span className="size-5 flex items-center justify-center font-bold text-primary">🕒</span>
+                <span>Opening hours: {STORE.hours}</span>
+              </p>
+              <p className="flex items-center gap-3">
+                <span className="size-5 flex items-center justify-center font-bold text-[#F59E0B]">★</span>
+                <span className="font-semibold text-foreground">Google rating: {STORE.rating.toFixed(1)} from {STORE.reviews} reviews</span>
+              </p>
             </div>
-          ))}
+            
+            <div className="mt-8 flex flex-wrap gap-3">
+              <a
+                href={`tel:${STORE.phoneRaw}`}
+                className="inline-flex items-center justify-center rounded-lg bg-secondary px-5 py-2.5 text-sm font-bold text-secondary-foreground transition-all hover:bg-secondary/90 hover:scale-[1.02]"
+              >
+                Call store
+              </a>
+              <a
+                href={`https://wa.me/${STORE.whatsapp}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center justify-center rounded-lg bg-[#25D366] px-5 py-2.5 text-sm font-bold text-white transition-all hover:bg-[#20bd5a] hover:scale-[1.02]"
+              >
+                WhatsApp
+              </a>
+              <a
+                href="https://maps.google.com/?q=Clip+N+Copy+Kundalahalli"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center justify-center rounded-lg border border-border bg-white px-5 py-2.5 text-sm font-bold text-foreground transition-all hover:bg-secondary/5 hover:scale-[1.02]"
+              >
+                Google Maps directions
+              </a>
+            </div>
+          </div>
+          
+          <div className="grid grid-cols-2 gap-4">
+            <div className="aspect-[4/5] rounded-lg overflow-hidden bg-muted relative isolate">
+              <img src="/storefront.webp" alt="Store Front" className="absolute inset-0 w-full h-full object-cover" />
+            </div>
+            <div className="aspect-[4/5] rounded-lg overflow-hidden bg-muted mt-8 relative isolate">
+              <img src="/shelves.webp" alt="Shop Interior" className="absolute inset-0 w-full h-full object-cover" />
+            </div>
+          </div>
         </div>
       </section>
     </LandingLayout>

@@ -69,9 +69,10 @@ export default function ServicesPage() {
           {/* CORE SERVICES GRID */}
           <div className="grid gap-6 grid-cols-1 sm:grid-cols-2 max-w-4xl">
             {PRINT_SERVICES.map((s) => (
-              <div 
+              <button 
                 key={s.name} 
-                className="group flex flex-col rounded-[20px] sm:rounded-[24px] bg-card p-6 shadow-[0_2px_12px_-4px_rgba(0,0,0,0.02)] border border-border/40 hover:shadow-[0_8px_24px_-4px_rgba(0,0,0,0.06)] hover:border-primary/20 transition-all hover:-translate-y-1 h-full"
+                onClick={() => handleOrder(s.name)}
+                className="text-left group flex flex-col rounded-[20px] sm:rounded-[24px] bg-card p-6 shadow-[0_2px_12px_-4px_rgba(0,0,0,0.02)] border border-border/40 hover:shadow-[0_8px_24px_-4px_rgba(0,0,0,0.06)] hover:border-primary/20 transition-all hover:-translate-y-1 h-full cursor-pointer w-full"
               >
                 <div className="size-12 shrink-0 rounded-full bg-primary/10 text-primary flex items-center justify-center mb-4 group-hover:bg-primary/20 transition-colors">
                   {getServiceIcon(s.name)}
@@ -80,16 +81,13 @@ export default function ServicesPage() {
                   <h3 className="text-xl font-display font-bold text-ink">{s.name}</h3>
                 </div>
                 <p className="text-sm text-muted-foreground mb-6 flex-1 leading-relaxed">{s.note}</p>
-                <div className="flex items-center justify-between border-t border-border/40 pt-4 mt-auto">
+                <div className="flex items-center justify-between border-t border-border/40 pt-4 mt-auto w-full">
                   <span className="text-xs font-bold text-primary">{s.price}</span>
-                  <button 
-                    onClick={() => handleOrder(s.name)} 
-                    className="text-xs font-bold text-primary hover:underline inline-flex items-center gap-1"
-                  >
-                    {s.name === "Printing" ? "Order now" : "Order now"} <ArrowRight className="size-3" />
-                  </button>
+                  <span className="text-xs font-bold text-primary group-hover:underline inline-flex items-center gap-1">
+                    Order now <ArrowRight className="size-3 transition-transform group-hover:translate-x-1" />
+                  </span>
                 </div>
-              </div>
+              </button>
             ))}
           </div>
         </section>
