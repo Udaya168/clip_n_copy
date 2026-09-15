@@ -155,11 +155,11 @@ export default function CheckoutPage() {
               Thank you for shopping with Clip N Copy.
             </p>
             <div className="mt-6 grid gap-3 sm:grid-cols-2">
-              <div className="rounded-2xl bg-secondary p-4 text-center">
+              <div className="rounded-2xl bg-muted/50 p-4 text-center">
                 <p className="text-xs text-muted-foreground">Order ID</p>
                 <p className="font-display font-bold text-primary">{createdOrder.orderNumber}</p>
               </div>
-              <div className="rounded-2xl bg-secondary p-4 text-center">
+              <div className="rounded-2xl bg-muted/50 p-4 text-center">
                 <p className="text-xs text-muted-foreground">Total Amount</p>
                 <p className="font-display font-bold">{inr(createdOrder.totalAmount)}</p>
               </div>
@@ -342,7 +342,7 @@ export default function CheckoutPage() {
                           "relative flex items-start gap-3.5 rounded-2xl border p-4 transition-all cursor-pointer select-none",
                           isSelected
                             ? "border-primary bg-primary/5 ring-2 ring-primary/20"
-                            : "border-border bg-background hover:bg-secondary"
+                            : "border-border bg-background hover:bg-muted/50"
                         )}
                       >
                         <input
@@ -413,7 +413,7 @@ export default function CheckoutPage() {
                   "rounded-2xl border transition-all duration-300 overflow-hidden",
                   selectedAddressId === "new" || savedAddresses.length === 0
                     ? "border-primary bg-primary/5 ring-2 ring-primary/20 p-4 space-y-4"
-                    : "border-border bg-background hover:bg-secondary p-4 cursor-pointer"
+                    : "border-border bg-background hover:bg-muted/50 p-4 cursor-pointer"
                 )}
                 onClick={() => {
                   if (savedAddresses.length > 0 && selectedAddressId !== "new") {
@@ -668,10 +668,10 @@ function Option({
         "flex items-center gap-3.5 rounded-2xl border p-4 text-left transition-all cursor-pointer",
         active
           ? "border-primary bg-primary/5 ring-2 ring-primary/20"
-          : "border-border bg-background hover:bg-secondary"
+          : "border-border bg-background hover:bg-muted/50"
       )}
     >
-      <div className={cn("grid size-10 place-items-center rounded-xl", active ? "bg-primary text-primary-foreground" : "bg-secondary text-foreground")}>
+      <div className={cn("grid size-10 place-items-center rounded-xl", active ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground")}>
         {icon}
       </div>
       <div className="flex-1 min-w-0">
