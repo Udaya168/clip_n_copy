@@ -4,6 +4,10 @@ import { MapPin, Phone, MessageCircle, Heart, Minus, Plus, ChevronRight, ArrowRi
 import { STORE, PRODUCTS, RAW_CATEGORIES } from "@/lib/data";
 import { useShop } from "@/lib/shop-store";
 import { LandingLayout } from "@/components/LandingLayout";
+import { FaqSection } from "@/components/FaqSection";
+import { ShopArchive } from "@/components/ShopArchive";
+import { CollectionSwitcher } from "@/components/CollectionSwitcher";
+import { ProductCard } from "@/components/ProductCard";
 import { useScrollRestoration } from "@/lib/useScrollRestoration";
 
 import heroImg from "@/assets/hero.webp";
@@ -14,6 +18,9 @@ export default function IndexPage() {
   const { addToCart, setQty, lines, wishlist, toggleWishlist } = useShop();
   const [activeCategory, setActiveCategory] = useState<string>("All");
   const [searchQuery, setSearchQuery] = useState("");
+
+  const scrollTo = (id: string) =>
+    document.getElementById(id)?.scrollIntoView({ behavior: "smooth", block: "start" });
 
   useScrollRestoration(true);
 
@@ -76,13 +83,13 @@ export default function IndexPage() {
               
               <div className="mt-8 flex flex-wrap gap-3 sm:gap-4">
                 <button
-                  onClick={() => document.getElementById("best-sellers")?.scrollIntoView({ behavior: "smooth" })}
+                  onClick={() => scrollTo("shop")}
                   className="rounded-lg bg-primary px-6 sm:px-8 py-3 sm:py-3.5 text-sm font-bold text-primary-foreground transition-all hover:bg-primary/90 hover:scale-[1.02] cursor-pointer inline-flex items-center gap-2"
                 >
                   Shop now <ArrowRight className="size-4" />
                 </button>
                 <button
-                  onClick={() => document.getElementById("printing")?.scrollIntoView({ behavior: "smooth" })}
+                  onClick={() => scrollTo("printing")}
                   className="rounded-lg bg-secondary px-6 sm:px-8 py-3 sm:py-3.5 text-sm font-bold text-secondary-foreground transition-all hover:bg-secondary/90 hover:scale-[1.02] cursor-pointer"
                 >
                   Explore printing
@@ -118,8 +125,14 @@ export default function IndexPage() {
         </div>
       </section>
 
-      {/* 5. BEST SELLERS */}
-      <section id="best-sellers" className="section-shell py-8 md:py-12">
+      {/* 4.5 SHOP ARCHIVE */}
+      <ShopArchive products={PRODUCTS} />
+
+      {/* 4.7 COLLECTION SWITCHER */}
+      <CollectionSwitcher />
+
+      {/* 5. BEST SELLERS / SHOP GRID */}
+      <section id="shop" className="section-shell py-8 md:py-12">
         <div className="flex items-end justify-between mb-8">
           <div className="flex flex-col">
             <p className="text-sm font-bold uppercase tracking-wider text-primary">From our real shelves</p>
@@ -160,73 +173,10 @@ export default function IndexPage() {
             </button>
           </div>
         ) : (
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-6">
-            {bestSellers.map((product) => {
-              const inCart = lines.find((item) => item.product.id === product.id);
-              const isWishlisted = wishlist.includes(product.id);
-              
-              return (
-                <div key={product.id} className="group relative flex flex-col overflow-hidden rounded-lg border border-border bg-card p-4 transition-all hover:shadow-soft">
-                  <button 
-                    onClick={() => toggleWishlist(product.id)}
-                    className="absolute right-3 top-3 z-10 grid size-8 place-items-center rounded-full bg-background/80 backdrop-blur-sm transition-colors hover:bg-secondary/10 cursor-pointer"
-                    aria-label="Toggle wishlist"
-                  >
-                    <Heart className={`size-4 ${isWishlisted ? "fill-primary text-primary" : "text-muted-foreground"}`} />
-                  </button>
-                  
-                  <div className="relative aspect-square overflow-hidden rounded-md bg-muted/20 mb-4 isolate">
-                    <img
-                      src={product.image}
-                      alt={product.name}
-                      loading="lazy"
-                      className="absolute inset-0 h-full w-full object-contain transition-transform duration-500 group-hover:scale-110 mix-blend-multiply"
-                    />
-                  </div>
-                  
-                  <div className="flex flex-col flex-1">
-                    <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wide">{product.brand}</p>
-                    <h3 className="mt-1 text-sm font-semibold text-foreground line-clamp-2 min-h-[2.5rem] leading-tight">
-                      {product.name}
-                    </h3>
-                    
-                    <div className="mt-auto pt-3 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                      <div className="flex flex-row sm:flex-col items-center sm:items-start gap-1 sm:gap-0">
-                        <span className="font-display font-bold text-lg text-foreground">₹{product.price}</span>
-                        {product.mrp > product.price && (
-                          <span className="text-xs font-medium text-muted-foreground line-through">₹{product.mrp}</span>
-                        )}
-                      </div>
-                      
-                      {inCart ? (
-                        <div className="flex items-center gap-2 rounded-lg border border-border bg-background p-1">
-                          <button
-                            onClick={() => setQty(product.id, inCart.qty - 1)}
-                            className="grid size-7 place-items-center rounded-md hover:bg-secondary/10 cursor-pointer"
-                          >
-                            <Minus className="size-3" />
-                          </button>
-                          <span className="min-w-[1.5rem] text-center text-sm font-bold">{inCart.qty}</span>
-                          <button
-                            onClick={() => setQty(product.id, inCart.qty + 1)}
-                            className="grid size-7 place-items-center rounded-md hover:bg-secondary/10 cursor-pointer"
-                          >
-                            <Plus className="size-3" />
-                          </button>
-                        </div>
-                      ) : (
-                        <button
-                          onClick={() => addToCart(product.id, 1)}
-                          className="w-full sm:w-auto rounded-lg bg-secondary px-4 py-2 text-sm font-bold text-secondary-foreground transition-all hover:bg-secondary/90 hover:scale-[1.02] cursor-pointer"
-                        >
-                          Add
-                        </button>
-                      )}
-                    </div>
-                  </div>
-                </div>
-              );
-            })}
+          <div className="grid-editorial">
+            {bestSellers.map((product, index) => (
+              <ProductCard key={product.id} product={product} index={index} />
+            ))}
           </div>
         )}
       </section>
@@ -342,6 +292,9 @@ export default function IndexPage() {
           </div>
         </div>
       </section>
+
+      {/* 8. FAQ SECTION */}
+      <FaqSection />
     </LandingLayout>
   );
 }

@@ -88,14 +88,14 @@ export default function ShopPage() {
   const title = category ? CATEGORY_NAME[category] : q ? `Results for “${q}”` : "All Products";
 
   const filters = (
-    <div className="space-y-6">
+    <div className="space-y-8">
       <FilterBlock title="Category">
-        <div className="space-y-1.5">
+        <div className="space-y-1">
           <Link
             to="/shop"
             className={cn(
-              "block rounded-lg px-2 py-1.5 text-sm hover:bg-secondary/10",
-              !category && "bg-primary-soft font-semibold text-primary",
+              "flex items-center justify-between rounded-lg px-3 py-2.5 text-[15px] transition-colors",
+              !category ? "bg-[#EEF2FF] font-bold text-primary" : "text-foreground hover:bg-secondary/5 font-medium"
             )}
           >
             All categories
@@ -105,11 +105,11 @@ export default function ShopPage() {
               key={c.slug}
               to={`/shop?category=${c.slug}`}
               className={cn(
-                "flex items-center justify-between rounded-lg px-2 py-1.5 text-sm hover:bg-secondary/10",
-                category === c.slug && "bg-primary-soft font-semibold text-primary",
+                "flex items-center justify-between rounded-lg px-3 py-2.5 text-[15px] transition-colors",
+                category === c.slug ? "bg-[#EEF2FF] font-bold text-primary" : "text-foreground hover:bg-secondary/5 font-medium"
               )}
             >
-              {c.name} <span className="text-xs text-muted-foreground">{c.count}</span>
+              {c.name} <span className={cn("text-sm", category === c.slug ? "text-primary/70" : "text-muted-foreground")}>{c.count}</span>
             </Link>
           ))}
         </div>
@@ -180,16 +180,17 @@ export default function ShopPage() {
 
       <div className="mt-6 grid gap-8 lg:grid-cols-[16rem_minmax(0,1fr)]">
         <aside className="hidden lg:block">
-          <div className="surface-card sticky top-40 max-h-[calc(100vh-11rem)] overflow-y-auto p-5">
-            <h2 className="mb-4 font-display text-lg font-bold">Filters</h2>
+          <div className="sticky top-40 max-h-[calc(100vh-11rem)] overflow-y-auto p-6 bg-white border border-border rounded-xl shadow-sm">
+            <h2 className="mb-6 font-display text-2xl font-bold text-foreground tracking-tight">Filters</h2>
             {filters}
           </div>
         </aside>
 
-        <div>
+        <div className="flex-1 min-w-0">
+          {/* Removed horizontal category chips per user request */}
 
           {isLoading ? (
-            <div className="grid-products">
+            <div className="grid-editorial">
               {Array.from({ length: 8 }).map((_, i) => (
                 <ProductSkeleton key={i} />
               ))}
@@ -225,9 +226,9 @@ export default function ShopPage() {
               )}
             </div>
           ) : (
-            <div className="grid-products">
-              {results.map((p) => (
-                <ProductCard key={p.id} product={p} />
+            <div className="grid-editorial">
+              {results.map((p, index) => (
+                <ProductCard key={p.id} product={p} index={index} />
               ))}
             </div>
           )}

@@ -8,6 +8,7 @@ interface AdminPrintDetailsModalProps {
   notification: AdminOrderNotification | null;
   isOpen: boolean;
   onClose: () => void;
+  onStatusChange?: (id: string, newStatus: string) => Promise<void> | void;
 }
 
 export function AdminPrintDetailsModal({
