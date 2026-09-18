@@ -545,7 +545,7 @@ export function Header() {
 
 function Badge({ children }: { children: React.ReactNode }) {
   return (
-    <span className="absolute -top-1 -right-1 grid min-w-5 place-items-center rounded-full accent-gradient px-1 text-[10px] font-bold text-accent-foreground">
+    <span className="absolute -top-1.5 -right-1.5 z-20 flex h-5 min-w-5 items-center justify-center rounded-full bg-primary px-1.5 text-[11px] font-extrabold leading-none text-primary-foreground shadow-sm ring-2 ring-background">
       {children}
     </span>
   );

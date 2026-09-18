@@ -6,7 +6,7 @@ import { inr, useShop } from "@/lib/shop-store";
 import { cn } from "@/lib/utils";
 
 export const ProductCard = memo(function ProductCard({ product, index = 0 }: { product: Product; index?: number }) {
-  const { addToCart, toggleWishlist, inWishlist, cart, setQty } = useShop();
+  const { addToCart, toggleWishlist, inWishlist, cart, setQty, setCartOpen } = useShop();
   const saved = inWishlist(product.id);
   const cartItem = cart.find(item => item.id === product.id);
   const currentQty = cartItem ? cartItem.qty : 0;
@@ -113,7 +113,7 @@ export const ProductCard = memo(function ProductCard({ product, index = 0 }: { p
                 </span>
                 <button
                   aria-label={`Increase quantity of ${product.name}`}
-                  onClick={(e) => { e.preventDefault(); setQty(product.id, currentQty + 1); }}
+                  onClick={(e) => { e.preventDefault(); setQty(product.id, currentQty + 1); setCartOpen(true); }}
                   disabled={currentQty >= product.stock}
                   className="flex-1 h-full flex items-center justify-center hover:bg-white/20 transition-colors disabled:opacity-50 disabled:cursor-not-allowed outline-none focus-visible:bg-white/30"
                 >
@@ -123,7 +123,7 @@ export const ProductCard = memo(function ProductCard({ product, index = 0 }: { p
             ) : (
               <button
                 aria-label={`Add ${product.name} to cart`}
-                onClick={(e) => { e.preventDefault(); addToCart(product.id, 1, undefined, false); }}
+                onClick={(e) => { e.preventDefault(); addToCart(product.id, 1, undefined, true); }}
                 disabled={product.stock <= 0}
                 className={cn(
                   "flex items-center justify-center h-full w-full rounded-[4px] text-xs sm:text-sm font-bold transition-all duration-300 outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2",

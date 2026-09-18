@@ -16,6 +16,7 @@ export function CartDrawer() {
     subtotal,
     savings,
     total,
+    cartCount,
   } = useShop();
   const { user } = useAuth();
   const navigate = useNavigate();
@@ -59,13 +60,13 @@ export function CartDrawer() {
         className="absolute inset-0 bg-ink/50 animate-in fade-in duration-200"
         onClick={() => setCartOpen(false)}
       />
-      <aside className="absolute inset-y-0 right-0 flex w-full max-w-[26rem] flex-col bg-background shadow-lift animate-in slide-in-from-right duration-300">
-        <header className="flex items-center justify-between border-b border-border p-4">
+      <aside className="absolute inset-y-0 right-0 flex w-[95vw] sm:w-full sm:max-w-[420px] flex-col bg-background shadow-[0_0_40px_rgba(0,0,0,0.1)] animate-in slide-in-from-right duration-300 ease-out z-50">
+        <header className="flex items-center justify-between border-b border-border p-4 md:p-5">
           <h2 className="flex items-center gap-2 font-display text-lg font-extrabold">
             <ShoppingBag className="size-5 text-primary" /> Your Cart
-            <span className="text-sm font-medium text-muted-foreground">({lines.length})</span>
+            <span className="text-sm font-medium text-muted-foreground">({cartCount})</span>
           </h2>
-          <button onClick={() => setCartOpen(false)} aria-label="Close cart">
+          <button onClick={() => setCartOpen(false)} aria-label="Close cart" className="grid size-8 place-items-center rounded-full hover:bg-secondary text-muted-foreground transition-colors">
             <X className="size-5" />
           </button>
         </header>
@@ -77,21 +78,21 @@ export function CartDrawer() {
             </span>
             <p className="font-display font-bold">Your cart is empty</p>
             <p className="text-sm text-muted-foreground">
-              Add notebooks, pens or books and they will show up here.
+              Add products to your cart and they will appear here.
             </p>
             <Link
               to="/shop"
               onClick={() => setCartOpen(false)}
-              className="mt-2 inline-flex h-11 items-center rounded-full bg-primary px-6 text-sm font-semibold text-primary-foreground"
+              className="mt-4 inline-flex h-11 items-center justify-center rounded-full bg-primary px-6 text-sm font-semibold text-primary-foreground shadow-sm transition-transform hover:scale-105 active:scale-95"
             >
-              Start shopping
+              Continue Shopping
             </Link>
           </div>
         ) : (
           <>
-            <div className="flex-1 space-y-3 overflow-y-auto p-4">
+            <div className="flex-1 space-y-4 overflow-y-auto p-4 md:p-5">
               {lines.map(({ product, qty, variant }) => (
-                <div key={`${product.id}-${variant || ''}`} className="flex gap-3 rounded-2xl border border-border p-3">
+                <div key={`${product.id}-${variant || ''}`} className="flex gap-4 rounded-2xl border border-border bg-white p-3 shadow-sm transition-all hover:shadow-md">
                   <img
                     src={product.image}
                     alt={product.name}
@@ -101,7 +102,7 @@ export function CartDrawer() {
                   <div className="min-w-0 flex-1">
                     <Link to={`/product/${product.id}`}
                       onClick={() => setCartOpen(false)}
-                      className="line-clamp-2 text-sm font-semibold hover:text-primary"
+                      className="line-clamp-2 text-sm font-semibold hover:text-primary transition-colors"
                     >
                       {product.name}
                     </Link>
@@ -109,36 +110,36 @@ export function CartDrawer() {
                     {variant && (
                       <p className="mt-1 text-xs font-semibold text-primary">Colour: {variant}</p>
                     )}
-                    <div className="mt-2 flex items-center justify-between gap-2">
-                      <div className="flex items-center gap-1 rounded-full border border-border">
+                    <div className="mt-3 flex items-center justify-between gap-3">
+                      <div className="flex items-center gap-1 rounded-full border border-border bg-background p-0.5">
                         <button
                           onClick={() => setQty(product.id, qty - 1, variant)}
-                          className="grid size-8 place-items-center rounded-full hover:bg-secondary"
+                          className="grid size-7 place-items-center rounded-full hover:bg-secondary transition-colors"
                           aria-label="Decrease quantity"
                         >
-                          <Minus className="size-3.5" />
+                          <Minus className="size-3" />
                         </button>
                         <span className="w-6 text-center text-sm font-bold">{qty}</span>
                         <button
                           onClick={() => setQty(product.id, qty + 1, variant)}
                           disabled={qty >= product.stock}
-                          className="grid size-8 place-items-center rounded-full hover:bg-secondary disabled:opacity-40"
+                          className="grid size-7 place-items-center rounded-full hover:bg-secondary transition-colors disabled:opacity-40"
                           aria-label="Increase quantity"
                         >
-                          <Plus className="size-3.5" />
+                          <Plus className="size-3" />
                         </button>
                       </div>
                       <div className="flex items-center gap-1.5 font-display text-sm font-bold">
                         {product.mrp > product.price && (
                           <span className="text-xs text-muted-foreground line-through font-normal">
-                            {inr(product.mrp * qty)}
+                            {inr(product.mrp)}
                           </span>
                         )}
-                        <span>{inr(product.price * qty)}</span>
+                        <span className="text-primary">{inr(product.price)}</span>
                       </div>
                       <button
                         onClick={() => removeFromCart(product.id, variant)}
-                        className="text-muted-foreground hover:text-destructive"
+                        className="grid size-8 place-items-center rounded-full text-muted-foreground hover:bg-destructive/10 hover:text-destructive transition-colors ml-auto"
                         aria-label="Remove item"
                       >
                         <Trash2 className="size-4" />

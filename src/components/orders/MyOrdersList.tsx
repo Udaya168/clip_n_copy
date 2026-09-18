@@ -135,7 +135,7 @@ export function MyOrdersList() {
   if (orders.length === 0) {
     return (
       <div className="rounded-2xl border border-border/40 bg-background p-10 text-center shadow-sm">
-        <div className="mx-auto flex size-14 items-center justify-center rounded-2xl bg-secondary text-muted-foreground">
+        <div className="mx-auto flex size-14 items-center justify-center rounded-2xl bg-secondary/10 text-foreground">
           <ShoppingBag className="size-6" />
         </div>
         <h3 className="mt-5 font-display text-xl font-bold text-foreground">No orders yet</h3>
@@ -181,7 +181,7 @@ export function MyOrdersList() {
         </div>
         <button
           onClick={fetchOrders}
-          className="inline-flex items-center gap-1.5 rounded-full border border-border/60 bg-secondary/30 px-4 py-2 text-xs font-semibold text-foreground hover:bg-secondary transition-colors cursor-pointer"
+          className="inline-flex items-center gap-1.5 rounded-full border border-border/60 bg-secondary/10 px-4 py-2 text-xs font-semibold text-foreground hover:bg-secondary hover:text-secondary-foreground transition-colors cursor-pointer"
         >
           <RefreshCw className="size-3.5" /> Refresh Status
         </button>
@@ -199,11 +199,11 @@ export function MyOrdersList() {
                 className={`inline-flex items-center gap-2 whitespace-nowrap rounded-full px-4 py-1.5 text-sm font-medium transition-colors cursor-pointer shrink-0 border ${
                   isActive
                     ? "bg-primary text-primary-foreground border-primary"
-                    : "bg-background text-muted-foreground border-border/60 hover:bg-secondary hover:text-foreground"
+                    : "bg-background text-muted-foreground border-border/60 hover:bg-secondary/10 hover:text-foreground"
                 }`}
               >
                 {filter.label}
-                <span className={`inline-flex items-center justify-center rounded-full px-1.5 py-0.5 text-[10px] font-bold ${isActive ? 'bg-primary-foreground/20 text-primary-foreground' : 'bg-secondary text-muted-foreground'}`}>
+                <span className={`inline-flex items-center justify-center rounded-full px-1.5 py-0.5 text-[10px] font-bold ${isActive ? 'bg-primary-foreground/20 text-primary-foreground' : 'bg-secondary/10 text-foreground'}`}>
                   {filter.count}
                 </span>
               </button>
@@ -214,7 +214,7 @@ export function MyOrdersList() {
 
       {filteredOrders.length === 0 ? (
         <div className="rounded-2xl border border-border/40 bg-background p-10 text-center shadow-sm">
-          <div className="mx-auto flex size-14 items-center justify-center rounded-2xl bg-secondary text-muted-foreground">
+          <div className="mx-auto flex size-14 items-center justify-center rounded-2xl bg-secondary/10 text-foreground">
             <ShoppingBag className="size-6" />
           </div>
           <h3 className="mt-5 font-display text-xl font-bold text-foreground">No orders found</h3>
@@ -278,7 +278,7 @@ export function MyOrdersList() {
                   
                   <button
                     onClick={() => setSelectedOrder(order)}
-                    className="inline-flex items-center justify-center rounded-full border border-border/60 bg-secondary/30 px-5 py-2 text-xs font-semibold text-foreground hover:bg-secondary hover:text-foreground transition-colors cursor-pointer"
+                    className="inline-flex items-center justify-center rounded-full border border-border/60 bg-secondary/10 px-5 py-2 text-xs font-semibold text-foreground hover:bg-secondary hover:text-secondary-foreground transition-colors cursor-pointer"
                   >
                     View Order
                   </button>

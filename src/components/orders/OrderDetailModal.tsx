@@ -56,7 +56,7 @@ export function OrderDetailModal({ order, onClose }: OrderDetailModalProps) {
           <button
             onClick={onClose}
             aria-label="Close modal"
-            className="grid size-9 place-items-center rounded-full bg-secondary/50 text-muted-foreground hover:bg-secondary hover:text-foreground transition-colors cursor-pointer"
+            className="grid size-9 place-items-center rounded-full bg-secondary/10 text-foreground hover:bg-secondary hover:text-secondary-foreground transition-colors cursor-pointer"
           >
             <X className="size-4.5" />
           </button>
